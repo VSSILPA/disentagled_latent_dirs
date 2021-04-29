@@ -2,7 +2,7 @@ from model_loader import get_model
 from src.evaluation import Evaluator
 from train import Trainer
 from saver import Saver
-# from visualiser import Visualiser
+from visualiser import Visualiser
 import torch
 from config import save_config
 import logging

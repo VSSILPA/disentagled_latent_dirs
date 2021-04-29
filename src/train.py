@@ -8,14 +8,12 @@ log = logging.getLogger(__name__)
 
 class Trainer(object):
 
-    def __init__(self, config):
+    def __init__(self, config ,opt):
         super(Trainer, self).__init__()
         self.config = config
+        self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
-        self.logit_loss = 0
-        self.shift_loss = 0
-        self.loss = 0
-        self.set_seed(self.config['random_seed'])
+
 
     @staticmethod
     def set_seed(seed):
@@ -27,7 +25,7 @@ class Trainer(object):
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
 
-    def train_gan(self, generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
+    def train_latent_discovery(self, generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
 
         # should_gen_classes = is_conditional(generator)
 
@@ -35,17 +33,16 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = self.make_noise(self.config['batch_size'], generator.dim_z,truncation=self.config['truncation']).cuda()
+        z = make_noise(self.opt.batch_size, generator.latent_size,truncation=self.opt.algo.ld.truncation).cuda()
         target_indices, shifts, basis_shift = self.make_shifts(deformator.input_dim)
 
         shift = deformator(basis_shift)
-
-        imgs = generator(z)
-        imgs_shifted = generator.gen_shifted(z, shift)
+        imgs , _ = generator(z,self.opt.depth,self.opt.alpha)
+        imgs_shifted, _ = generator(z + shift,self.opt.depth,self.opt.alpha)
 
         logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = self.cross_entropy(logits, target_indices.cuda())
-        shift_loss = self.config['shift_weight'] * torch.mean(torch.abs(shift_prediction - shifts))
+        shift_loss = self.opt.algo.ld.shift_weight * torch.mean(torch.abs(shift_prediction - shifts))
 
         loss = logit_loss + shift_loss
         loss.backward()
@@ -53,40 +50,39 @@ class Trainer(object):
         deformator_opt.step()
         shift_predictor_opt.step()
 
-        self.logit_loss = self.logit_loss + logit_loss.item()
-        self.shift_loss = self.shift_loss + shift_loss.item()
-        self.loss = self.loss + loss.item()
 
-        return  deformator, shift_predictor, deformator_opt, shift_predictor_opt, (self.loss ,self.logit_loss, self.shift_loss)
+        return  deformator, shift_predictor, deformator_opt, shift_predictor_opt, (loss.item() ,logit_loss.item(), shift_loss.item())
 
-    def make_noise(self, batch, dim, truncation=None):
+    @staticmethod
+    def make_noise(batch, dim, truncation=None):
         if isinstance(dim, int):
             dim = [dim]
         if truncation is None or truncation == 1.0:
             return torch.randn([batch] + dim)
         else:
-            return torch.from_numpy(self.truncated_noise([batch] + dim, truncation)).to(torch.float)
+            return torch.from_numpy(truncated_noise([batch] + dim, truncation)).to(torch.float)
 
-    def truncated_noise(self,size, truncation=1.0):
+    @staticmethod
+    def truncated_noise(size, truncation=1.0):
         return truncnorm.rvs(-truncation, truncation, size=size)
 
     def make_shifts(self, latent_dim):
-        target_indices = torch.randint(0, self.config['directions_count'], [self.config['batch_size']],device='cuda')
-        if self.config['shift_distribution'] == "normal":
+        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.batch_size],device='cuda')
+        if self.opt.algo.ld.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape, device='cuda')
-        elif self.config['shift_distribution'] == "uniform":
+        elif self.opt.algo.ld.shift_distribution == "uniform":
             shifts = 2.0 * torch.rand(target_indices.shape, device='cuda') - 1.0
 
-        shifts = self.config['shift_scale'] * shifts
-        shifts[(shifts < self.config['min_shift']) & (shifts > 0)] = self.config['min_shift']
-        shifts[(shifts > -self.config['min_shift']) & (shifts < 0)] = -self.config['min_shift']
+        shifts = self.opt.algo.ld.shift_scale * shifts
+        shifts[(shifts < self.opt.algo.ld.min_shift) & (shifts > 0)] = self.opt.algo.ld.min_shift
+        shifts[(shifts > -self.opt.algo.ld.min_shift) & (shifts < 0)] = -self.opt.algo.ld.min_shift
 
         try:
             latent_dim[0]
             latent_dim = list(latent_dim)
         except Exception:
             latent_dim = [latent_dim]
-        z_shift = torch.zeros([self.config['batch_size']] + latent_dim, device='cuda')
+        z_shift = torch.zeros([self.opt.batch_size] + latent_dim, device='cuda')
         for i, (index, val) in enumerate(zip(target_indices, shifts)):
             z_shift[i][index] += val
 

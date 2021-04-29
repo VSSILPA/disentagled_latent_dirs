@@ -1,70 +1,174 @@
+"""
+-------------------------------------------------
+   File Name:    config.py
+   Author:       Adarsh k
+   Date:         2021/04/25
+   Description:  Modified from:
+                 https://github.com/kadarsh22/Disentanglementlibpytorch
+-------------------------------------------------
+"""
+
 import argparse
 import json
 import os
 import sys
+from yacs.config import CfgNode as CN
+from contextlib import redirect_stdout
 
-experiment_name = input("Enter experiment name ")
-if experiment_name == '':
-    print('enter valid experiment name')
-    sys.exit()
+test_mode = True
+if test_mode:
+    experiment_name = 'test'
+    experiment_description = 'test'
+else:
+    experiment_name = input("Enter experiment name ")
+    experiment_description = 'test'
+    if experiment_name == '':
+        print('enter valid experiment name')
+        sys.exit()
+    experiment_description = input("Enter description of experiment ")
+    if experiment_description == '':
+        print('enter proper description')
+        sys.exit()
 
-experiment_description = input("Enter description of experiment ")
-if experiment_description == '':
-    print('enter proper description')
-    sys.exit()
+# ---------------------------------------------------------------------------- #
+# Options for experiment identifier
+# ---------------------------------------------------------------------------- #
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment_name', type=str, default=experiment_name)
 parser.add_argument('--experiment_description', type=str, default=experiment_description)
+parser.add_argument('--evaluation', type=bool, default=False, help='wether to run in evaluation mode or not')
+parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of the model to be loaded')
 
-# general configuration
-parser.add_argument('--gan_type', type=str, default='SNGAN', choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN'],
-                    help='architecture of model')
-parser.add_argument('--dataset', type=str, default='Mnist', choices=['celebA', 'Mnist', 'ImageNet',
-                                                                        'anime_face','dsprites'], help='name of the dataset')
-parser.add_argument('--logging_freq', type=int, default=10, help='Frequency at which result  should be logged')
-parser.add_argument('--saving_freq', type=int, default=2000, help='Frequency at which result  should be logged')
-parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='25_gan.pkl', help='name of the model to be loaded')
-parser.add_argument('--device_id', type=int, default=0, help='Device id of gpu')
-parser.add_argument('--random_seed', type=int, default=2, help='Random seeds to run for ')
-
-
-# GAN configurations
-parser.add_argument('--num_steps', type=int, default=int(1e+5), help='The number of epochs to run')
-parser.add_argument('--batch_size', type=int, default=128, help='batch size')
-parser.add_argument('--max_latent_dim', type=int, default=64, help='max number of latent dimensions')
-parser.add_argument('--num_interpretable_dir', type=int, default=64, help='number of interpretable directions')
-parser.add_argument('--deformator_lr', type=float, default=0.0001, help='learning rate of deformator')
-parser.add_argument('--shift_predictor_lr', type=float, default=0.0001, help='learning rate of shift_predictor')
-parser.add_argument('--beta1', type=float, default=0.5, help='beta1 optimizer')
-parser.add_argument('--beta2', type=float, default=0.999, help='beta2 optimizer')
-parser.add_argument('--deformator_random_init', type=bool, default=True)
+# ---------------------------------------------------------------------------- #
+# Options for General settings
+# ---------------------------------------------------------------------------- #
+cfg = CN()
+cfg.gan_type = 'StyleGAN'  #choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
+cfg.algorithm = 'LD'       #choices=['LD', 'CF', 'OURS']
+cfg.logging_freq = 10
+cfg.saving_freq = 5
+cfg.device = 'cuda'
+cfg.device_id = '0'
+cfg.random_seed = 2
+cfg.num_steps = int(1e+5)
+cfg.batch_size = 128
 
 
+# ---------------------------------------------------------------------------- #
+# Options for Latent Discovery
+# ---------------------------------------------------------------------------- #
 
-parser.add_argument('--deformator_type', type=str, default='proj', choices=['fc' , 'linear','id','ortho','proj','random'])
-parser.add_argument('--shift_predictor', type=str, choices=['ResNet', 'LeNet'], default='LeNet')
-parser.add_argument('--shift_distribution', type=str, choices=['normal','uniform'],default='uniform')
-parser.add_argument('--shift_scale', type=int,default=6)
-parser.add_argument('--min_shift', type=int,default=0.5)
-parser.add_argument('--directions_count', type=int, default=64, help='number of directions')
-parser.add_argument('--label_weight', type=float,default=1.0)
-parser.add_argument('--shift_weight', type=float,default=0.25)
-parser.add_argument('--truncation', type=int,default=None)
+cfg.dataset = CN()
+cfg.dataset.name = 'dsprites' #choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d']
+cfg.dataset.params = {
+    "3dshapes": {"in_channel": 3, "size": 64},
+    "mpi3d": {"in_channel": 3, "size": 64},
+    # grayscale -> rgb
+    "dsprites": {"in_channel": 3, "size": 64},
+    "cars": {"in_channel": 3, "size": 64, "f_size": 512},
+    "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
+}
 
-## Model specfic parameters
-parser.add_argument('--w_shift', type=bool, default=True,
-                    help='latent directions search in w-space for StyleGAN2')
-parser.add_argument('--gan_resolution', type=int, default=1024,
-                    help='generator out images resolution. Required only for StyleGAN2')
+
+# ---------------------------------------------------------------------------- #
+# Options for Latent Discovery
+# ---------------------------------------------------------------------------- #
+cfg.algo = CN()
+cfg.algo.ld = CN()
+cfg.algo.ld.max_latent_dim = 64
+cfg.algo.ld.num_interpretable_dir = 64
+cfg.algo.ld.deformator_lr = 0.0001
+cfg.algo.ld.shift_predictor_lr = 0.0001
+cfg.algo.ld.beta1 = 0.9
+cfg.algo.ld.beta2 = 0.999
+cfg.algo.ld.deformator_randint = True
+cfg.algo.ld.deformator_type = 'proj'        #choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+cfg.algo.ld.shift_predictor = 'LeNet'       #choices=['ResNet', 'LeNet']
+cfg.algo.ld.shift_distribution  ='uniform'  #choices=['normal', 'uniform']
+cfg.algo.ld.shift_scale = 6
+cfg.algo.ld.min_shift = 0.5
+cfg.algo.ld.directions_count = 64
+cfg.algo.ld.label_weight = 1.0
+cfg.algo.ld.shift_weight = 0.25
+cfg.algo.ld.truncation = True
+
+
+# ---------------------------------------------------------------------------- #
+# Options for StyleGAN
+# ---------------------------------------------------------------------------- #
+
+cfg.output_dir = ''
+cfg.structure = 'linear'
+cfg.loss = "logistic"
+cfg.drift = 0.001
+cfg.d_repeats = 1
+cfg.use_ema = False
+cfg.ema_decay = 0.999
+cfg.alpha = 1
+cfg.depth = 4
+
+# ---------------------------------------------------------------------------- #
+# Options for Generator
+# ---------------------------------------------------------------------------- #
+cfg.model = CN()
+cfg.model.gen = CN()
+cfg.model.gen.latent_size = 512
+# 8 in original paper
+cfg.model.gen.mapping_layers = 4
+cfg.model.gen.blur_filter = [1, 2, 1]
+cfg.model.gen.truncation_psi = 0.7
+cfg.model.gen.truncation_cutoff = 8
+
+# ---------------------------------------------------------------------------- #
+# Options for Discriminator
+# ---------------------------------------------------------------------------- #
+cfg.model.dis = CN()
+cfg.model.dis.use_wscale = True
+cfg.model.dis.blur_filter = [1, 2, 1]
+
+# ---------------------------------------------------------------------------- #
+# Options for Generator Optimizer
+# ---------------------------------------------------------------------------- #
+cfg.model.g_optim = CN()
+cfg.model.g_optim.learning_rate = 0.003
+cfg.model.g_optim.beta_1 = 0
+cfg.model.g_optim.beta_2 = 0.99
+cfg.model.g_optim.eps = 1e-8
+
+
+# ---------------------------------------------------------------------------- #
+# Options for Discriminator Optimizer
+# ---------------------------------------------------------------------------- #
+cfg.model.d_optim = CN()
+cfg.model.d_optim.learning_rate = 0.003
+cfg.model.d_optim.beta_1 = 0
+cfg.model.d_optim.beta_2 = 0.99
+cfg.model.d_optim.eps = 1e-8
+
+# ---------------------------------------------------------------------------- #
+# Options for Encoder
+# ---------------------------------------------------------------------------- #
+
+cfg.encoder = CN()
+cfg.encoder.num_samples = 10000
+cfg.encoder.num_batches = 50
+cfg.encoder.generator_bs =50
+cfg.encoder.num_directions = 5
+cfg.encoder.root = 'generated_data'
+cfg.encoder.latent_train_size = 500000
+cfg.encoder.latent_nb_epochs = 20
+cfg.encoder.latent_lr = 1e-3
+cfg.encoder.latent_step_size = 10
+cfg.encoder.latent_gamma = 0.5
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
-    return config.__dict__
+    print(cfg)
+    return config.__dict__, cfg
 
 
-def save_config(config):
+def save_config(config,opt):
     exp_name = config['experiment_name']
     cwd = os.path.dirname(os.getcwd()) + f'/results/{exp_name}'  # project root
     models_dir = cwd + '/models'  # models directory
@@ -72,8 +176,11 @@ def save_config(config):
     os.makedirs(cwd, exist_ok=True)
     os.makedirs(models_dir, exist_ok=True)
     os.makedirs(visualisations_dir, exist_ok=True)
-    with open(f'{cwd}/config.json', 'w') as fp:
-        json.dump(config, fp, indent=4, sort_keys=True)
+
+    with open(f'{cwd}/config.yml', 'w') as f:
+        with redirect_stdout(f):
+            print(opt.dump())
+
     return
 
 
