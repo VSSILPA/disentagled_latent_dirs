@@ -5,22 +5,23 @@ import os
 from train import Trainer
 
 class LatentDataset(Dataset):
-    def __init__(self, generator, latent_directions, dataset="dsprites", N=50000, generator_bs=50,
-                create_new_data=False, root="generated_data"):
+    def __init__(self, generator, latent_directions, opt,root, create_new_data=False):
         super().__init__()
-        assert N % generator_bs == 0
+        assert opt.encoder.num_samples % opt.encoder.generator_bs == 0
         self.device = list(generator.parameters())[0].device
+        self.opt = opt
         self.root = root
 
         if create_new_data:
-            self._generate_data(generator, generator_bs, dataset, N=N, save=False)
+            self._generate_data(generator, self.opt.encoder.generator_bs, self.opt.dataset, N=self.opt.encoder.num_samples, save=False)
         else:
-            exist = self._try_load_cached(dataset)
+            exist = self._try_load_cached(self.opt.dataset)
             if not exist:
                 print("Building dataset from scratch.")
-                self._generate_data(generator=generator, generator_bs=generator_bs, dataset=dataset, N=N, save=True)
+                self._generate_data(generator=generator, generator_bs=self.opt.encoder.generator_bs, dataset=self.opt.dataset,
+                                    N=self.opt.encoder.num_samples, save=True)
 
-        self.labels = self.labels @ latent_directions
+        self.labels = self.labels @ latent_directions.linear.weight.detach().cpu().numpy()
 
     def _try_load_cached(self, dataset):
         path = os.path.join(self.root, dataset + ".npz")
@@ -39,9 +40,8 @@ class LatentDataset(Dataset):
         for _ in range(N // generator_bs):
             z = Trainer.make_noise(generator_bs, generator.latent_size,
                                    truncation=True).to(self.device)
-            image, w = generator(z)
-            x = (((image.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
-            x = torch.clamp(x, -1, 1)
+            image, w = generator(z,self.opt.alpha,self.opt.depth )
+            x = torch.clamp(image, -1, 1)
             x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
             images.append(x)
             labels.append(w.detach().cpu().numpy())

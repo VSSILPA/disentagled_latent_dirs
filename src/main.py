@@ -23,9 +23,9 @@ def main(configurations, opt):
     perf_logger = PerfomanceLogger()
     data = get_data_loader(configurations, opt)
     if configurations['evaluation']:
-        run_evaluation_wrapper(configurations, perf_logger)
+        run_evaluation_wrapper(configurations, data, perf_logger)
     else:
-        run_training_wrapper(configurations, opt, perf_logger)
+        run_training_wrapper(configurations, opt, data, perf_logger)
 
 
 if __name__ == "__main__":

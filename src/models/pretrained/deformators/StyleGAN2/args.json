@@ -1,0 +1,1 @@
+{"max_latent_ind": 512, "gan_type": "StyleGAN2", "deformator": "ortho", "w_shift": true, "resolution": 1024}

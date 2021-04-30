@@ -12,6 +12,7 @@ class BetaVAEMetric(object):
 
     def __init__(self, dsprites, device_id, config):
         super(BetaVAEMetric, self).__init__()
+
         self.data = dsprites
         self.device_id = device_id
         self.config = config

@@ -1,3 +1,14 @@
+"""
+-------------------------------------------------
+   File Name:    model_loader.py
+   Author:       Adarsh k
+   Date:         2021/04/25
+   Description:  Load a pretrained generator as specified in config as well as required models for the given algorithm
+                 Reference  : https://github.com/kadarsh22/GANLatentDiscovery
+                 Contains pretrained generator and latent deformator
+-------------------------------------------------
+"""
+
 import sys
 sys.path.insert(0, './models/')
 from utils import *
@@ -17,7 +28,7 @@ def load(model, cpk_file):
 
 
 def get_model(config, opt):
-    device = torch.device('cuda:' + str(opt.device_id))
+    device = torch.device(opt.device + opt.device_id)
     gan_type = opt.gan_type
     if gan_type == 'BigGAN':
         G_weights = 'models/pretrained/generators/BigGAN/G_ema.pth',
@@ -31,11 +42,11 @@ def get_model(config, opt):
                              d_args=opt.model.dis,
                              g_opt_args=opt.model.g_optim,
                              d_opt_args=opt.model.d_optim,
-                             loss='logistic',
-                             drift=0.001,
-                             d_repeats=1,
-                             use_ema=False,
-                             ema_decay=0.999,
+                             loss=opt.loss,
+                             drift=opt.drift,
+                             d_repeats=opt.d_repeats,
+                             use_ema=opt.use_ema,
+                             ema_decay=opt.ema_decay,
                              device=device)
         load(style_gan.gen, 'models/pretrained/stylegan_dsprites/GAN_GEN_4_9.pth')
         G = style_gan.gen

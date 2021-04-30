@@ -9,15 +9,15 @@ import torch
 import time
 
 
-def run_training_wrapper(configuration, opt, perf_logger):
+def run_training_wrapper(configuration, opt, data, perf_logger):
 	for key, values in configuration.items():
 		logging.info(' {} : {}'.format(key, values))
-	device = torch.device('cuda:' + str(opt.device_id))
+	device = torch.device(opt.device + opt.device_id)
 	save_config(configuration, opt)
 	perf_logger.start_monitoring("Fetching data, models and class instantiations")
 	models = get_model(configuration, opt)
 	model_trainer = Trainer(configuration,opt)
-	evaluator = Evaluator(configuration, opt)
+	evaluator = Evaluator(configuration, opt, )
 	saver = Saver(configuration)
 	visualise_results = Visualiser(configuration)
 	# deformator, shift_predictor, deformator_opt, shift_predictor_opt = saver.load_model(deformator,shift_predictor,
@@ -46,7 +46,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
 				perf_logger.stop_monitoring("Saving Model")
 
 			if i % opt.logging_freq == 0 and i != 0:
-				accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
+				accuracy = evaluator.compute_metrics(generator, deformator ,data, epoch=0)
 				total_loss, logit_loss, shift_loss = losses
 				logging.info(
 					"Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F  Accuracy %.5f" % (
