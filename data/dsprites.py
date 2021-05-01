@@ -19,6 +19,7 @@ class DSprites(object):
 		self.images = np.load(npy_path + '/imgs.npy',mmap_mode='r+', encoding="latin1", allow_pickle=True)
 		self.latents_values = np.load(npy_path +"/latents_values.npy", encoding="latin1", allow_pickle=True)
 		self.latents_classes = np.load(npy_path + "/latents_classes.npy", encoding="latin1", allow_pickle=True)
+		self.images = self.images.reshape(-1,1,64,64)
 		# with open(dsprites_path, "rb") as data_file:
 		# 	data = np.load(dsprites_path, encoding="latin1", allow_pickle=True)
 		# metadata = data['metadata'][()]

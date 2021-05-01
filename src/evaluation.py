@@ -1,21 +1,17 @@
 import torch
-import torch.nn as nn
 import logging
 from utils import make_noise
-from train import Trainer
 import models.latent_regressor as latent_regressor
 import numpy as np
+import torch.nn as nn
 import time
 from metrics.betavae_metric import BetaVAEMetric
 from metrics.factor_vae_metric import FactorVAEMetric
 from metrics.mig import MIG
 from metrics.dci_metric import DCIMetric
 from latent_dataset import LatentDataset
-import json
 import os
-import shutil
 from config import BB_KWARGS
-
 
 log = logging.getLogger(__name__)
 
@@ -25,19 +21,18 @@ class Evaluator(object):
         self.config = config
         self.device = torch.device('cuda:' + str(opt.device_id))
         self.opt = opt
-        self.encoder = latent_regressor.Encoder(latent_dimension=self.opt.encoder.num_directions, backbone="cnn_encoder",
-                              **BB_KWARGS[self.opt.dataset])
+        self.encoder = latent_regressor.Encoder(latent_dimension=self.opt.encoder.latent_dimension,
+                                                backbone="cnn_encoder",
+                                                **BB_KWARGS[self.opt.dataset])
+        self.metric_eval = {'beta_vae': [], 'factor_vae': [], 'mig': []}
 
-        exp_name = self.config['experiment_name']
-        self.cwd = os.path.dirname(os.getcwd()) + f'/results/{exp_name}'
-
-    def compute_metrics(self,generator, directions ,data, epoch ):
+    def compute_metrics(self, generator, directions, data, epoch):
         start_time = time.time()
-        encoder = self._train_encoder(generator,directions)
+        encoder = self._train_encoder(generator, directions)
 
-        beta_vae = BetaVAEMetric(data, self.device)
-        factor_vae = FactorVAEMetric(data, self.device, self.config)
-        mig = MIG(data, self.device)
+        beta_vae = BetaVAEMetric(data, self.device, self.opt)
+        factor_vae = FactorVAEMetric(data, self.device, self.opt)
+        mig = MIG(data, self.device, self.opt)
         DCI_metric = DCIMetric(data, self.device)
         beta_vae_metric = beta_vae.compute_beta_vae(encoder, np.random.RandomState(self.opt.random_seed),
                                                     batch_size=64,
@@ -61,10 +56,9 @@ class Evaluator(object):
         logging.info('informativeness_vector')
         logging.info(dci['informativeness_vector'])
         logging.info(
-            "Epochs  %d / %d Time taken %d sec B-VAE: %.3f, F-VAE %.3F, MIG : %.3f Disentanglement: %.3f "
+            "Time taken %d sec B-VAE: %.3f, F-VAE %.3F, MIG : %.3f Disentanglement: %.3f "
             "Completeness: "
             "%.3f Informativeness: %.3f " % (
-                epoch, self.config['epochs'],
                 time.time() - start_time,
                 metrics['beta_vae'][
                     "eval_accuracy"],
@@ -75,32 +69,16 @@ class Evaluator(object):
             ))
         return self.metric_eval
 
-
     def _train_encoder(self, generator, directions):
         model = self.encoder.to(self.device)
         model = nn.DataParallel(model)
-
-        self.catalyst_logdir = os.path.join(self.cwd, "encoder_train")
-        os.makedirs(self.catalyst_logdir, exist_ok=True)
-
         loader = self._get_encoder_train_data(generator, directions)
-
         trained_model = latent_regressor._train(model, loader, self.opt)
-        logdir = os.path.join(self.catalyst_logdir, "tmp")
-
-        shutil.rmtree(logdir)
-
-        del model
-
         return trained_model
 
-
     def _get_encoder_train_data(self, generator, directions):
-
-
-        save_dir = os.path.join(self.cwd, self.opt.encoder.root)
+        save_dir = os.path.join(self.opt.result_dir, self.opt.encoder.root)
         os.makedirs(save_dir, exist_ok=True)
-
         train_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=False)
 
         LABEL_MEAN = np.mean(train_dataset.labels, 0)

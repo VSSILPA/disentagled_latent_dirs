@@ -10,6 +10,7 @@
 """
 
 import sys
+
 sys.path.insert(0, './models/')
 from utils import *
 from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
@@ -66,22 +67,21 @@ def get_model(config, opt):
     else:
         raise NotImplementedError
 
-
     if opt.algorithm == 'LD':
         deformator = LatentDeformator(shift_dim=opt.model.gen.latent_size,
-                                      input_dim=opt.algo.ld.num_interpretable_dir,
+                                      input_dim=opt.algo.ld.directions_count,  ##dimensicon of one-hot encoded vector
                                       out_dim=opt.model.gen.latent_size,
                                       type=opt.algo.ld.deformator_type,
                                       random_init=opt.algo.ld.deformator_randint).to(device)
         if opt.algo.ld.shift_predictor == 'ResNet':
-            shift_predictor = ResNetShiftPredictor(deformator.input_dim, config['shift_predictor_size']).to(device)
+            shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.ld.shift_predictor_size).to(device)
         elif opt.algo.ld.shift_predictor == 'LeNet':
-            shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1 ).to(device)
+            shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
 
         deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ld.deformator_lr)
 
         shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
-        models = (G , deformator , shift_predictor ,deformator_opt ,shift_predictor_opt)
+        models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     else:
         raise NotImplementedError
     return models

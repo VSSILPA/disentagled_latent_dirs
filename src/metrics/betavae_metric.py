@@ -10,12 +10,12 @@ class BetaVAEMetric(object):
         Framework
     """
 
-    def __init__(self, dsprites, device_id, config):
+    def __init__(self, dsprites, device_id, opt):
         super(BetaVAEMetric, self).__init__()
 
         self.data = dsprites
         self.device_id = device_id
-        self.config = config
+        self.opt = opt
 
     def compute_beta_vae(self, model, random_state, batch_size=64, num_train=10000, num_eval=5000):
 
@@ -56,7 +56,7 @@ class BetaVAEMetric(object):
     def _generate_training_sample(self, model, batch_size, random_state):
 
         # Select random coordinate to keep fixed.
-        index = random_state.randint(low=self.config['low_beta_vae'],
+        index = random_state.randint(low=1,
                                      high=6)  # 2-size ,3-orientation, 4-X-position 5 - Yposition
 
         # Sample two mini batches of latent variables.
@@ -71,8 +71,8 @@ class BetaVAEMetric(object):
         observation2 = self.data.sample_images_from_latent(factors2)
 
         #   Compute representations based on the observations.
-        representation1, _ = model.encoder(torch.from_numpy(observation1).cuda(self.device_id))
-        representation2, _ = model.encoder(torch.from_numpy(observation2).cuda(self.device_id))
+        representation1 = model(torch.from_numpy(observation1).cuda(self.device_id))
+        representation2 = model(torch.from_numpy(observation2).cuda(self.device_id))
         representation1 = representation1.data.cpu().numpy()
         representation2 = representation2.data.cpu().numpy()
 

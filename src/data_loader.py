@@ -1,4 +1,4 @@
-def get_data_loader(config ,opt):
+def get_data_loader(config, opt):
     if opt.dataset == 'dsprites':
         from data.dsprites import DSprites
         data = DSprites(config)

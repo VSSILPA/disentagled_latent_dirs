@@ -11,11 +11,11 @@ class MIG(object):
             Implementation of the metric in: MIG
     """
 
-    def __init__(self, dsprites, device_id,config):
+    def __init__(self, dsprites, device_id,opt):
         super(MIG, self).__init__()
         self.data = dsprites
         self.device_id = device_id
-        self.config = config
+        self.config = opt
 
     def compute_mig(self, model, num_train=10000, batch_size=64):
 
@@ -36,7 +36,7 @@ class MIG(object):
         sorted_m = np.sort(m, axis=0)[::-1]
         dimension_wise_mig = np.divide((sorted_m[0, :] - sorted_m[1, :])[1:],entropy[1:])  # 1: skips the first latent code that is constant
         logging.info(dimension_wise_mig)
-        score_dict["discrete_mig"] = np.mean(dimension_wise_mig[self.config['mig_start']:])
+        score_dict["discrete_mig"] = np.mean(dimension_wise_mig[0:])
         return score_dict
 
     def discrete_entropy(self,ys):
@@ -87,7 +87,7 @@ class MIG(object):
             current_factors = self.data.sample_latent(num_points_iter)
             current_observations = torch.from_numpy(self.data.sample_images_from_latent(current_factors))
             current_factors = self.data.sample_latent_values(current_factors)
-            current_representations, _ = model.encoder(current_observations)
+            current_representations = model(current_observations)
             current_representations = current_representations.data.cpu()
             if i == 0:
                 factors = current_factors

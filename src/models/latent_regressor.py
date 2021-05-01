@@ -108,13 +108,14 @@ class Encoder(nn.Module):
         self.latent_head = nn.Linear(f_size, latent_dimension)
 
     def forward(self, x):
+        x =  x.type(torch.cuda.FloatTensor)
         features = self.backbone(x)
         latent = self.latent_head(features)
         return latent
 
 
 def _train(model, loader, opt):
-    device = torch.device(opt.device + ':' + str(opt.device_id))
+    device = torch.device(opt.device  + str(opt.device_id))
     early_stopping = EarlyStopping(patience=10, verbose=False)
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.encoder.latent_lr)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -149,7 +150,7 @@ def _train(model, loader, opt):
         train_loss_avg = sum(train_loss) / len(train_loss)
         valid_loss_avg = sum(valid_loss) / len(valid_loss)
 
-        #         print('Epoch: {}, train_loss : {}, test_loss : {}'.format(epoch, train_loss_avg, valid_loss_avg))
+        print('Epoch: {}, train_loss : {}, test_loss : {}'.format(epoch, train_loss_avg, valid_loss_avg))
         early_stopping(valid_loss_avg, model)
         if early_stopping.early_stop:
             break

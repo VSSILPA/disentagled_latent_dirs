@@ -40,11 +40,11 @@ class LatentDataset(Dataset):
         for _ in range(N // generator_bs):
             z = Trainer.make_noise(generator_bs, generator.latent_size,
                                    truncation=True).to(self.device)
-            image, w = generator(z,self.opt.alpha,self.opt.depth )
+            image, w = generator(z,self.opt.depth,self.opt.alpha )
             x = torch.clamp(image, -1, 1)
             x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
             images.append(x)
-            labels.append(w.detach().cpu().numpy())
+            labels.append(w.detach()[:,0,:].cpu().numpy())
 
         self.images = np.concatenate(images, 0)
         self.labels = np.concatenate(labels, 0)

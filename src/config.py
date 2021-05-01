@@ -37,24 +37,25 @@ else:
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment_name', type=str, default=experiment_name)
 parser.add_argument('--experiment_description', type=str, default=experiment_description)
-parser.add_argument('--evaluation', type=bool, default=False, help='wether to run in evaluation mode or not')
+parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
 parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of the model to be loaded')
 
 # ---------------------------------------------------------------------------- #
 # Options for General settings
 # ---------------------------------------------------------------------------- #
-cfg = CN()
-cfg.gan_type = 'StyleGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
-cfg.algorithm = 'LD'
-cfg.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d']
-cfg.logging_freq = 10
-cfg.saving_freq = 5
-cfg.device = 'cuda:'
-cfg.device_id = '0'
-cfg.random_seed = 2
-cfg.num_steps = int(1e+5)
-cfg.batch_size = 128
+opt = CN()
+opt.gan_type = 'StyleGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
+opt.algorithm = 'LD'       # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.logging_freq = 10
+opt.saving_freq = 5
+opt.device = 'cuda:'
+opt.device_id = '0'
+opt.random_seed = 2
+opt.num_steps = int(1e+5)
+opt.batch_size = 128
 
+##Encoder backbone params
 BB_KWARGS = {
     "3dshapes": {"in_channel": 3, "size": 64},
     "mpi3d": {"in_channel": 3, "size": 64},
@@ -63,102 +64,100 @@ BB_KWARGS = {
     "cars": {"in_channel": 3, "size": 64, "f_size": 512},
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
 }
-
 # ---------------------------------------------------------------------------- #
 # Options for Latent Discovery
 # ---------------------------------------------------------------------------- #
-cfg.algo = CN()
-cfg.algo.ld = CN()
-cfg.algo.ld.max_latent_dim = 64
-cfg.algo.ld.num_interpretable_dir = 64
-cfg.algo.ld.deformator_lr = 0.0001
-cfg.algo.ld.shift_predictor_lr = 0.0001
-cfg.algo.ld.beta1 = 0.9
-cfg.algo.ld.beta2 = 0.999
-cfg.algo.ld.deformator_randint = True
-cfg.algo.ld.deformator_type = 'proj'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-cfg.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']
-cfg.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
-cfg.algo.ld.shift_scale = 6
-cfg.algo.ld.min_shift = 0.5
-cfg.algo.ld.directions_count = 64
-cfg.algo.ld.label_weight = 1.0
-cfg.algo.ld.shift_weight = 0.25
-cfg.algo.ld.truncation = True
+opt.algo = CN()
+opt.algo.ld = CN()
+opt.algo.ld.latent_dim = 512
+opt.algo.ld.directions_count = 64
+opt.algo.ld.shift_scale = 6
+opt.algo.ld.min_shift = 0.5
+opt.algo.ld.deformator_lr = 0.0001
+opt.algo.ld.shift_predictor_lr = 0.0001
+opt.algo.ld.beta1 = 0.9
+opt.algo.ld.beta2 = 0.999
+opt.algo.ld.deformator_randint = True
+opt.algo.ld.deformator_type = 'proj'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']
+opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
+opt.algo.ld.shift_predictor_size = None     #reconstructor resolution
+opt.algo.ld.label_weight = 1.0
+opt.algo.ld.shift_weight = 0.25
+opt.algo.ld.truncation = None
 
 # ---------------------------------------------------------------------------- #
 # Options for StyleGAN
 # ---------------------------------------------------------------------------- #
 
-cfg.output_dir = ''
-cfg.structure = 'linear'
-cfg.loss = "logistic"
-cfg.drift = 0.001
-cfg.d_repeats = 1
-cfg.use_ema = False
-cfg.ema_decay = 0.999
-cfg.alpha = 1
-cfg.depth = 4
+opt.structure = 'linear'
+opt.loss = "logistic"
+opt.drift = 0.001
+opt.d_repeats = 1
+opt.use_ema = False
+opt.ema_decay = 0.999
+opt.alpha = 1
+opt.depth = 4
 
 # ---------------------------------------------------------------------------- #
 # Options for Generator
 # ---------------------------------------------------------------------------- #
-cfg.model = CN()
-cfg.model.gen = CN()
-cfg.model.gen.latent_size = 512
+opt.model = CN()
+opt.model.gen = CN()
+opt.model.gen.latent_size = 512
 # 8 in original paper
-cfg.model.gen.mapping_layers = 4
-cfg.model.gen.blur_filter = [1, 2, 1]
-cfg.model.gen.truncation_psi = 0.7
-cfg.model.gen.truncation_cutoff = 8
+opt.model.gen.mapping_layers = 4
+opt.model.gen.blur_filter = [1, 2, 1]
+opt.model.gen.truncation_psi = 0.7
+opt.model.gen.truncation_cutoff = 8
 
 # ---------------------------------------------------------------------------- #
 # Options for Discriminator
 # ---------------------------------------------------------------------------- #
-cfg.model.dis = CN()
-cfg.model.dis.use_wscale = True
-cfg.model.dis.blur_filter = [1, 2, 1]
+opt.model.dis = CN()
+opt.model.dis.use_wscale = True
+opt.model.dis.blur_filter = [1, 2, 1]
 
 # ---------------------------------------------------------------------------- #
 # Options for Generator Optimizer
 # ---------------------------------------------------------------------------- #
-cfg.model.g_optim = CN()
-cfg.model.g_optim.learning_rate = 0.003
-cfg.model.g_optim.beta_1 = 0
-cfg.model.g_optim.beta_2 = 0.99
-cfg.model.g_optim.eps = 1e-8
+opt.model.g_optim = CN()
+opt.model.g_optim.learning_rate = 0.003
+opt.model.g_optim.beta_1 = 0
+opt.model.g_optim.beta_2 = 0.99
+opt.model.g_optim.eps = 1e-8
 
 # ---------------------------------------------------------------------------- #
 # Options for Discriminator Optimizer
 # ---------------------------------------------------------------------------- #
-cfg.model.d_optim = CN()
-cfg.model.d_optim.learning_rate = 0.003
-cfg.model.d_optim.beta_1 = 0
-cfg.model.d_optim.beta_2 = 0.99
-cfg.model.d_optim.eps = 1e-8
+opt.model.d_optim = CN()
+opt.model.d_optim.learning_rate = 0.003
+opt.model.d_optim.beta_1 = 0
+opt.model.d_optim.beta_2 = 0.99
+opt.model.d_optim.eps = 1e-8
 
 # ---------------------------------------------------------------------------- #
 # Options for Encoder
 # ---------------------------------------------------------------------------- #
 
-cfg.encoder = CN()
-cfg.encoder.num_samples = 10000
-cfg.encoder.num_batches = 50
-cfg.encoder.generator_bs = 50
-cfg.encoder.batch_size = 128
-cfg.encoder.num_directions = 5
-cfg.encoder.root = 'generated_data'
-cfg.encoder.latent_train_size = 500000
-cfg.encoder.latent_nb_epochs = 20
-cfg.encoder.latent_lr = 1e-3
-cfg.encoder.latent_step_size = 10
-cfg.encoder.latent_gamma = 0.5
+opt.encoder = CN()
+opt.encoder.num_samples = 10000
+opt.encoder.latent_dimension = 64  ## this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.generator_bs = 50
+opt.encoder.batch_size = 128
+opt.encoder.root = 'generated_data'
+opt.encoder.latent_train_size = 500000
+opt.encoder.latent_nb_epochs = 20
+opt.encoder.latent_lr = 1e-3
+opt.encoder.latent_step_size = 10
+opt.encoder.latent_gamma = 0.5
 
+assert opt.model.gen.latent_size == opt.algo.ld.latent_dim
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
-    print(cfg)
-    return config.__dict__, cfg
+    print(opt)
+    return config.__dict__, opt
 
 
 def save_config(config, opt):

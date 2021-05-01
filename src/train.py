@@ -33,10 +33,10 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = make_noise(self.opt.batch_size, generator.latent_size,truncation=self.opt.algo.ld.truncation).cuda()
-        target_indices, shifts, basis_shift = self.make_shifts(deformator.input_dim)
+        z = make_noise(self.opt.batch_size, generator.latent_size, truncation=self.opt.algo.ld.truncation).cuda()
+        target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
 
-        shift = deformator(basis_shift)
+        shift = deformator(z_shift)
         imgs , _ = generator(z,self.opt.depth,self.opt.alpha)
         imgs_shifted, _ = generator(z + shift,self.opt.depth,self.opt.alpha)
 

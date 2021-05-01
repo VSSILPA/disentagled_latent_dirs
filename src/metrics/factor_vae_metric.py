@@ -8,11 +8,11 @@ class FactorVAEMetric(object):
         Framework
     """
 
-	def __init__(self, dsprites, device_id, config):
+	def __init__(self, dsprites, device_id, opt):
 		super(FactorVAEMetric, self).__init__()
 		self.data = dsprites
 		self.device_id = device_id
-		self.config = config
+		self.opt = opt
 
 	def compute_factor_vae(self, model, random_state, batch_size=64, num_train=10000, num_eval=5000,
 						   num_variance_estimate=10000):
@@ -45,13 +45,13 @@ class FactorVAEMetric(object):
 
 		latents = self.data.sample_latent(size=num_variance_estimate)
 		observations = self.data.sample_images_from_latent(latents)
-		train_loader = torch.utils.data.DataLoader(observations, batch_size=self.config['batch_size'], shuffle=True,drop_last = True)
+		train_loader = torch.utils.data.DataLoader(observations, batch_size=self.opt.encoder.batch_size, shuffle=True,drop_last = True)
 		representations_list = []
 		for images in train_loader:
-			representations, _ = model.encoder(images.cuda(self.device_id))
+			representations = model(images.cuda(self.device_id))
 			representations_list.append(representations.data.cpu())
 		representations = torch.stack(representations_list)
-		representations = representations.view(-1,self.config['latent_dim'])
+		representations = representations.view(-1,self.opt.encoder.num_directions)
 		# assert representations.shape[0] == num_variance_estimate
 		return np.var(representations.numpy(), axis=0, ddof=1)
 
@@ -59,7 +59,7 @@ class FactorVAEMetric(object):
 								  active_dims):
 
 		# Select random coordinate to keep fixed.
-		factor_index = random_state.randint(low=self.config['low_factor_vae'], high=self.data.num_factors)
+		factor_index = random_state.randint(low=1, high=self.data.num_factors)
 
 		# Sample two mini batches of latent variables.
 		factors1 = self.data.sample_latent(batch_size)
@@ -68,7 +68,7 @@ class FactorVAEMetric(object):
 		factors1[:, factor_index] = factors1[0, factor_index]
 		observation = self.data.sample_images_from_latent(factors1)
 
-		representations, _ = model.encoder(torch.from_numpy(observation))
+		representations = model(torch.from_numpy(observation))
 		representations = representations.data.cpu().numpy()
 
 		## Rescaling
