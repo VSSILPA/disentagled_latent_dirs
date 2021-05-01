@@ -55,7 +55,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 perf_logger.stop_monitoring("Saving Model")
 
             if i % opt.logging_freq == 0 and i != 0:
-                accuracy = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+                metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                 total_loss, logit_loss, shift_loss = losses
                 logging.info(
                     "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (

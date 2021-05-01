@@ -51,7 +51,7 @@ class FactorVAEMetric(object):
 			representations = model(images.cuda(self.device_id))
 			representations_list.append(representations.data.cpu())
 		representations = torch.stack(representations_list)
-		representations = representations.view(-1,self.opt.encoder.num_directions)
+		representations = representations.view(-1,self.opt.encoder.latent_dimension)
 		# assert representations.shape[0] == num_variance_estimate
 		return np.var(representations.numpy(), axis=0, ddof=1)
 
