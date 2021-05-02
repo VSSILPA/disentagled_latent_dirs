@@ -28,13 +28,14 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
     model_trainer = Trainer(configuration, opt)
     evaluator = Evaluator(configuration, opt)
     saver = Saver(configuration)
-    visualise_results = Visualiser(configuration)
+    visualise_results = Visualiser(configuration, opt)
     # deformator, shift_predictor, deformator_opt, shift_predictor_opt = saver.load_model(deformator,shift_predictor,
     # deformator_opt,shift_predictor_opt)
     perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
     if opt.algorithm == 'LD':
         generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
+        visualise_results.plot_generated_images(opt, generator)
         generator.to(device).eval()
         deformator.to(device).train()
         shift_predictor.to(device).train()
@@ -63,9 +64,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                         total_loss / opt.logging_freq, logit_loss / opt.logging_freq,
                         shift_loss / opt.logging_freq))
                 perf_logger.start_monitoring("Latent Traversal Visualisations")
-                visualise_results.make_interpolation_chart(i, generator, deformator, z=None,
-                                                           shift_r=10, shifts_count=5, dims=None, dims_count=10,
-                                                           texts=None)
+                visualise_results.make_interpolation_chart(i, generator, deformator,
+                                                           shift_r=10, shifts_count=5, dims_count=5)
                 perf_logger.stop_monitoring("Latent Traversal Visualisations")
                 start_time = time.time()
                 loss, logit_loss, shift_loss = 0, 0, 0

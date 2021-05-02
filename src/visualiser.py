@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 from utils import *
 matplotlib.use("Agg")
 import itertools
-from torchvision.utils import make_grid
+from torchvision.utils import make_grid,save_image
 from torchvision.transforms import ToPILImage
 import io
 from PIL import Image
+from utils import  make_noise
 
 
 def add_border(tensor):
@@ -23,9 +24,10 @@ def add_border(tensor):
 	return tensor
 
 class Visualiser(object):
-	def __init__(self, config):
+	def __init__(self, config, opt):
 		self.config = config
 		self.experiment_name = config['experiment_name']
+		self.opt = opt
 
 	def to_image(self,tensor, adaptive=False):
 		if len(tensor.shape) == 4:
@@ -41,54 +43,37 @@ class Visualiser(object):
 	@torch.no_grad()
 	def interpolate(self, generator, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False):
 		shifted_images = []
-		for shift in np.arange(-shifts_r, shifts_r + 1e-9, shifts_r / shifts_count):
+		for shift in np.arange(-shifts_r, shifts_r , shifts_r / shifts_count):
 			if deformator is not None:
-				z_deformed = z.cuda() + deformator(one_hot(z.shape[1:], shift, dim).cuda())
+				z_deformed = z.cuda() + deformator(one_hot(self.opt.algo.ld.directions_count, shift, dim).cuda())
 			else:
 				z_deformed = z.cuda() + one_hot(z.shape[1:], shift, dim).cuda()
-			shifted_image = generator(z_deformed).cpu()[0]
+			shifted_image =  generator(z_deformed, self.opt.depth, self.opt.alpha)[0].cpu()
 			if shift == 0.0 and with_central_border:
 				shifted_image = add_border(shifted_image)
 
 			shifted_images.append(shifted_image)
-		return shifted_images
+		return torch.stack(shifted_images)
 
 
-	def make_interpolation_chart(self, step ,generator, deformator=None, z=None,
-								 shift_r=10, shifts_count = 5, dims = None, dims_count = 10, texts = None, **kwargs):
+	def make_interpolation_chart(self, step ,generator, deformator=None, shift_r=10, shifts_count = 5, dims_count = 10):
 
-		file_location = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/visualisations/latent_traversal/'
+		file_location = self.opt.result_dir + '/visualisations/latent_traversal/'
 		if not os.path.exists(file_location):
 			os.makedirs(file_location)
 		path = file_location + str(step) + '.png'
 
-		if deformator is not None:
-			deformator.eval()
+		deformator.eval()
+		generator.eval()
 
-		z = z if z is not None else make_noise(1, generator.dim_z)
-
-		original_img = generator(z.cuda()).cpu()
-
+		z = make_noise(self.opt.num_images_grid, generator.latent_size, truncation=self.opt.algo.ld.truncation).cuda()
 		imgs = []
-		if dims is None:
-			dims = range(dims_count)
-		for i in dims:
+		for i in range(dims_count):
 			imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, deformator))
 
-		rows_count = len(imgs) + 1
-		fig, axs = plt.subplots(rows_count, **kwargs)
+		batch_tensor = torch.stack(imgs).view(-1,1,64,64)
 
-		axs[0].axis('off')
-		axs[0].imshow(self.to_image(original_img, True))
-
-		if texts is None:
-			texts = dims
-		for ax, shifts_imgs, text in zip(axs[1:], imgs, texts):
-			ax.axis('off')
-			plt.subplots_adjust(left=0.5)
-			ax.imshow(self.to_image(make_grid(shifts_imgs, nrow=(2 * shifts_count + 1), padding=1), True))
-			ax.text(-20, 21, str(text), fontsize=10)
-		plt.savefig(path)
+		save_image(batch_tensor.view(-1,1,64,64), path, nrow=10,normalize=True, scale_each=True, pad_value=128, padding=1)
 
 	def fig_to_image(fig):
 		buf = io.BytesIO()
@@ -109,7 +94,11 @@ class Visualiser(object):
 		path = file_location + str(plot_type) + '.jpeg'
 		plt.savefig(path)
 
-
+	def plot_generated_images(self, opt, generator):
+		z = make_noise(100, generator.latent_size, truncation=opt.algo.ld.truncation).cuda()
+		imgs, _ = generator(z, opt.depth, opt.alpha)
+		save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),
+				   normalize=True, scale_each=True, pad_value=128, padding=1)
 
 
 

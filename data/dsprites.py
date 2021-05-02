@@ -4,6 +4,7 @@ import torchvision
 import os
 import matplotlib.pyplot as plt
 
+
 SCREAM_PATH = "/home/adarsh/Documents/data/scream/scream.jpg"
 dsprites_path = "../data/dsprites/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"
 npy_path = '/home/adarsh/PycharmProjects/StyleGAN_dsprites/data/dsprites'
