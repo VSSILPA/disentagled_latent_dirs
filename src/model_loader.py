@@ -14,6 +14,7 @@ import sys
 sys.path.insert(0, './models/')
 from utils import *
 from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
+from models.stylegan2.models import Generator
 
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
@@ -55,8 +56,18 @@ def get_model(config, opt):
         G_weights = 'models/pretrained/generators/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
         G = make_proggan(G_weights)
     elif gan_type == 'StyleGAN2':
-        G_weights = 'models/pretrained/StyleGAN2/stylegan2-car-config-f.pt',
-        G = make_style_gan2(config['gan_resolution'], G_weights, config['w_shift'])
+        config = {"latent": 512, "n_mlp": 3, "channel_multiplier": 4}
+        G = Generator(
+            size=64,
+            style_dim=config["latent"],
+            n_mlp=config["n_mlp"],
+            small=True,
+            channel_multiplier=config["channel_multiplier"],
+        )
+        G.load_state_dict(torch.load(config.pretrained_gen_path))
+        G.eval().to(device)
+        for p in G.parameters():
+            p.requires_grad_(False)
     elif gan_type == 'SNGAN':
         G_weights = 'models/pretrained/generators/SN_MNIST'
         G = make_gan(G_weights)
@@ -82,6 +93,8 @@ def get_model(config, opt):
 
         shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
         models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
+    elif opt.algorithm == 'CF':
+        return G
     else:
         raise NotImplementedError
     return models

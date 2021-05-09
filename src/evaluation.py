@@ -43,6 +43,7 @@ class Evaluator(object):
         mutual_info_gap = mig.compute_mig(encoder, num_train=10000, batch_size=128)
 
         dci = DCI_metric.compute_dci(encoder)
+
         dci_average = (dci['disentanglement'] + dci['completeness'] + dci['informativeness']) / 3
         metrics = {'beta_vae': beta_vae_metric, 'factor_vae': factor_vae_metric, 'mig': mutual_info_gap,
                    'dci_metric': dci_average}
@@ -109,12 +110,13 @@ class Evaluator(object):
 
         percents = torch.empty([n_steps])
         for step in range(n_steps):
-            z = make_noise(self.config['batch_size'], generator.dim_z).to(self.device)
+            z = make_noise(128, generator.latent_size, truncation=self.opt.algo.ld.truncation).cuda()
+
             target_indices, shifts, basis_shift = trainer.make_shifts(deformator.input_dim)
             shift = deformator(basis_shift)
 
-            imgs = generator(z)
-            imgs_shifted = generator.gen_shifted(z, shift)
+            imgs, _ = generator(z, self.opt.depth, self.opt.alpha)
+            imgs_shifted, _ = generator(z + shift, self.opt.depth, self.opt.alpha)
 
             logits, _ = shift_predictor(imgs, imgs_shifted)
             percents[step] = (torch.argmax(logits, dim=1) == target_indices.cuda()).to(torch.float32).mean()

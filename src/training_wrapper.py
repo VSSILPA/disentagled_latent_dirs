@@ -16,6 +16,7 @@ from config import save_config
 import logging
 import torch
 import time
+import numpy as np
 
 
 def run_training_wrapper(configuration, opt, data, perf_logger):
@@ -57,18 +58,43 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
 
             if i % opt.logging_freq == 0 and i != 0:
                 metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+                accuracy = evaluator.evaluate_model(generator,deformator,shift_predictor,model_trainer)
                 total_loss, logit_loss, shift_loss = losses
                 logging.info(
-                    "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
+                    "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F Accuracy %.3F " % (
                         i, opt.num_steps, time.time() - start_time,
                         total_loss / opt.logging_freq, logit_loss / opt.logging_freq,
-                        shift_loss / opt.logging_freq))
+                        shift_loss / opt.logging_freq,accuracy))
                 perf_logger.start_monitoring("Latent Traversal Visualisations")
                 visualise_results.make_interpolation_chart(i, generator, deformator,
                                                            shift_r=10, shifts_count=5, dims_count=5)
                 perf_logger.stop_monitoring("Latent Traversal Visualisations")
                 start_time = time.time()
                 loss, logit_loss, shift_loss = 0, 0, 0
+    elif opt.algorithm == 'CF':
+        generator = models
+        weights = []
+        weights.append(generator.g_synthesis.init_block.epi1.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.init_block.epi2.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[0].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[0].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[1].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[1].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[2].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[2].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[3].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
+        weights.append(generator.g_synthesis.blocks[3].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
+        weight = np.concatenate(weights, axis=1).astype(np.float32)
+        weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
+        eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
+        deformator =  eigen_vectors[:opt.algo.ld.directions_count]
+        deformator_layer = torch.nn.Linear(64,512)
+        deformator_layer.weight.data = torch.FloatTensor(deformator)
+        metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
+        print(metrics)
+
+
+
 
     else:
         raise NotImplementedError
