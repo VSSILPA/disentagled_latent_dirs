@@ -1,3 +1,11 @@
 /src/models/pretrained/generators/
 /pretrained_models/generators/
 /src/models/pretrained/
+/src/checkpoint.pt
+/venv/
+/pretrained_models/50_model.pkl
+/pretrained_models/18000_model.pkl
+/data/cars/
+/data/dsprites/
+/data/mpi3d_toy/
+/data/shapes3d/
