@@ -9,3 +9,8 @@
 /data/dsprites/
 /data/mpi3d_toy/
 /data/shapes3d/
+/src/models/BigGAN/
+/src/models/ProgGAN/
+/src/models/SNGAN/
+/src/models/StyleGAN/
+/src/models/StyleGAN2/
