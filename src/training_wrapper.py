@@ -74,6 +74,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
     elif opt.algorithm == 'CF':
         generator = models
         weights = []
+        visualise_results.plot_generated_images(opt, generator)
         weights.append(generator.g_synthesis.init_block.epi1.style_mod.lin.weight.T.cpu().detach().numpy())
         weights.append(generator.g_synthesis.init_block.epi2.style_mod.lin.weight.T.cpu().detach().numpy())
         weights.append(generator.g_synthesis.blocks[0].epi1.style_mod.lin.weight.T.cpu().detach().numpy())

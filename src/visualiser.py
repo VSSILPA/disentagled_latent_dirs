@@ -95,10 +95,10 @@ class Visualiser(object):
 		plt.savefig(path)
 
 	def plot_generated_images(self, opt, generator):
-		z = make_noise(100, generator.latent_size, truncation=opt.algo.ld.truncation).cuda()
-		imgs, _ = generator(z, opt.depth, opt.alpha)
-		save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),
-				   normalize=True, scale_each=True, pad_value=128, padding=1)
+		z = torch.randn(50, generator.style_dim).cuda()
+		w = generator.style(z)
+		imgs = generator([w])[0]
+		save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),normalize=True, scale_each=True, pad_value=128, padding=1)
 
 
 

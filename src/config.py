@@ -47,7 +47,7 @@ opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
 opt.algorithm = 'CF'       # choices=['LD', 'CF', 'Ours', 'GS']
 opt.dataset = '3dshapes'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
-opt.pretrained_gen_path = '../pretrained_models/generators/3dshapes/0.pt'
+opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/3dshapes/0.pt'
 opt.logging_freq = 500
 opt.saving_freq = 500
 opt.device = 'cuda:'

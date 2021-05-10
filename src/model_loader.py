@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, './models/')
 from utils import *
-from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
+# from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
 from models.stylegan2.models import Generator
 
 from models.latent_deformator import LatentDeformator
@@ -56,15 +56,15 @@ def get_model(config, opt):
         G_weights = 'models/pretrained/generators/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
         G = make_proggan(G_weights)
     elif gan_type == 'StyleGAN2':
-        config = {"latent": 512, "n_mlp": 3, "channel_multiplier": 4}
+        config_gan = {"latent": 512, "n_mlp": 3, "channel_multiplier": 4}
         G = Generator(
             size=64,
-            style_dim=config["latent"],
-            n_mlp=config["n_mlp"],
-            small=True,
-            channel_multiplier=config["channel_multiplier"],
+            style_dim=config_gan["latent"],
+            n_mlp=config_gan["n_mlp"],
+            small=False,
+            channel_multiplier=config_gan["channel_multiplier"],
         )
-        G.load_state_dict(torch.load(config.pretrained_gen_path))
+        G.load_state_dict(torch.load(opt.pretrained_gen_path))
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
