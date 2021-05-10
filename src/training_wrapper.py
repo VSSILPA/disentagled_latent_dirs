@@ -73,29 +73,20 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 loss, logit_loss, shift_loss = 0, 0, 0
     elif opt.algorithm == 'CF':
         generator = models
-        weights = []
-        visualise_results.plot_generated_images(opt, generator)
-        weights.append(generator.g_synthesis.init_block.epi1.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.init_block.epi2.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[0].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[0].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[1].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[1].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[2].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[2].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[3].epi1.style_mod.lin.weight.T.cpu().detach().numpy())
-        weights.append(generator.g_synthesis.blocks[3].epi2.style_mod.lin.weight.T.cpu().detach().numpy())
-        weight = np.concatenate(weights, axis=1).astype(np.float32)
-        weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
-        eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
-        deformator =  eigen_vectors[:opt.algo.ld.directions_count]
-        deformator_layer = torch.nn.Linear(64,512)
+        modulate = {
+            k: v
+            for k, v in generator.state_dict().items()
+            if "modulation" in k and "to_rgbs" not in k and "weight" in k
+        }
+        weight_mat = []
+        for k, v in modulate.items():
+            weight_mat.append(v)
+        W = torch.cat(weight_mat, 0)
+        V = torch.svd(W).V.detach().cpu().numpy()
+        deformator = V[:, :opt.algo.ld.directions_count]
+        deformator_layer = torch.nn.Linear(64, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
         print(metrics)
-
-
-
-
     else:
         raise NotImplementedError

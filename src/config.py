@@ -42,7 +42,7 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 
 # ---------------------------------------------------------------------------- #
 # Options for General settings
-# ---------------------------------------------------------------------------- #
+# ---------------------------------------------------------3dshapes------------------- #
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
 opt.algorithm = 'CF'       # choices=['LD', 'CF', 'Ours', 'GS']
@@ -67,6 +67,15 @@ BB_KWARGS = {
     "cars": {"in_channel": 3, "size": 64, "f_size": 512},
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
 }
+
+
+##StyleGAN2 params
+generator_kwargs = {
+    "input_is_latent": True,
+    "randomize_noise": False,
+    "truncation": 0.8,
+}
+
 # ---------------------------------------------------------------------------- #
 # Options for Latent Discovery
 # ---------------------------------------------------------------------------- #

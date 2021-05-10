@@ -11,7 +11,7 @@ from torchvision.transforms import ToPILImage
 import io
 from PIL import Image
 from utils import  make_noise
-
+from config import generator_kwargs
 
 def add_border(tensor):
 	border = 3
@@ -97,7 +97,7 @@ class Visualiser(object):
 	def plot_generated_images(self, opt, generator):
 		z = torch.randn(50, generator.style_dim).cuda()
 		w = generator.style(z)
-		imgs = generator([w])[0]
+		imgs = generator([w], **generator_kwargs)[0]
 		save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),normalize=True, scale_each=True, pad_value=128, padding=1)
 
 

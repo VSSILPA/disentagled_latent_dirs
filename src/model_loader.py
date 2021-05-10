@@ -9,16 +9,15 @@
 -------------------------------------------------
 """
 
-import sys
 
-sys.path.insert(0, './models/')
 from utils import *
-# from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
+from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
 from models.stylegan2.models import Generator
-
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from models.StyleGAN.GAN import StyleGAN
+import sys
+sys.path.insert(0, './models/')
 
 
 def load(model, cpk_file):

@@ -377,6 +377,8 @@ class Generator(nn.Module):
     ):
         super().__init__()
 
+        self.trunc = self.mean_latent(4096)
+
         self.size = size
 
         if small and size > 64:
@@ -501,6 +503,8 @@ class Generator(nn.Module):
         noise=None,
         randomize_noise=True,
     ):
+        truncation_latent = self.trunc
+
         if not input_is_latent:
             styles = [self.style(s) for s in styles]
 

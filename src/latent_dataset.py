@@ -2,6 +2,7 @@ import torch
 from torch.utils.data.dataset import Dataset
 import numpy as np
 import os
+from config import generator_kwargs
 from train import Trainer
 
 class LatentDataset(Dataset):
@@ -21,7 +22,7 @@ class LatentDataset(Dataset):
                 self._generate_data(generator=generator, generator_bs=self.opt.encoder.generator_bs, dataset=self.opt.dataset,
                                     N=self.opt.encoder.num_samples, save=True)
 
-        self.labels = self.labels @ latent_directions.weight.T.detach().cpu().numpy()
+        self.labels = self.labels @ latent_directions.weight.detach().cpu().numpy()
 
     def _try_load_cached(self, dataset):
         path = os.path.join(self.root, dataset + ".npz")
@@ -37,14 +38,24 @@ class LatentDataset(Dataset):
     def _generate_data(self, generator, generator_bs, dataset, N, save=False):
         images = []
         labels = []
+
+
         for _ in range(N // generator_bs):
-            z = Trainer.make_noise(generator_bs, generator.latent_size,
-                                   truncation=True).to(self.device)
-            image, w = generator(z,self.opt.depth,self.opt.alpha )
-            x = torch.clamp(image, -1, 1)
+            # z = Trainer.make_noise(generator_bs, generator.latent_size,
+            #                        truncation=True).to(self.device)
+            # image, w = generator(z,self.opt.depth,self.opt.alpha )
+            # x = torch.clamp(image, -1, 1)
+            # x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
+            # images.append(x)
+            # labels.append(w.detach()[:,0,:].cpu().numpy())
+
+            z = torch.randn(generator_bs, generator.style_dim).to(self.device)
+            w = generator.style(z)
+            x = generator([w], **generator_kwargs)[0]
+            x = torch.clamp(x, -1, 1)
             x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
             images.append(x)
-            labels.append(w.detach()[:,0,:].cpu().numpy())
+            labels.append(w.detach().cpu().numpy())
 
         self.images = np.concatenate(images, 0)
         self.labels = np.concatenate(labels, 0)
