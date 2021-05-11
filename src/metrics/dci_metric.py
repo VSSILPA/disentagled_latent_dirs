@@ -66,7 +66,8 @@ class DCIMetric(object):
         i = 0
         while i < num_points:
             num_points_iter = min(num_points - i, batch_size)
-            current_factors, current_observations = self.data.sample(num_points_iter)
+            current_factors = self.data.sample_latent(num_points_iter)
+            current_observations = self.data.sample_images_from_latent(current_factors)
             current_representations = model(torch.from_numpy(current_observations))
             current_representations = current_representations.data.cpu()
             if i == 0:

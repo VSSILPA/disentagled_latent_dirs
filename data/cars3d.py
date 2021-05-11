@@ -5,6 +5,8 @@ import os
 import matplotlib.pyplot as plt
 from utils import cartesian_product
 from scipy.io import loadmat
+import numpy as np
+from torchvision.transforms import Resize
 
 class Cars3D(object):
 	def __init__(self, config):
@@ -14,13 +16,8 @@ class Cars3D(object):
 		path  = os.getcwd()+"/data/cars"
 		paths = np.loadtxt(path+'/list.txt', dtype="str")
 		paths = [os.path.join(path, "{}.mat".format(each)) for each in paths]
-		images = []
-		for path in paths:
-			images.append(loadmat(path)["im"])
-
-		self.images = np.array(images)
-		self.images = np.transpose(self.images, [0, 4, 5, 1, 2, 3]).reshape([-1, 128, 128, 3])
-		self.images = np.transpose(self.images, [0, 3, 1, 2])
+		self.images = np.load('../data/cars/car3d.npy')
+		self.images = self.images.reshape(-1,3,64,64)
 		self.labels = cartesian_product(np.arange(183), np.arange(24), np.arange(4))
 		self.latents_sizes = np.array([183,24,4])
 		self.latent_bases = np.concatenate((self.latents_sizes[::-1].cumprod()[::-1][1:], np.array([1, ])))
@@ -46,8 +43,10 @@ class Cars3D(object):
 		return samples
 
 	def sample_images_from_latent(self, latent):
+
 		indices_sampled = self.latent_to_index(latent)
 		imgs_sampled = self.images[indices_sampled]
+		imgs_sampled = 2 * (imgs_sampled / 255.0) - 1
 		return imgs_sampled
 
 	def latent_to_index(self, latents):

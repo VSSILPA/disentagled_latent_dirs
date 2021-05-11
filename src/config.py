@@ -46,8 +46,8 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
 opt.algorithm = 'CF'       # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = '3dshapes'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
-opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/3dshapes/0.pt'
+opt.dataset = 'cars3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
 opt.logging_freq = 500
 opt.saving_freq = 500
 opt.device = 'cuda:'
@@ -64,7 +64,7 @@ BB_KWARGS = {
     "mpi3d": {"in_channel": 3, "size": 64},
     # grayscale -> rgb
     "dsprites": {"in_channel": 1, "size": 64},
-    "cars": {"in_channel": 3, "size": 64, "f_size": 512},
+    "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
 }
 

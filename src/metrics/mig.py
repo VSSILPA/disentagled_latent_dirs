@@ -86,7 +86,6 @@ class MIG(object):
             num_points_iter = min(num_points - i, batch_size)
             current_factors = self.data.sample_latent(num_points_iter)
             current_observations = torch.from_numpy(self.data.sample_images_from_latent(current_factors))
-            current_factors = self.data.sample_latent_values(current_factors)
             current_representations = model(current_observations)
             current_representations = current_representations.data.cpu()
             if i == 0:

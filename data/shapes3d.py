@@ -14,10 +14,7 @@ class Shapes3d(object):
 		os.chdir("..")
 		path  = os.getcwd()+"/data/shapes3d"
 		self.dataset = h5py.File(os.path.join(path, "3dshapes.h5"), "r")
-		self.images = np.array(
-			self.dataset["images"][0:15], dtype=np.uint8
-		)  # array shape [480000,64,64,3], uint8 in range(256)
-		self.images = np.transpose(self.images, [0, 3, 1, 2])/255
+		self.images = self.dataset['images']
 		self.labels = cartesian_product(
 			np.arange(10),
 			np.arange(10),
@@ -51,8 +48,15 @@ class Shapes3d(object):
 
 	def sample_images_from_latent(self, latent):
 		indices_sampled = self.latent_to_index(latent)
-		imgs_sampled = self.images[indices_sampled]
-		return imgs_sampled
+		ims = []
+		for ind in indices_sampled:
+			im = self.images[ind]
+			im = np.asarray(im)
+			ims.append(im)
+		ims = np.stack(ims, axis=0)
+		ims = ims / 255.  # normalise values to range [0,1]
+		ims = ims.astype(np.float32)
+		return ims.reshape([len(indices_sampled),3, 64, 64])
 
 	def latent_to_index(self, latents):
 		return np.dot(latents, self.latent_bases).astype(int)
