@@ -11,10 +11,7 @@ class Shapes3d(object):
 	def __init__(self, config):
 		self.config = config
 		self.exp_name = config['experiment_name']
-		os.chdir("..")
-		path  = os.getcwd()+"/data/shapes3d"
-		self.dataset = h5py.File(os.path.join(path, "3dshapes.h5"), "r")
-		self.images = self.dataset['images']
+		self.images = np.load('../data/shapes3d/shapes3d.npy',mmap_mode='r+')
 		self.labels = cartesian_product(
 			np.arange(10),
 			np.arange(10),

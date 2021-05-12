@@ -7,7 +7,7 @@ def get_data_loader(config, opt):
         from data.mpi3d import MPI3D
         data = MPI3D(config)
         return data
-    elif opt.dataset == '3dshapes':
+    elif opt.dataset == 'shapes3d':
         from data.shapes3d import Shapes3d
         data = Shapes3d(config)
         return data

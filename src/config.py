@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'test_2'
-    experiment_description = 'test_2'
+    experiment_name = 'stabilsation'
+    experiment_description = 'setting up working code  base'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'test'
@@ -46,8 +46,9 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
 opt.algorithm = 'CF'       # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'cars3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
-opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
+opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+# opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
+opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/mpi3d/0.pt'
 opt.logging_freq = 500
 opt.saving_freq = 500
 opt.device = 'cuda:'

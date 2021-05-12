@@ -30,8 +30,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
     evaluator = Evaluator(configuration, opt)
     saver = Saver(configuration)
     visualise_results = Visualiser(configuration, opt)
-    # deformator, shift_predictor, deformator_opt, shift_predictor_opt = saver.load_model(deformator,shift_predictor,
-    # deformator_opt,shift_predictor_opt)
     perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
     if opt.algorithm == 'LD':
@@ -87,6 +85,5 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         deformator_layer = torch.nn.Linear(64, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
-        print(metrics)
     else:
         raise NotImplementedError

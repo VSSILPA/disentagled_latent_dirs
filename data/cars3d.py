@@ -12,11 +12,7 @@ class Cars3D(object):
 	def __init__(self, config):
 		self.config = config
 		self.exp_name = config['experiment_name']
-		os.chdir("..")
-		path  = os.getcwd()+"/data/cars"
-		paths = np.loadtxt(path+'/list.txt', dtype="str")
-		paths = [os.path.join(path, "{}.mat".format(each)) for each in paths]
-		self.images = np.load('data/cars/car3d.npy')
+		self.images = np.load('../data/cars/car3d.npy')
 		self.images = self.images.reshape(-1,3,64,64)  ## data is range of [0,1]
 		self.labels = cartesian_product(np.arange(183), np.arange(24), np.arange(4))
 		self.num_factors = 3
@@ -25,12 +21,14 @@ class Cars3D(object):
 		self.show_images_grid()
 
 	def show_images_grid(self, nrows=10):
-		path = os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/input.jpeg'
+		file_location = os.path.dirname(os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/')
+		if not os.path.exists(file_location):
+			os.makedirs(file_location)
 		index = np.random.choice(self.images.shape[0], nrows * nrows, replace=False)
 		batch_tensor = torch.from_numpy(self.images[index])
 		grid_img = torchvision.utils.make_grid(batch_tensor.reshape(-1, 3, 64, 64), nrow=10, padding=5, pad_value=1)
 		grid = grid_img.permute(1, 2, 0).type(torch.FloatTensor)
-		plt.imsave(path, grid.numpy())
+		plt.imsave(file_location+'/input.jpeg', grid.numpy())
 
 	def sample_latent(self, size=1):
 		"""

@@ -53,7 +53,7 @@ class Evaluator(object):
                    'dci_metric': dci_average}
         self.metric_eval['beta_vae'].append(metrics['beta_vae']["eval_accuracy"])
         self.metric_eval['factor_vae'].append(metrics['factor_vae']["eval_accuracy"])
-        self.metric_eval['mig'].append(metrics['mig']["discrete_mig"])
+        self.metric_eval['mig'].append(metrics['mig'])
         logging.info('Disentanglement Vector')
         logging.info(dci['disentanglement_vector'])
         logging.info('completeness_vector')
@@ -69,7 +69,7 @@ class Evaluator(object):
                     "eval_accuracy"],
                 metrics['factor_vae'][
                     "eval_accuracy"],
-                metrics['mig']["discrete_mig"], dci['disentanglement'],
+                metrics['mig'], dci['disentanglement'],
                 dci['completeness'], dci['informativeness']
             ))
         return self.metric_eval
