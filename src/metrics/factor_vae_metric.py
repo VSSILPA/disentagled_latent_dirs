@@ -59,7 +59,7 @@ class FactorVAEMetric(object):
 								  active_dims):
 
 		# Select random coordinate to keep fixed.
-		factor_index = random_state.randint(low=1, high=self.data.num_factors)
+		factor_index = random_state.randint(low=0, high=self.data.num_factors)
 
 		# Sample two mini batches of latent variables.
 		factors1 = self.data.sample_latent(batch_size)

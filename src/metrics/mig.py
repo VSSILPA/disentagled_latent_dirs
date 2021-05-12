@@ -8,7 +8,7 @@ import sklearn
 
 class MIG(object):
     """
-            Implementation of the metric in: MIG
+        Implementation of the metric in: MIG
     """
 
     def __init__(self, dsprites, device_id,opt):
@@ -21,22 +21,9 @@ class MIG(object):
 
         score_dict = {}
         representations, ground_truth = self.generate_batch_factor_code(model, num_train, batch_size)
-
-        normalized_representation = self.normalize_data(representations)
-        normalized_ground_truth = self.normalize_data(ground_truth)
-
-        ## discretize data
-        discrete_representation = self.discretize_data(normalized_representation)
-        discrete_ground_truth = self.discretize_data(normalized_ground_truth)
-
-        m = self.discrete_mutual_info(discrete_representation, discrete_ground_truth)
-        # m is [num_latents, num_factors]
-
-        entropy = self.discrete_entropy(discrete_ground_truth)
-        sorted_m = np.sort(m, axis=0)[::-1]
-        dimension_wise_mig = np.divide((sorted_m[0, :] - sorted_m[1, :])[1:],entropy[1:])  # 1: skips the first latent code that is constant
-        logging.info(dimension_wise_mig)
-        score_dict["discrete_mig"] = np.mean(dimension_wise_mig[0:])
+        mat, e = self._get_mi_matrix(representations, ground_truth, bins=20)
+        sorted_m = np.sort(mat, axis=0)[::-1]
+        mig = np.mean(np.divide(sorted_m[0, :] - sorted_m[1, :], e[:]))
         return score_dict
 
     def discrete_entropy(self,ys):
@@ -77,6 +64,31 @@ class MIG(object):
 
         return m
 
+    def _get_mi_matrix(self, representations, ground_truth, bins=20):
+        x = self._histogram_discretize(representations, num_bins=bins)
+        f = ground_truth
+        mat = self.discrete_mutual_info(x, f)
+        e = self.discrete_entropy(f)
+        return mat, e
+
+    def discrete_mutual_info(self, mus, ys):
+        """Compute discrete mutual information."""
+        num_codes = mus.shape[0]
+        num_factors = ys.shape[0]
+        m = np.zeros([num_codes, num_factors])
+        for i in range(num_codes):
+            for j in range(num_factors):
+                m[i, j] = sklearn.metrics.mutual_info_score(ys[j, :], mus[i, :])
+        return m
+
+    def discrete_entropy(self,ys):
+        """Compute discrete mutual information."""
+        num_factors = ys.shape[0]
+        h = np.zeros(num_factors)
+        for j in range(num_factors):
+            h[j] = sklearn.metrics.mutual_info_score(ys[j, :], ys[j, :])
+        return h
+
     def generate_batch_factor_code(self, model, num_points, batch_size):
 
         representations = None
@@ -96,3 +108,11 @@ class MIG(object):
                 representations = np.vstack((representations, current_representations))
             i += num_points_iter
         return np.transpose(representations), np.transpose(factors)
+
+    def _histogram_discretize(self,target, num_bins=20):
+        discretized = np.zeros_like(target)
+        for i in range(target.shape[0]):
+            discretized[i, :] = np.digitize(
+                target[i, :], np.histogram(target[i, :], num_bins)[1][:-1]
+            )
+        return discretized

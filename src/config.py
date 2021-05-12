@@ -82,7 +82,7 @@ generator_kwargs = {
 opt.algo = CN()
 opt.algo.ld = CN()
 opt.algo.ld.latent_dim = 512
-opt.algo.ld.directions_count = 5
+opt.algo.ld.directions_count = 64
 opt.algo.ld.shift_scale = 6
 opt.algo.ld.min_shift = 0.5
 opt.algo.ld.deformator_lr = 0.0001
@@ -154,7 +154,7 @@ opt.model.d_optim.eps = 1e-8
 
 opt.encoder = CN()
 opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 5 ## this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.latent_dimension = 64 ## this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
 opt.encoder.generator_bs = 50
 opt.encoder.batch_size = 128
 opt.encoder.root = 'generated_data'

@@ -16,17 +16,19 @@ class Cars3D(object):
 		path  = os.getcwd()+"/data/cars"
 		paths = np.loadtxt(path+'/list.txt', dtype="str")
 		paths = [os.path.join(path, "{}.mat".format(each)) for each in paths]
-		self.images = np.load('../data/cars/car3d.npy')
-		self.images = self.images.reshape(-1,3,64,64)
+		self.images = np.load('data/cars/car3d.npy')
+		self.images = self.images.reshape(-1,3,64,64)  ## data is range of [0,1]
 		self.labels = cartesian_product(np.arange(183), np.arange(24), np.arange(4))
+		self.num_factors = 3
 		self.latents_sizes = np.array([183,24,4])
 		self.latent_bases = np.concatenate((self.latents_sizes[::-1].cumprod()[::-1][1:], np.array([1, ])))
+		self.show_images_grid()
 
 	def show_images_grid(self, nrows=10):
 		path = os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/input.jpeg'
 		index = np.random.choice(self.images.shape[0], nrows * nrows, replace=False)
-		batch_tensor = torch.from_numpy(self.images[index]/255)
-		grid_img = torchvision.utils.make_grid(batch_tensor.reshape(-1, 3, 128, 128), nrow=10, padding=5, pad_value=1)
+		batch_tensor = torch.from_numpy(self.images[index])
+		grid_img = torchvision.utils.make_grid(batch_tensor.reshape(-1, 3, 64, 64), nrow=10, padding=5, pad_value=1)
 		grid = grid_img.permute(1, 2, 0).type(torch.FloatTensor)
 		plt.imsave(path, grid.numpy())
 
@@ -46,7 +48,7 @@ class Cars3D(object):
 
 		indices_sampled = self.latent_to_index(latent)
 		imgs_sampled = self.images[indices_sampled]
-		imgs_sampled = 2 * (imgs_sampled / 255.0) - 1
+		imgs_sampled = 2 * (imgs_sampled) - 1
 		return imgs_sampled
 
 	def latent_to_index(self, latents):
