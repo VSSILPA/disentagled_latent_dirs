@@ -21,6 +21,7 @@ class Cars3D(object):
         self.show_images_grid()
 
     def show_images_grid(self, nrows=10):
+        os.chdir('..')
         file_location = os.path.dirname(os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/')
         if not os.path.exists(file_location):
             os.makedirs(file_location)

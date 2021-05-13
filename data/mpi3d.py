@@ -27,9 +27,10 @@ class MPI3D(object):
 		self.show_images_grid()
 
 	def show_images_grid(self, nrows=10):
+		os.chdir('..')
 		path = os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/input.jpeg'
 		index = np.random.choice(self.images.shape[0], nrows * nrows, replace=False)
-		batch_tensor = torch.from_numpy(self.images[index])
+		batch_tensor = torch.from_numpy(self.images[index])/255
 		grid_img = torchvision.utils.make_grid(batch_tensor.reshape(-1, 3, 64, 64), nrow=10, padding=5, pad_value=1)
 		grid = grid_img.permute(1, 2, 0).type(torch.FloatTensor)
 		plt.imsave(path, grid.numpy())

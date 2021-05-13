@@ -12,10 +12,11 @@
 
 from utils import *
 from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
+from models.StyleGAN.GAN import StyleGAN
 from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
-from models.StyleGAN.GAN import StyleGAN
+
 import sys
 sys.path.insert(0, './models/')
 
@@ -71,15 +72,13 @@ def get_model(config, opt):
         G_weights = 'models/pretrained/generators/SN_MNIST'
         G = make_gan(G_weights)
     elif gan_type == 'DCGAN':
-        G_weights = 'models/pretrained/generators/dsprites'
-        G = Generator()
-        G.load_state_dict(torch.load(G_weights))
+        raise NotImplementedError
     else:
         raise NotImplementedError
 
     if opt.algorithm == 'LD':
         deformator = LatentDeformator(shift_dim=opt.model.gen.latent_size,
-                                      input_dim=opt.algo.ld.directions_count,  ##dimensicon of one-hot encoded vector
+                                      input_dim=opt.algo.ld.directions_count,  # dimension of one-hot encoded vector
                                       out_dim=opt.model.gen.latent_size,
                                       type=opt.algo.ld.deformator_type,
                                       random_init=opt.algo.ld.deformator_randint).to(device)

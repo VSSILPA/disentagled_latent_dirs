@@ -144,13 +144,13 @@ opt.model.d_optim.eps = 1e-8
 
 opt.encoder = CN()
 opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 64  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.latent_dimension = 10  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
 opt.encoder.generator_bs = 50
 opt.encoder.batch_size = 128
 opt.encoder.root = 'generated_data'
 opt.encoder.latent_train_size = 500000
 opt.encoder.latent_nb_epochs = 20
-opt.encoder.latent_lr = 1e-3
+opt.encoder.latent_lr = 0.001
 opt.encoder.latent_step_size = 10
 opt.encoder.latent_gamma = 0.5
 

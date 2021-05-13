@@ -27,6 +27,7 @@ class DSprites(object):
         self.show_images_grid()
 
     def show_images_grid(self, nrows=10):
+        os.chdir('..')
         path = os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/input.jpeg'
         index = np.random.choice(self.images.shape[0], nrows * nrows, replace=False)
         batch_tensor = torch.from_numpy(self.images[index])

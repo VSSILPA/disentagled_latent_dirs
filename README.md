@@ -9,3 +9,9 @@ Change to [-1,1] if required
 
 Cars3D dataset can't be normalised for the whole data due to memory erroR.
 Change the train function by loading data and normalize it using an IF CONDITION.
+
+config.py
+Options for style gan generator , discriminator used for stylegan architecture and not style gan2
+
+shapes3d,mpi3d --- self.images is in range [0,255]
+while cars3d,ddsprites in range[0,1]
