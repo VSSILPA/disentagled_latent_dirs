@@ -3,6 +3,7 @@ from torch.utils.data.dataset import Dataset
 import numpy as np
 import os
 from config import generator_kwargs
+import random
 
 
 class LatentDataset(Dataset):
@@ -12,6 +13,7 @@ class LatentDataset(Dataset):
         self.device = list(generator.parameters())[0].device
         self.opt = opt
         self.root = root
+        self.set_seed(self.opt.random_seed)
 
         if create_new_data:
             self._generate_data(generator, self.opt.encoder.generator_bs, self.opt.dataset, N=self.opt.encoder.num_samples, save=False)
@@ -33,6 +35,16 @@ class LatentDataset(Dataset):
             return True
         else:
             return False
+
+    @staticmethod
+    def set_seed(seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        np.random.seed(seed)
+        random.seed(seed)
+        os.environ['PYTHONHASHSEED'] = str(seed)
 
     @torch.no_grad()
     def _generate_data(self, generator, generator_bs, dataset, N, save=False):

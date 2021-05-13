@@ -16,7 +16,7 @@ class DSprites(object):
         self.opt = opt
         self.exp_name = config['experiment_name']
         self.images = np.load(npy_path + '/imgs.npy', mmap_mode='r+', encoding="latin1", allow_pickle=True)
-        self.images = self.images.reshape(-1, 1, 64, 64)  # data in range of [0,1]
+        self.images = self.images.reshape(-1, 1, 64, 64)*255  # data in range of [0,255]
         self.labels = cartesian_product(np.arange(3),
                                         np.arange(6),
                                         np.arange(40),
@@ -50,7 +50,7 @@ class DSprites(object):
     def sample_images_from_latent(self, latent):
         indices_sampled = self.latent_to_index(latent)
         imgs_sampled = self.images[indices_sampled]
-        imgs_sampled = 2 * imgs_sampled - 1  # normalising data to -1,1
+        imgs_sampled = 2 * (imgs_sampled/255) - 1  # normalising data to -1,1
         return imgs_sampled
 
     def latent_to_index(self, latents):

@@ -84,7 +84,7 @@ opt.algo.ld.truncation = None
 # Options for Latent Discovery
 # ---------------------------------------------------------------------------- #
 opt.algo.cf = CN()
-opt.algo.cf.topk = 10
+opt.algo.cf.topk = 512
 
 # ---------------------------------------------------------------------------- #
 # Options for StyleGAN
@@ -150,7 +150,7 @@ opt.model.d_optim.eps = 1e-8
 
 opt.encoder = CN()
 opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 10  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.latent_dimension = 512  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
 opt.encoder.generator_bs = 50
 opt.encoder.batch_size = 128
 opt.encoder.root = 'generated_data'

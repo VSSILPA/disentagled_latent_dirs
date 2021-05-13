@@ -80,7 +80,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         W = torch.cat(weight_mat, 0)
         V = torch.svd(W).V.detach().cpu().numpy()
         deformator = V[:, :opt.algo.cf.topk]
-        deformator_layer = torch.nn.Linear(64, 512)
+        deformator_layer = torch.nn.Linear(opt.algo.cf.topk, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
     else:

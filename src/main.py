@@ -17,7 +17,6 @@ from logger import PerfomanceLogger
 from data_loader import get_data_loader
 
 
-
 def main(configurations, opt):
     Trainer.set_seed(opt.random_seed)
     PerfomanceLogger.configure_logger(configurations)

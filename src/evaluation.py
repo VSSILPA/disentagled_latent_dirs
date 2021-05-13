@@ -12,6 +12,7 @@ from metrics.dci_metric import DCIMetric
 from latent_dataset import LatentDataset
 import os
 from config import BB_KWARGS
+import random
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ class Evaluator(object):
 
     def compute_metrics(self, generator, directions, data, epoch):
         start_time = time.time()
+        self.set_seed(self.opt.random_seed)
         encoder = self._train_encoder(generator, directions)
 
         beta_vae = BetaVAEMetric(data, self.device, self.opt)
@@ -126,3 +128,13 @@ class Evaluator(object):
             percents[step] = (torch.argmax(logits, dim=1) == target_indices.cuda()).to(torch.float32).mean()
 
         return percents.mean()
+
+    @staticmethod
+    def set_seed(seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        np.random.seed(seed)
+        random.seed(seed)
+        os.environ['PYTHONHASHSEED'] = str(seed)

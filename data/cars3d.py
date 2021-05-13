@@ -12,7 +12,7 @@ class Cars3D(object):
         self.opt = opt
         self.exp_name = config['experiment_name']
         self.images = np.load('../data/cars/car3d.npy')
-        self.images = self.images.reshape(-1, 3, 64, 64)  # data is range of [0,1]
+        self.images = self.images.reshape(-1, 3, 64, 64)*255  # data is range of [0,1]
         self.labels = cartesian_product(np.arange(183),
                                         np.arange(24),
                                         np.arange(4))
@@ -47,7 +47,7 @@ class Cars3D(object):
 
         indices_sampled = self.latent_to_index(latent)
         imgs_sampled = self.images[indices_sampled]
-        imgs_sampled = 2 * imgs_sampled - 1  # normalising data to -1,1
+        imgs_sampled = 2 * (imgs_sampled/255) - 1  # normalising data to -1,1
         return imgs_sampled
 
     def latent_to_index(self, latents):
