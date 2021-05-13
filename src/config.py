@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 test_mode = True
 if test_mode:
     experiment_name = 'stabilsation'
-    experiment_description = 'setting up working code  base'
+    experiment_description = 'setting up working code base'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'test'
@@ -42,13 +42,14 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 
 # ---------------------------------------------------------------------------- #
 # Options for General settings
-# ---------------------------------------------------------3dshapes------------------- #
+# ---------------------------------------------------------------------------- #
 opt = CN()
-opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'SNGAN']
-opt.algorithm = 'CF'       # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
+opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
-opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/mpi3d/0.pt'
+# opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/mpi3d/0.pt'
+opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/3dshapes/0.pt'
 opt.logging_freq = 500
 opt.saving_freq = 500
 opt.device = 'cuda:'
@@ -56,26 +57,6 @@ opt.device_id = '0'
 opt.random_seed = 2
 opt.num_steps = int(1e+5)
 opt.batch_size = 128
-opt.num_images_grid = 1
-
-
-##Encoder backbone params
-BB_KWARGS = {
-    "3dshapes": {"in_channel": 3, "size": 64},
-    "mpi3d": {"in_channel": 3, "size": 64},
-    # grayscale -> rgb
-    "dsprites": {"in_channel": 1, "size": 64},
-    "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
-    "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
-}
-
-
-##StyleGAN2 params
-generator_kwargs = {
-    "input_is_latent": True,
-    "randomize_noise": False,
-    "truncation": 0.8,
-}
 
 # ---------------------------------------------------------------------------- #
 # Options for Latent Discovery
@@ -94,7 +75,7 @@ opt.algo.ld.deformator_randint = True
 opt.algo.ld.deformator_type = 'proj'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
 opt.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
-opt.algo.ld.shift_predictor_size = None     #reconstructor resolution
+opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
@@ -111,6 +92,14 @@ opt.use_ema = False
 opt.ema_decay = 0.999
 opt.alpha = 1
 opt.depth = 4
+
+# ---------------------------------------------------------------------------- #
+# Options for StyleGAN2
+# ---------------------------------------------------------------------------- #
+generator_kwargs = {
+    "input_is_latent": True,
+    "randomize_noise": False,
+    "truncation": 0.8}
 
 # ---------------------------------------------------------------------------- #
 # Options for Generator
@@ -155,7 +144,7 @@ opt.model.d_optim.eps = 1e-8
 
 opt.encoder = CN()
 opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 64 ## this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.latent_dimension = 64  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
 opt.encoder.generator_bs = 50
 opt.encoder.batch_size = 128
 opt.encoder.root = 'generated_data'
@@ -165,8 +154,21 @@ opt.encoder.latent_lr = 1e-3
 opt.encoder.latent_step_size = 10
 opt.encoder.latent_gamma = 0.5
 
-assert opt.model.gen.latent_size == opt.algo.ld.latent_dim
-assert opt.encoder.latent_dimension == opt.algo.ld.directions_count
+# ---------------------------------------------------------------------------- #
+# Options for Encoder Backbone
+# ---------------------------------------------------------------------------- #
+BB_KWARGS = {
+    "shapes3d": {"in_channel": 3, "size": 64},
+    "mpi3d": {"in_channel": 3, "size": 64},
+    # grayscale -> rgb
+    "dsprites": {"in_channel": 1, "size": 64},
+    "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
+    "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
+}
+if opt.algorithm == 'CF':
+    assert opt.model.gen.latent_size == opt.algo.ld.latent_dim
+    assert opt.encoder.latent_dimension == opt.algo.ld.directions_count
+
 
 def get_config(inputs):
     config = parser.parse_args(inputs)

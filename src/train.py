@@ -8,12 +8,11 @@ log = logging.getLogger(__name__)
 
 class Trainer(object):
 
-    def __init__(self, config ,opt):
+    def __init__(self, config, opt):
         super(Trainer, self).__init__()
         self.config = config
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
-
 
     @staticmethod
     def set_seed(seed):
@@ -37,8 +36,8 @@ class Trainer(object):
         target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
 
         shift = deformator(z_shift)
-        imgs , _ = generator(z,self.opt.depth,self.opt.alpha)
-        imgs_shifted, _ = generator(z + shift,self.opt.depth,self.opt.alpha)
+        imgs, _ = generator(z, self.opt.depth, self.opt.alpha)
+        imgs_shifted, _ = generator(z + shift, self.opt.depth, self.opt.alpha)
 
         logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = self.cross_entropy(logits, target_indices.cuda())
@@ -50,8 +49,7 @@ class Trainer(object):
         deformator_opt.step()
         shift_predictor_opt.step()
 
-
-        return  deformator, shift_predictor, deformator_opt, shift_predictor_opt, (loss.item() ,logit_loss.item(), shift_loss.item())
+        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (loss.item(), logit_loss.item(), shift_loss.item())
 
     @staticmethod
     def make_noise(batch, dim, truncation=None):
@@ -67,7 +65,7 @@ class Trainer(object):
         return truncnorm.rvs(-truncation, truncation, size=size)
 
     def make_shifts(self, latent_dim):
-        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.batch_size],device='cuda')
+        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.batch_size], device='cuda')
         if self.opt.algo.ld.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape, device='cuda')
         elif self.opt.algo.ld.shift_distribution == "uniform":
@@ -87,5 +85,3 @@ class Trainer(object):
             z_shift[i][index] += val
 
         return target_indices, shifts, z_shift
-
-
