@@ -91,8 +91,6 @@ def resnet34(**kwargs):
 def cnn_encoder(**kwargs):
     return CNN_Encoder(**kwargs)
 
-
-
 class Encoder(nn.Module):
     def __init__(self, latent_dimension, backbone="resnet18", f_size=256, **bb_kwargs):
         super().__init__()
@@ -115,7 +113,7 @@ class Encoder(nn.Module):
 
 
 def _train(model, loader, opt):
-    device = torch.device(opt.device  + str(opt.device_id))
+    device = torch.device(opt.device + str(opt.device_id))
     early_stopping = EarlyStopping(patience=10, verbose=False)
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.encoder.latent_lr)
     scheduler = torch.optim.lr_scheduler.StepLR(

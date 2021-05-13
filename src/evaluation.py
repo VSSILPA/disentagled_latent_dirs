@@ -34,16 +34,16 @@ class Evaluator(object):
         factor_vae = FactorVAEMetric(data, self.device, self.opt)
         mig = MIG(data, self.device, self.opt)
         DCI_metric = DCIMetric(data, self.device)
-        beta_vae_metric = beta_vae.compute_beta_vae(encoder, np.random.RandomState(self.opt.random_seed),
-                                                    batch_size=64,
-                                                    num_train=5000, num_eval=5000)
+        # beta_vae_metric = beta_vae.compute_beta_vae(encoder, np.random.RandomState(self.opt.random_seed),
+        #                                             batch_size=64,
+        #                                             num_train=5000, num_eval=5000)
         logging.info("Computed beta vae metric")
-        factor_vae_metric = factor_vae.compute_factor_vae(encoder, np.random.RandomState(self.opt.random_seed),
-                                                          batch_size=64, num_train=5000, num_eval=5000,
-                                                          num_variance_estimate=5000)
+        # factor_vae_metric = factor_vae.compute_factor_vae(encoder, np.random.RandomState(self.opt.random_seed),
+        #                                                   batch_size=64, num_train=5000, num_eval=5000,
+        #                                                   num_variance_estimate=5000)
         logging.info("Computed factor vae metric")
         mutual_info_gap = mig.compute_mig(encoder, num_train=10000, batch_size=128)
-
+        print(mutual_info_gap)
         logging.info("Computed mig metric")
         dci = DCI_metric.compute_dci(encoder)
         logging.info("Computed dci metric")

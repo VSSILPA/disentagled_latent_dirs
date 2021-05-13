@@ -3,7 +3,7 @@ from torch.utils.data.dataset import Dataset
 import numpy as np
 import os
 from config import generator_kwargs
-from train import Trainer
+
 
 class LatentDataset(Dataset):
     def __init__(self, generator, latent_directions, opt,root, create_new_data=False):
@@ -39,8 +39,8 @@ class LatentDataset(Dataset):
         images = []
         labels = []
 
-
         for _ in range(N // generator_bs):
+            # Used for style gan
             # z = Trainer.make_noise(generator_bs, generator.latent_size,
             #                        truncation=True).to(self.device)
             # image, w = generator(z,self.opt.depth,self.opt.alpha )

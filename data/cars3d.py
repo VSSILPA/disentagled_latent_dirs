@@ -7,8 +7,9 @@ from utils import cartesian_product
 
 
 class Cars3D(object):
-    def __init__(self, config):
+    def __init__(self, config, opt):
         self.config = config
+        self.opt = opt
         self.exp_name = config['experiment_name']
         self.images = np.load('../data/cars/car3d.npy')
         self.images = self.images.reshape(-1, 3, 64, 64)  # data is range of [0,1]
@@ -21,8 +22,7 @@ class Cars3D(object):
         self.show_images_grid()
 
     def show_images_grid(self, nrows=10):
-        os.chdir('..')
-        file_location = os.path.dirname(os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/')
+        file_location = self.opt.result_dir + '/visualisations/input.jpeg'
         if not os.path.exists(file_location):
             os.makedirs(file_location)
         index = np.random.choice(self.images.shape[0], nrows * nrows, replace=False)

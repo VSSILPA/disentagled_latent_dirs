@@ -46,10 +46,10 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
 # opt.pretrained_gen_path = 'src/models/pretrained/generators/new_generators/new_generators/mpi3d/0.pt'
-opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/3dshapes/0.pt'
+opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/shapes3d/1.pt'
 opt.logging_freq = 500
 opt.saving_freq = 500
 opt.device = 'cuda:'
@@ -79,6 +79,12 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
+
+# ---------------------------------------------------------------------------- #
+# Options for Latent Discovery
+# ---------------------------------------------------------------------------- #
+opt.algo.cf = CN()
+opt.algo.cf.topk = 10
 
 # ---------------------------------------------------------------------------- #
 # Options for StyleGAN
@@ -165,7 +171,7 @@ BB_KWARGS = {
     "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
 }
-if opt.algorithm == 'CF':
+if opt.algorithm == 'LD':
     assert opt.model.gen.latent_size == opt.algo.ld.latent_dim
     assert opt.encoder.latent_dimension == opt.algo.ld.directions_count
 

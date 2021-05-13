@@ -12,18 +12,16 @@ from train import Trainer
 from evaluation import Evaluator
 from saver import Saver
 from visualiser import Visualiser
-from config import save_config
 import logging
 import torch
 import time
-import numpy as np
 
 
 def run_training_wrapper(configuration, opt, data, perf_logger):
     for key, values in configuration.items():
         logging.info(' {} : {}'.format(key, values))
     device = torch.device(opt.device + opt.device_id)
-    save_config(configuration, opt)
+
     perf_logger.start_monitoring("Fetching data, models and class instantiations")
     models = get_model(configuration, opt)
     model_trainer = Trainer(configuration, opt)
@@ -81,7 +79,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             weight_mat.append(v)
         W = torch.cat(weight_mat, 0)
         V = torch.svd(W).V.detach().cpu().numpy()
-        deformator = V[:, :opt.algo.ld.directions_count]
+        deformator = V[:, :opt.algo.cf.topk]
         deformator_layer = torch.nn.Linear(64, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)

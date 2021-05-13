@@ -11,8 +11,9 @@ npy_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/data/dsprites'
 
 
 class DSprites(object):
-    def __init__(self, config):
+    def __init__(self, config, opt):
         self.config = config
+        self.opt = opt
         self.exp_name = config['experiment_name']
         self.images = np.load(npy_path + '/imgs.npy', mmap_mode='r+', encoding="latin1", allow_pickle=True)
         self.images = self.images.reshape(-1, 1, 64, 64)  # data in range of [0,1]
@@ -27,8 +28,7 @@ class DSprites(object):
         self.show_images_grid()
 
     def show_images_grid(self, nrows=10):
-        os.chdir('..')
-        path = os.getcwd() + f'/results/{self.exp_name}' + '/visualisations/input.jpeg'
+        path = self.opt.result_dir + '/visualisations/input.jpeg'
         index = np.random.choice(self.images.shape[0], nrows * nrows, replace=False)
         batch_tensor = torch.from_numpy(self.images[index])
         grid_img = torchvision.utils.make_grid(batch_tensor.view(-1, 1, 64, 64), nrow=10, padding=5, pad_value=1)
