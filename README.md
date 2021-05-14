@@ -15,3 +15,6 @@ Options for style gan generator , discriminator used for stylegan architecture a
 
 shapes3d,mpi3d --- self.images is in range [0,255]
 while cars3d,ddsprites in range[0,1]
+
+average expected loss for encoder training is in range of .35,0.5 if the loss is around 0.9 it might due to usage of 
+images from a different generator model

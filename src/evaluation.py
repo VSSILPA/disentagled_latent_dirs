@@ -35,44 +35,45 @@ class Evaluator(object):
         beta_vae = BetaVAEMetric(data, self.device, self.opt)
         factor_vae = FactorVAEMetric(data, self.device, self.opt)
         mig = MIG(data, self.device, self.opt)
-        DCI_metric = DCIMetric(data, self.device)
-        # beta_vae_metric = beta_vae.compute_beta_vae(encoder, np.random.RandomState(self.opt.random_seed),
-        #                                             batch_size=64,
-        #                                             num_train=5000, num_eval=5000)
+        dci = DCIMetric(data, self.device)
+
+        beta_vae_metric = beta_vae.compute_beta_vae(encoder, np.random.RandomState(self.opt.random_seed),
+                                                    batch_size=64,
+                                                    num_train=5000, num_eval=5000)
         logging.info("Computed beta vae metric")
-        # factor_vae_metric = factor_vae.compute_factor_vae(encoder, np.random.RandomState(self.opt.random_seed),
-        #                                                   batch_size=64, num_train=5000, num_eval=5000,
-        #                                                   num_variance_estimate=5000)
+        factor_vae_metric = factor_vae.compute_factor_vae(encoder, np.random.RandomState(self.opt.random_seed),
+                                                          batch_size=64, num_train=5000, num_eval=5000,
+                                                          num_variance_estimate=5000)
         logging.info("Computed factor vae metric")
         mutual_info_gap = mig.compute_mig(encoder, num_train=10000, batch_size=128)
-        print(mutual_info_gap)
+
         logging.info("Computed mig metric")
-        dci = DCI_metric.compute_dci(encoder)
+        dci_metric = dci.compute_dci(encoder)
         logging.info("Computed dci metric")
 
-        dci_average = (dci['disentanglement'] + dci['completeness'] + dci['informativeness']) / 3
+        dci_average = (dci_metric['disentanglement'] + dci_metric['completeness'] + dci_metric['informativeness']) / 3
         metrics = {'beta_vae': beta_vae_metric, 'factor_vae': factor_vae_metric, 'mig': mutual_info_gap,
                    'dci_metric': dci_average}
         self.metric_eval['beta_vae'].append(metrics['beta_vae']["eval_accuracy"])
         self.metric_eval['factor_vae'].append(metrics['factor_vae']["eval_accuracy"])
         self.metric_eval['mig'].append(metrics['mig'])
         logging.info('Disentanglement Vector')
-        logging.info(dci['disentanglement_vector'])
+        logging.info(dci_metric['disentanglement_vector'])
         logging.info('completeness_vector')
-        logging.info(dci['completeness_vector'])
+        logging.info(dci_metric['completeness_vector'])
         logging.info('informativeness_vector')
-        logging.info(dci['informativeness_vector'])
+        logging.info(dci_metric['informativeness_vector'])
         logging.info(
             "Time taken %d sec B-VAE: %.3f, F-VAE %.3F, MIG : %.3f Disentanglement: %.3f "
             "Completeness: "
-            "%.3f Informativeness: %.3f " % (
+            "%.3f Informativeness: %.3f DCI: %.3f" % (
                 time.time() - start_time,
                 metrics['beta_vae'][
                     "eval_accuracy"],
                 metrics['factor_vae'][
                     "eval_accuracy"],
-                metrics['mig'], dci['disentanglement'],
-                dci['completeness'], dci['informativeness']
+                metrics['mig'], dci_metric['disentanglement'],
+                dci_metric['completeness'], dci_metric['informativeness'], dci_average
             ))
         return self.metric_eval
 

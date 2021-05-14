@@ -148,7 +148,8 @@ def _train(model, loader, opt):
         train_loss_avg = sum(train_loss) / len(train_loss)
         valid_loss_avg = sum(valid_loss) / len(valid_loss)
 
-        print('Epoch: {}, train_loss : {}, test_loss : {}'.format(epoch, train_loss_avg, valid_loss_avg))
+        print('Epoch: {}, train_loss : {}, test_loss : {}'.format(epoch, train_loss_avg, valid_loss_avg))  # TODO
+        # Change from print to logging
         early_stopping(valid_loss_avg, model)
         if early_stopping.early_stop:
             break
