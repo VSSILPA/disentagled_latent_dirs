@@ -25,7 +25,6 @@ class Evaluator(object):
         self.encoder = latent_regressor.Encoder(latent_dimension=self.opt.encoder.latent_dimension,
                                                 backbone="cnn_encoder",
                                                 **BB_KWARGS[self.opt.dataset])
-        self.metric_eval = {'beta_vae': [], 'factor_vae': [], 'mig': []}
 
     def compute_metrics(self, generator, directions, data, epoch):
         start_time = time.time()
@@ -51,12 +50,9 @@ class Evaluator(object):
         dci_metric = dci.compute_dci(encoder)
         logging.info("Computed dci metric")
 
-        dci_average = (dci_metric['disentanglement'] + dci_metric['completeness'] + dci_metric['informativeness']) / 3
+        dci_average = (dci_metric['disentanglement'] + dci_metric['completeness'] + (1-dci_metric['informativeness'])) / 3
         metrics = {'beta_vae': beta_vae_metric, 'factor_vae': factor_vae_metric, 'mig': mutual_info_gap,
-                   'dci_metric': dci_average}
-        self.metric_eval['beta_vae'].append(metrics['beta_vae']["eval_accuracy"])
-        self.metric_eval['factor_vae'].append(metrics['factor_vae']["eval_accuracy"])
-        self.metric_eval['mig'].append(metrics['mig'])
+                   'dci': dci_average}
         logging.info('Disentanglement Vector')
         logging.info(dci_metric['disentanglement_vector'])
         logging.info('completeness_vector')
@@ -75,7 +71,7 @@ class Evaluator(object):
                 metrics['mig'], dci_metric['disentanglement'],
                 dci_metric['completeness'], dci_metric['informativeness'], dci_average
             ))
-        return self.metric_eval
+        return metrics
 
     def _train_encoder(self, generator, directions):
         model = self.encoder.to(self.device)
@@ -87,18 +83,18 @@ class Evaluator(object):
     def _get_encoder_train_data(self, generator, directions):
         save_dir = os.path.join(self.opt.result_dir, self.opt.encoder.root)
         os.makedirs(save_dir, exist_ok=True)
-        train_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=False)
+        train_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=self.opt.encoder.create_new_data)
 
         LABEL_MEAN = np.mean(train_dataset.labels, 0)
         LABEL_STD = np.std(train_dataset.labels, 0) + 1e-5
 
         train_dataset.labels = (train_dataset.labels - LABEL_MEAN) / LABEL_STD
 
-        test_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=False)
+        test_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=self.opt.encoder.create_new_data)
 
         test_dataset.labels = (test_dataset.labels - LABEL_MEAN) / LABEL_STD
 
-        val_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=False)
+        val_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=self.opt.encoder.create_new_data)
 
         val_dataset.labels = (val_dataset.labels - LABEL_MEAN) / LABEL_STD
 

@@ -46,14 +46,15 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'cars3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
-opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
+opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/shapes3d/2.pt'
 opt.logging_freq = 500
 opt.saving_freq = 500
 opt.device = 'cuda:'
 opt.device_id = '0'
+opt.num_seeds = 2
 opt.random_seed = 2
 opt.num_steps = int(1e+5)
 opt.batch_size = 128
@@ -159,6 +160,7 @@ opt.encoder.latent_nb_epochs = 20
 opt.encoder.latent_lr = 0.001
 opt.encoder.latent_step_size = 10
 opt.encoder.latent_gamma = 0.5
+opt.encoder.create_new_data = True
 
 # ---------------------------------------------------------------------------- #
 # Options for Encoder Backbone
