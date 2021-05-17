@@ -90,8 +90,15 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
             metrics_seed['mig'].append(metrics['mig'])
             metrics_seed['dci'].append(metrics['dci'])
+        #
+        # elif opt.algorithm == 'GS':
+        #
+        #
+
         else:
             raise NotImplementedError
+
+
     logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
         stdev(metrics_seed['betavae_metric'])) + '\n' +
                  'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(
