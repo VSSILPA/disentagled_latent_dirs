@@ -2,9 +2,12 @@ import random
 from utils import *
 from models.latent_deformator import normal_projection_stat
 import torch.nn as nn
+from config import generator_kwargs
 
 log = logging.getLogger(__name__)
 
+
+torch.autograd.set_detect_anomaly(True)
 
 class Trainer(object):
 
@@ -32,12 +35,13 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = make_noise(self.opt.batch_size, generator.latent_size, truncation=self.opt.algo.ld.truncation).cuda()
+        z = make_noise(self.opt.algo.ld.batch_size, generator.style_dim, truncation=self.opt.algo.ld.truncation).cuda()
         target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
 
         shift = deformator(z_shift)
-        imgs, _ = generator(z, self.opt.depth, self.opt.alpha)
-        imgs_shifted, _ = generator(z + shift, self.opt.depth, self.opt.alpha)
+        w = generator.style(z)
+        imgs, _ = generator([w], **generator_kwargs)
+        imgs_shifted, _ = generator([w + shift],**generator_kwargs)
 
         logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = self.cross_entropy(logits, target_indices.cuda())
@@ -65,7 +69,7 @@ class Trainer(object):
         return truncnorm.rvs(-truncation, truncation, size=size)
 
     def make_shifts(self, latent_dim):
-        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.batch_size], device='cuda')
+        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.algo.ld.batch_size], device='cuda')
         if self.opt.algo.ld.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape, device='cuda')
         elif self.opt.algo.ld.shift_distribution == "uniform":
@@ -80,7 +84,7 @@ class Trainer(object):
             latent_dim = list(latent_dim)
         except Exception:
             latent_dim = [latent_dim]
-        z_shift = torch.zeros([self.opt.batch_size] + latent_dim, device='cuda')
+        z_shift = torch.zeros([self.opt.algo.ld.batch_size] + latent_dim, device='cuda')
         for i, (index, val) in enumerate(zip(target_indices, shifts)):
             z_shift[i][index] += val
 

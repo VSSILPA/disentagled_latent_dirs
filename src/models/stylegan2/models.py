@@ -377,15 +377,12 @@ class Generator(nn.Module):
     ):
         super().__init__()
 
-
-
         self.size = size
 
         if small and size > 64:
             raise ValueError("small only works for sizes <= 64")
 
         self.style_dim = style_dim
-
 
         layers = [PixelNorm()]
 
@@ -422,8 +419,6 @@ class Generator(nn.Module):
             }
 
         self.input = ConstantInput(self.channels[4])
-        self.trunc = self.mean_latent(4096)
-
         self.conv1 = StyledConv(
             self.channels[4], self.channels[4], 3, style_dim, blur_kernel=blur_kernel
         )
@@ -506,7 +501,7 @@ class Generator(nn.Module):
         noise=None,
         randomize_noise=True,
     ):
-        truncation_latent = self.trunc.cuda()
+        truncation_latent = self.mean_latent(4096)
 
         if not input_is_latent:
             styles = [self.style(s) for s in styles]

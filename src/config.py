@@ -14,7 +14,7 @@ import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = False
+test_mode = True
 if test_mode:
     experiment_name = 'stabilsation'
     experiment_description = 'setting up working code base'
@@ -45,27 +45,25 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 # ---------------------------------------------------------------------------- #
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/shapes3d/2.pt'
-opt.logging_freq = 500
-opt.saving_freq = 500
 opt.device = 'cuda:'
 opt.device_id = '0'
 opt.num_seeds = 8
 opt.random_seed = 2
-opt.num_steps = int(1e+5)
-opt.batch_size = 128
 
 # ---------------------------------------------------------------------------- #
 # Options for Latent Discovery
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.ld = CN()
+opt.algo.ld.batch_size = 1
 opt.algo.ld.latent_dim = 512
-opt.algo.ld.directions_count = 64
+opt.algo.ld.num_steps = 20000
+opt.algo.ld.directions_count = 10
 opt.algo.ld.shift_scale = 6
 opt.algo.ld.min_shift = 0.5
 opt.algo.ld.deformator_lr = 0.0001
@@ -73,19 +71,28 @@ opt.algo.ld.shift_predictor_lr = 0.0001
 opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
-opt.algo.ld.deformator_type = 'proj'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']
+opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
+opt.algo.ld.logging_freq = 500
+opt.algo.ld.saving_freq = 500
 
 # ---------------------------------------------------------------------------- #
-# Options for Latent Discovery
+# Options for Closed form
 # ---------------------------------------------------------------------------- #
 opt.algo.cf = CN()
 opt.algo.cf.topk = 10
+
+# ---------------------------------------------------------------------------- #
+# Options for Gan space
+# ---------------------------------------------------------------------------- #
+opt.algo.gs = CN()
+opt.algo.gs.topk = 10
+opt.algo.gs.num_samples = 20000
 
 # ---------------------------------------------------------------------------- #
 # Options for StyleGAN

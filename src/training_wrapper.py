@@ -35,13 +35,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
 
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
-            visualise_results.plot_generated_images(opt, generator)
+            # visualise_results.plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
             start_time = time.time()
-            for i in range(opt.num_steps):
+            for i in range(opt.algo.ld.num_steps):
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
                         generator, deformator, shift_predictor, deformator_opt,
@@ -49,13 +49,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 loss = loss + losses[0]
                 logit_loss = logit_loss + losses[1]
                 shift_loss = shift_loss + losses[2]
-                if i % opt.saving_freq == 0 and i != 0:
+                if i % opt.algo.ld.saving_freq == 0 and i != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
                     saver.save_model(params, i, algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
 
-                if i % opt.logging_freq == 0 and i != 0:
+                if i % opt.algo.ld.logging_freq == 0 and i != 0:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
                     total_loss, logit_loss, shift_loss = losses
@@ -90,11 +90,19 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
             metrics_seed['mig'].append(metrics['mig'])
             metrics_seed['dci'].append(metrics['dci'])
-        #
-        # elif opt.algorithm == 'GS':
-        #
-        #
-
+        elif opt.algorithm == 'GS':
+            generator = models
+            z = torch.randn(opt.algo.gs.num_samples , generator.style_dim).to(device)
+            feats = generator.get_latent(z)
+            V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
+            deformator = V[:, :opt.algo.gs.topk]
+            deformator_layer = torch.nn.Linear(opt.algo.cf.topk, 512)
+            deformator_layer.weight.data = torch.FloatTensor(deformator)
+            metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
+            metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
+            metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
+            metrics_seed['mig'].append(metrics['mig'])
+            metrics_seed['dci'].append(metrics['dci'])
         else:
             raise NotImplementedError
 

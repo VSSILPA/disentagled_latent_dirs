@@ -91,7 +91,7 @@ def get_model(config, opt):
 
         shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
         models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
-    elif opt.algorithm == 'CF':
+    elif opt.algorithm == 'CF' or 'GS':
         return G
     else:
         raise NotImplementedError
