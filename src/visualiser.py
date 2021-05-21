@@ -44,38 +44,40 @@ class Visualiser(object):
             return ToPILImage()((255 * tensor.cpu().detach()).to(torch.uint8))
 
     @torch.no_grad()
-    def interpolate(self, generator, z, shifts_r, shifts_count, dim, deformator=None, with_central_border=False):
+    def interpolate(self, generator, z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         shifted_images = []
+        directions.cuda()
         for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count):
-            if deformator is not None:
-                z_deformed = z.cuda() + deformator(one_hot(self.opt.algo.ld.directions_count, shift, dim).cuda())
+            if directions is not None:
+                z_deformed = z.cuda() + directions(one_hot(directions.in_features, shift, dim).cuda())
             else:
                 z_deformed = z.cuda() + one_hot(z.shape[1:], shift, dim).cuda()
-            shifted_image = generator(z_deformed, self.opt.depth, self.opt.alpha)[0].cpu()
+            w = generator.style(z_deformed)
+            shifted_image = generator([w], **generator_kwargs)[0]
             if shift == 0.0 and with_central_border:
                 shifted_image = add_border(shifted_image)
-
             shifted_images.append(shifted_image)
         return torch.stack(shifted_images)
 
-    def make_interpolation_chart(self, step, generator, deformator=None, shift_r=10, shifts_count=5, dims_count=10):
+    def make_interpolation_chart(self, step, generator, directions, shift_r=10, shifts_count=5, dims_count=10):
 
         file_location = self.opt.result_dir + '/visualisations/latent_traversal/'
         if not os.path.exists(file_location):
             os.makedirs(file_location)
         path = file_location + str(step) + '.png'
 
-        deformator.eval()
+        directions.eval()
         generator.eval()
 
-        z = make_noise(self.opt.num_images_grid, generator.latent_size, truncation=self.opt.algo.ld.truncation).cuda()
+        z = torch.randn(1, generator.style_dim)
         imgs = []
-        for i in range(dims_count):
-            imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, deformator))
+        for i in range(directions.in_features):
+            imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
-        batch_tensor = torch.stack(imgs).view(-1, 1, 64, 64)
+        batch_tensor = torch.stack(imgs).view(-1, 3, 64, 64)
+        batch_tensor = torch.clamp(batch_tensor,-1,1)
 
-        save_image(batch_tensor.view(-1, 1, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
+        save_image(batch_tensor.view(-1, 3, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
     def fig_to_image(fig):

@@ -60,7 +60,7 @@ class Trainer(object):
         z = torch.randn(self.opt.algo.gs.num_samples, generator.style_dim).to(device)
         feats = generator.get_latent(z)
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
-        deformator = V[:, :self.opt.algo.gs.topk]
+        deformator = V[:, :self.opt.algo.gs.num_directions]
         deformator_layer = torch.nn.Linear(self.opt.algo.cf.topk, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
@@ -76,8 +76,8 @@ class Trainer(object):
             weight_mat.append(v)
         W = torch.cat(weight_mat, 0)
         V = torch.svd(W).V.detach().cpu().numpy()
-        deformator = V[:, :self.opt.algo.cf.topk]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.topk, 512)
+        deformator = V[:, :self.opt.algo.cf.num_directions]
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 

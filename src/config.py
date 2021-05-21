@@ -45,8 +45,8 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 # ---------------------------------------------------------------------------- #
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/shapes3d/2.pt'
@@ -85,13 +85,13 @@ opt.algo.ld.saving_freq = 500
 # Options for Closed form
 # ---------------------------------------------------------------------------- #
 opt.algo.cf = CN()
-opt.algo.cf.topk = 10
+opt.algo.cf.num_directions = 10
 
 # ---------------------------------------------------------------------------- #
 # Options for Gan space
 # ---------------------------------------------------------------------------- #
 opt.algo.gs = CN()
-opt.algo.gs.topk = 10
+opt.algo.gs.num_directions = 10
 opt.algo.gs.num_samples = 20000
 
 # ---------------------------------------------------------------------------- #
