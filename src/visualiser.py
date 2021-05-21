@@ -26,6 +26,21 @@ def add_border(tensor):
     return tensor
 
 
+def plot_generated_images(opt, generator):
+    z = torch.randn(50, generator.style_dim).cuda()
+    w = generator.style(z)
+    imgs = generator([w], **generator_kwargs)[0]
+    save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),
+               normalize=True, scale_each=True, pad_value=128, padding=1)
+
+
+def fig_to_image(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf)
+    buf.seek(0)
+    return Image.open(buf)
+
+
 class Visualiser(object):
     def __init__(self, config, opt):
         self.config = config
@@ -59,7 +74,7 @@ class Visualiser(object):
             shifted_images.append(shifted_image)
         return torch.stack(shifted_images)
 
-    def make_interpolation_chart(self, step, generator, directions, shift_r=10, shifts_count=5, dims_count=10):
+    def make_interpolation_chart(self, step, generator, directions, shift_r=10, shifts_count=5):
 
         file_location = self.opt.result_dir + '/visualisations/latent_traversal/'
         if not os.path.exists(file_location):
@@ -75,16 +90,10 @@ class Visualiser(object):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
         batch_tensor = torch.stack(imgs).view(-1, 3, 64, 64)
-        batch_tensor = torch.clamp(batch_tensor,-1,1)
+        batch_tensor = torch.clamp(batch_tensor, -1, 1)
 
         save_image(batch_tensor.view(-1, 3, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
-
-    def fig_to_image(fig):
-        buf = io.BytesIO()
-        fig.savefig(buf)
-        buf.seek(0)
-        return Image.open(buf)
 
     def generate_plot_save_results(self, results, plot_type):
         file_location = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/visualisations/plots/'
@@ -97,10 +106,3 @@ class Visualiser(object):
         plt.legend(loc="upper right")
         path = file_location + str(plot_type) + '.jpeg'
         plt.savefig(path)
-
-    def plot_generated_images(self, opt, generator):
-        z = torch.randn(50, generator.style_dim).cuda()
-        w = generator.style(z)
-        imgs = generator([w], **generator_kwargs)[0]
-        save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),
-                   normalize=True, scale_each=True, pad_value=128, padding=1)

@@ -73,13 +73,12 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         elif opt.algorithm == 'CF':
             generator = models
             directions = model_trainer.train_closed_form(generator)
-            visualise_results.make_interpolation_chart(i, generator, directions,
-                                                       shift_r=10, shifts_count=5, dims_count=5)
-            # metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
+            visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
+            metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'GS':
             generator = models
             directions = model_trainer.train_ganspace(generator)
-            # metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
+            metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         else:
             raise NotImplementedError
         metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
