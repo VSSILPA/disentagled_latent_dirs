@@ -6,8 +6,8 @@ from config import generator_kwargs
 
 log = logging.getLogger(__name__)
 
-
 torch.autograd.set_detect_anomaly(True)
+
 
 class Trainer(object):
 
@@ -35,13 +35,13 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = make_noise(self.opt.algo.ld.batch_size, generator.style_dim, truncation=self.opt.algo.ld.truncation).cuda()
+        z = torch.randn(self.opt.algo.ld.batch_size, generator.style_dim).cuda()
         target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
 
         shift = deformator(z_shift)
         w = generator.style(z)
         imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift],**generator_kwargs)
+        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
         logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = self.cross_entropy(logits, target_indices.cuda())
@@ -53,23 +53,37 @@ class Trainer(object):
         deformator_opt.step()
         shift_predictor_opt.step()
 
-        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (loss.item(), logit_loss.item(), shift_loss.item())
+        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
+        loss.item(), logit_loss.item(), shift_loss.item())
 
-    @staticmethod
-    def make_noise(batch, dim, truncation=None):
-        if isinstance(dim, int):
-            dim = [dim]
-        if truncation is None or truncation == 1.0:
-            return torch.randn([batch] + dim)
-        else:
-            return torch.from_numpy(truncated_noise([batch] + dim, truncation)).to(torch.float)
+    def train_ganspace(self, generator):
+        z = torch.randn(self.opt.algo.gs.num_samples, generator.style_dim).to(device)
+        feats = generator.get_latent(z)
+        V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
+        deformator = V[:, :self.opt.algo.gs.topk]
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.topk, 512)
+        deformator_layer.weight.data = torch.FloatTensor(deformator)
+        return deformator_layer
 
-    @staticmethod
-    def truncated_noise(size, truncation=1.0):
-        return truncnorm.rvs(-truncation, truncation, size=size)
+    def train_closed_form(self,generator):
+        modulate = {
+            k: v
+            for k, v in generator.state_dict().items()
+            if "modulation" in k and "to_rgbs" not in k and "weight" in k
+        }
+        weight_mat = []
+        for k, v in modulate.items():
+            weight_mat.append(v)
+        W = torch.cat(weight_mat, 0)
+        V = torch.svd(W).V.detach().cpu().numpy()
+        deformator = V[:, :self.opt.algo.cf.topk]
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.topk, 512)
+        deformator_layer.weight.data = torch.FloatTensor(deformator)
+        return deformator_layer
 
     def make_shifts(self, latent_dim):
-        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.algo.ld.batch_size], device='cuda')
+        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.algo.ld.batch_size],
+                                       device='cuda')
         if self.opt.algo.ld.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape, device='cuda')
         elif self.opt.algo.ld.shift_distribution == "uniform":

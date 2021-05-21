@@ -41,7 +41,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             shift_predictor.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
             start_time = time.time()
-            for i in range(opt.algo.ld.num_steps):
+            for k in range(opt.algo.ld.num_steps):
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
                         generator, deformator, shift_predictor, deformator_opt,
@@ -49,13 +49,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 loss = loss + losses[0]
                 logit_loss = logit_loss + losses[1]
                 shift_loss = shift_loss + losses[2]
-                if i % opt.algo.ld.saving_freq == 0 and i != 0:
+                if k % opt.algo.ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
                     saver.save_model(params, i, algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
 
-                if i % opt.algo.ld.logging_freq == 0 and i != 0:
+                if k % opt.algo.ld.logging_freq == 0 and k != 0:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
                     total_loss, logit_loss, shift_loss = losses
@@ -72,44 +72,23 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     loss, logit_loss, shift_loss = 0, 0, 0
         elif opt.algorithm == 'CF':
             generator = models
-            modulate = {
-                k: v
-                for k, v in generator.state_dict().items()
-                if "modulation" in k and "to_rgbs" not in k and "weight" in k
-            }
-            weight_mat = []
-            for k, v in modulate.items():
-                weight_mat.append(v)
-            W = torch.cat(weight_mat, 0)
-            V = torch.svd(W).V.detach().cpu().numpy()
-            deformator = V[:, :opt.algo.cf.topk]
-            deformator_layer = torch.nn.Linear(opt.algo.cf.topk, 512)
-            deformator_layer.weight.data = torch.FloatTensor(deformator)
+            deformator_layer = model_trainer.train_closed_form(generator)
             metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
-            metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
-            metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
-            metrics_seed['mig'].append(metrics['mig'])
-            metrics_seed['dci'].append(metrics['dci'])
         elif opt.algorithm == 'GS':
             generator = models
-            z = torch.randn(opt.algo.gs.num_samples , generator.style_dim).to(device)
-            feats = generator.get_latent(z)
-            V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
-            deformator = V[:, :opt.algo.gs.topk]
-            deformator_layer = torch.nn.Linear(opt.algo.cf.topk, 512)
-            deformator_layer.weight.data = torch.FloatTensor(deformator)
+            deformator_layer = model_trainer.train_ganspace(generator)
             metrics = evaluator.compute_metrics(generator, deformator_layer, data, epoch=0)
-            metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
-            metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
-            metrics_seed['mig'].append(metrics['mig'])
-            metrics_seed['dci'].append(metrics['dci'])
         else:
             raise NotImplementedError
-
+        metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
+        metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
+        metrics_seed['mig'].append(metrics['mig'])
+        metrics_seed['dci'].append(metrics['dci'])
 
     logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
         stdev(metrics_seed['betavae_metric'])) + '\n' +
                  'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(
         stdev(metrics_seed['factorvae_metric'])) + '\n'
-                 'MIG : ' + str(mean(metrics_seed['mig'])) + u"\u00B1" + str(stdev(metrics_seed['mig'])) + '\n' +
+                                                   'MIG : ' + str(mean(metrics_seed['mig'])) + u"\u00B1" + str(
+        stdev(metrics_seed['mig'])) + '\n' +
                  'DCI:' + str(mean(metrics_seed['dci'])) + u"\u00B1" + str(stdev(metrics_seed['dci'])))

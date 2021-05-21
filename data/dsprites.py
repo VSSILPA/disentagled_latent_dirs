@@ -16,7 +16,7 @@ class DSprites(object):
         self.opt = opt
         self.exp_name = config['experiment_name']
         self.images = np.load(npy_path + '/imgs.npy', mmap_mode='r+', encoding="latin1", allow_pickle=True)
-        self.images = self.images.reshape(-1, 1, 64, 64)*255  # data in range of [0,255]
+        self.images = self.images.reshape(-1, 1, 64, 64)  # data in range of [0,255]
         self.labels = cartesian_product(np.arange(3),
                                         np.arange(6),
                                         np.arange(40),
