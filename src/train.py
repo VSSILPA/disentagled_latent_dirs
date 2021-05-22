@@ -57,11 +57,11 @@ class Trainer(object):
         loss.item(), logit_loss.item(), shift_loss.item())
 
     def train_ganspace(self, generator):
-        z = torch.randn(self.opt.algo.gs.num_samples, generator.style_dim).to(device)
+        z = torch.randn(self.opt.algo.gs.num_samples, generator.style_dim).cuda()
         feats = generator.get_latent(z)
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.gs.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.topk, 512)
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, 512)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 

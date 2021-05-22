@@ -78,6 +78,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         elif opt.algorithm == 'GS':
             generator = models
             directions = model_trainer.train_ganspace(generator)
+            visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         else:
             raise NotImplementedError

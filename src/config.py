@@ -14,7 +14,7 @@ import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = True
+test_mode = False
 if test_mode:
     experiment_name = 'stabilsation'
     experiment_description = 'setting up working code base'
@@ -45,8 +45,8 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 # ---------------------------------------------------------------------------- #
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.algorithm = 'GS'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/shapes3d/2.pt'
