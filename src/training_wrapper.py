@@ -40,8 +40,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             deformator.to(device).train()
             shift_predictor.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
-            start_time = time.time()
             for k in range(opt.algo.ld.num_steps):
+                start_time = time.time()
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
                         generator, deformator, shift_predictor, deformator_opt,
@@ -53,20 +53,27 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
                     saver.save_model(params, i, algo='LD')
+                    total_loss, logit_loss, shift_loss = losses
+                    logging.info(
+                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
+                            k, opt.algo.ld.num_steps, time.time() - start_time,
+                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
+                            shift_loss / opt.algo.ld.logging_freq))
+                    loss, logit_loss, shift_loss = 0, 0, 0
                     perf_logger.stop_monitoring("Saving Model")
 
                 if k % opt.algo.ld.logging_freq == 0 and k != 0:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-                    accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
+                    # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
                     total_loss, logit_loss, shift_loss = losses
                     logging.info(
-                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F Accuracy %.3F " % (
-                            i, opt.num_steps, time.time() - start_time,
-                            total_loss / opt.logging_freq, logit_loss / opt.logging_freq,
-                            shift_loss / opt.logging_freq, accuracy))
+                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
+                            i, opt.algo.ld.num_steps, time.time() - start_time,
+                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
+                            shift_loss / opt.algo.ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    visualise_results.make_interpolation_chart(i, generator, deformator,
-                                                               shift_r=10, shifts_count=5, dims_count=5)
+                    # visualise_results.make_interpolation_chart(i, generator, deformator,
+                    #                                            shift_r=10, shifts_count=5, dims_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     start_time = time.time()
                     loss, logit_loss, shift_loss = 0, 0, 0

@@ -14,7 +14,7 @@ import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = False
+test_mode = True
 if test_mode:
     experiment_name = 'stabilsation'
     experiment_description = 'setting up working code base'
@@ -44,9 +44,9 @@ parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 opt = CN()
-opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'GS'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.gan_type = 'DCGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
+opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/shapes3d/2.pt'
@@ -61,7 +61,7 @@ opt.random_seed = 2
 opt.algo = CN()
 opt.algo.ld = CN()
 opt.algo.ld.batch_size = 32
-opt.algo.ld.latent_dim = 512
+opt.algo.ld.latent_dim = 10
 opt.algo.ld.num_steps = 20000
 opt.algo.ld.directions_count = 10
 opt.algo.ld.shift_scale = 6
@@ -72,13 +72,13 @@ opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
 opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
+opt.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 500
+opt.algo.ld.logging_freq = 15000
 opt.algo.ld.saving_freq = 500
 
 # ---------------------------------------------------------------------------- #
@@ -120,7 +120,7 @@ generator_kwargs = {
 # ---------------------------------------------------------------------------- #
 opt.model = CN()
 opt.model.gen = CN()
-opt.model.gen.latent_size = 512
+opt.model.gen.latent_size = 10
 # 8 in original paper
 opt.model.gen.mapping_layers = 4
 opt.model.gen.blur_filter = [1, 2, 1]

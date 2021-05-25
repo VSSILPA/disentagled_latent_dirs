@@ -13,9 +13,10 @@
 from utils import *
 from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
 from models.StyleGAN.GAN import StyleGAN
-from models.stylegan2.models import Generator
+# from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
+from models.infogan import Generator
 
 import sys
 sys.path.insert(0, './models/')
@@ -72,7 +73,15 @@ def get_model(config, opt):
         G_weights = 'models/pretrained/generators/SN_MNIST'
         G = make_gan(G_weights)
     elif gan_type == 'DCGAN':
-        raise NotImplementedError
+        G = Generator()
+        G.load_state_dict(torch.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators/new_generators/new_generators/dsprites/infogan_mig_0.22.pkl')['gen_state_dict'])
+        G.eval()
+        G.cuda()
+        z = torch.rand(100, 5).cuda()* 2 - 1
+        c_cond = torch.rand(100, 5).cuda() * 2 - 1
+        z = torch.cat((z, c_cond), dim=1)
+        images = G(z.cuda())
+        print('hello')
     else:
         raise NotImplementedError
 

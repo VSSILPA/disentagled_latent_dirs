@@ -35,13 +35,17 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.ld.batch_size, generator.style_dim).cuda()
+        z = torch.randn(self.opt.algo.ld.batch_size, 5).cuda()
+        c_cond = torch.rand(self.opt.algo.ld.batch_size, 5).cuda() * 2 - 1
+        z = torch.cat((z, c_cond), dim=1)
         target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
 
         shift = deformator(z_shift)
-        w = generator.style(z)
-        imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
+        # w = generator.style(z)
+        # imgs, _ = generator([w], **generator_kwargs)
+        # imgs_shifted, _ = generator([w + shift], **generator_kwargs)
+        imgs = generator(z)
+        imgs_shifted = generator(z+shift)
 
         logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = self.cross_entropy(logits, target_indices.cuda())
