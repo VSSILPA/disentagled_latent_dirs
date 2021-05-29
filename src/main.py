@@ -9,7 +9,7 @@
 """
 
 import sys
-from config import get_config,save_config
+from config import get_config, save_config
 from train import Trainer
 from training_wrapper import run_training_wrapper
 from evaluation_wrapper import run_evaluation_wrapper
@@ -30,5 +30,5 @@ def main(configurations, opt):
 
 
 if __name__ == "__main__":
-    config, opt = get_config(sys.argv[1:])
-    main(config, opt)
+    config, options = get_config(sys.argv[1:])
+    main(config, options)

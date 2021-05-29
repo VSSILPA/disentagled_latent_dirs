@@ -1,12 +1,9 @@
 import numpy as np
 import torch
 import torchvision
-import os
 from utils import cartesian_product
 import matplotlib.pyplot as plt
 
-SCREAM_PATH = "/home/adarsh/Documents/data/scream/scream.jpg"
-dsprites_path = "../data/dsprites/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"
 npy_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/data/dsprites'
 
 
@@ -25,6 +22,11 @@ class DSprites(object):
         self.num_factors = 5
         self.latents_sizes = np.array([3, 6, 40, 32, 32])
         self.latents_bases = np.concatenate((self.latents_sizes[::-1].cumprod()[::-1][1:], np.array([1, ])))
+        # self.shape_template = [[0] + [x for x in range(6 * 40 * 32 * 32 + 1, 3 * 6 * 40 * 32 * 32 + 1, 6 * 40 * 32 * 32)]]
+        # self.size_template =  [[0] + [x for x in range(40 * 32 * 32 + 1, 6 * 40 * 32 * 32 + 1, 40 * 32 * 32)]]
+        # self.orientation_template = [[0] + [x for x in range(32 * 32 + 1, 40 * 32 * 32 + 1, 32 * 32)]]
+        # self.xpos_template = [0] + [x for x in range(32, 32 * 32, 32)]]
+        # self.ypos_template = [x for x in range(32)]
         self.show_images_grid()
 
     def show_images_grid(self, nrows=10):

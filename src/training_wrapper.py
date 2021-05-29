@@ -23,7 +23,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         logging.info(' {} : {}'.format(key, values))
     device = torch.device(opt.device + opt.device_id)
     metrics_seed = {'betavae_metric': [], 'factorvae_metric': [], 'mig': [], 'dci': []}
-    for i in range(opt.num_seeds):
+    for i in range(opt.num_seeds-1):
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
         models = get_model(configuration, opt)
@@ -72,8 +72,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                             total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
                             shift_loss / opt.algo.ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    # visualise_results.make_interpolation_chart(i, generator, deformator,
-                    #                                            shift_r=10, shifts_count=5, dims_count=5)
+                    visualise_results.make_interpolation_chart(i, generator, deformator,
+                                                               shift_r=10, shifts_count=5, dims_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     start_time = time.time()
                     loss, logit_loss, shift_loss = 0, 0, 0
@@ -87,6 +87,17 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             directions = model_trainer.train_ganspace(generator)
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
+        elif opt.algorithm == 'Cnn Train':
+            from models.classifier import CRDiscriminator
+            classifier = CRDiscriminator(dim_c_cont=2).cuda()
+            cr_optimizer = torch.optim.Adam(classifier.parameters(), lr=0.002, betas=(0.9, 0.999))
+
+            classifier.train()
+            for iteration in range(5000):
+                cr_optimizer.zero_grad()
+                label_real = torch.full((64,), 1, dtype=torch.long, device='cuda')
+                label_fake = torch.full((64,), 0, dtype=torch.long, device='cuda')
+                labels = torch.cat((label_real, label_fake))
         else:
             raise NotImplementedError
         metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])

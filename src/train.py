@@ -35,7 +35,7 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.ld.batch_size, 5).cuda()
+        z = torch.rand(self.opt.algo.ld.batch_size, 5).cuda()* 2 - 1
         c_cond = torch.rand(self.opt.algo.ld.batch_size, 5).cuda() * 2 - 1
         z = torch.cat((z, c_cond), dim=1)
         target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
@@ -65,7 +65,7 @@ class Trainer(object):
         feats = generator.get_latent(z)
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.gs.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, 512)
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1])
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 
@@ -78,10 +78,10 @@ class Trainer(object):
         weight_mat = []
         for k, v in modulate.items():
             weight_mat.append(v)
-        W = torch.cat(weight_mat, 0)
+        W = torch.cat(weight_mat[:-1], 0)
         V = torch.svd(W).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.cf.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, 512)
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1])
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 

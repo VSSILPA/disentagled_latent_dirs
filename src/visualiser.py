@@ -89,10 +89,10 @@ class Visualiser(object):
         for i in range(directions.in_features):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
-        batch_tensor = torch.stack(imgs).view(-1, 3, 64, 64)
+        batch_tensor = torch.stack(imgs).view(-1, 1, 64, 64)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
 
-        save_image(batch_tensor.view(-1, 3, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
+        save_image(batch_tensor.view(-1, 1, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
     def generate_plot_save_results(self, results, plot_type):

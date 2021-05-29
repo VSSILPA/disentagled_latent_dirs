@@ -24,7 +24,7 @@ class LatentDataset(Dataset):
                 self._generate_data(generator=generator, generator_bs=self.opt.encoder.generator_bs, dataset=self.opt.dataset,
                                     N=self.opt.encoder.num_samples, save=True)
 
-        self.labels = self.labels @ latent_directions.linear.weight.detach().cpu().numpy()
+        self.labels = self.labels @ latent_directions.weight.detach().cpu().numpy()
 
     def _try_load_cached(self, dataset):
         path = os.path.join(self.root, dataset + ".npz")
@@ -61,16 +61,13 @@ class LatentDataset(Dataset):
             # images.append(x)
             # labels.append(w.detach()[:,0,:].cpu().numpy())
 
-            z = torch.randn(generator_bs, 5, device=self.device)
-            c_cond = torch.rand(generator_bs, 5, device=self.device) * 2 - 1
-            z = torch.cat((z, c_cond), dim=1)
-            x = generator(z)
-            # w = generator.style(z)
-            # x = generator([w], **generator_kwargs)[0]
-            # x = torch.clamp(x, -1, 1)
-            # x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
-            images.append(x.detach().cpu().numpy())
-            labels.append(z.detach().cpu().numpy())
+            z = torch.randn(generator_bs, generator.style_dim).to(self.device)
+            w = generator.style(z)
+            x = generator([w], **generator_kwargs)[0]
+            x = torch.clamp(x, -1, 1)
+            x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
+            images.append(x)
+            labels.append(w.detach().cpu().numpy())
 
         self.images = np.concatenate(images, 0)
         self.labels = np.concatenate(labels, 0)

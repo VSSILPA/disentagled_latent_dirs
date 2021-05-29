@@ -13,10 +13,9 @@
 from utils import *
 from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
 from models.StyleGAN.GAN import StyleGAN
-# from models.stylegan2.models import Generator
+from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
-from models.infogan import Generator
 
 import sys
 sys.path.insert(0, './models/')
@@ -57,15 +56,15 @@ def get_model(config, opt):
         G_weights = 'models/pretrained/generators/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
         G = make_proggan(G_weights)
     elif gan_type == 'StyleGAN2':
-        config_gan = {"latent": 512, "n_mlp": 3, "channel_multiplier": 4}
+        config_gan = {"latent": 64, "n_mlp": 3, "channel_multiplier": 1}
         G = Generator(
             size=64,
             style_dim=config_gan["latent"],
             n_mlp=config_gan["n_mlp"],
-            small=False,
+            small=True,
             channel_multiplier=config_gan["channel_multiplier"],
         )
-        G.load_state_dict(torch.load(opt.pretrained_gen_path))
+        G.load_state_dict(torch.load('/media/adarsh/DATA/checkpoints_old/200000.pt')["g"])
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
@@ -77,11 +76,15 @@ def get_model(config, opt):
         G.load_state_dict(torch.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators/new_generators/new_generators/dsprites/infogan_mig_0.22.pkl')['gen_state_dict'])
         G.eval()
         G.cuda()
-        z = torch.rand(100, 5).cuda()* 2 - 1
-        c_cond = torch.rand(100, 5).cuda() * 2 - 1
-        z = torch.cat((z, c_cond), dim=1)
-        images = G(z.cuda())
-        print('hello')
+        # z = torch.rand(100, 5).cuda()* 2 - 1
+        # c_cond = torch.rand(100, 5).cuda() * 2 - 1
+        # z = torch.cat((z, c_cond), dim=1)
+        # images = G(z.cuda())
+        # from torchvision.utils import save_image
+        # save_image(images.detach(),
+        #            '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/stabilsation' + '/visualisations/gen_images.jpeg',
+        #            nrow=int(np.sqrt(len(images))), normalize=True,
+        #            scale_each=True, pad_value=128, padding=1)
     else:
         raise NotImplementedError
 
