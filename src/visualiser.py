@@ -62,7 +62,7 @@ class Visualiser(object):
     def interpolate(self, generator, z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         shifted_images = []
         directions.cuda()
-        for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count):
+        for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count): # TODO change traversal in z space to wspace
             if directions is not None:
                 z_deformed = z.cuda() + directions(one_hot(directions.in_features, shift, dim).cuda())
             else:
@@ -86,7 +86,14 @@ class Visualiser(object):
 
         z = torch.randn(1, generator.style_dim)
         imgs = []
-        for i in range(directions.in_features):
+        if self.opt.algorithm == 'LD':
+            num_directions = self.opt.algo.ld.num_directions
+        elif self.opt.algorithm =='GS':
+            num_directions = self.opt.algo.gs.num_directions
+        elif self.opt.algorithm == 'CF' :
+            num_directions = self.opt.algo.cf.num_directions
+
+        for i in range(num_directions):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
         batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, 64, 64)

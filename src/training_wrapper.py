@@ -33,7 +33,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
 
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
-            plot_generated_images(opt, generator)
+            # plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
@@ -75,7 +75,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     loss, logit_loss, shift_loss = 0, 0, 0
         elif opt.algorithm == 'CF':
             generator = models
-            plot_generated_images(opt, generator)
+            # plot_generated_images(opt, generator)
             directions = model_trainer.train_closed_form(generator)
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)

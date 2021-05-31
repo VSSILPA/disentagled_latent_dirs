@@ -348,8 +348,8 @@ class ToRGB(nn.Module):
         if upsample:
             self.upsample = Upsample(blur_kernel)
 
-        self.conv = ModulatedConv2d(in_channel, 1, 1, style_dim, demodulate=False)
-        self.bias = nn.Parameter(torch.zeros(1, 1, 1, 1))
+        self.conv = ModulatedConv2d(in_channel, 1 if style_dim ==64 else 3, 1, style_dim, demodulate=False)
+        self.bias = nn.Parameter(torch.zeros(1,  1 if style_dim ==64 else 3, 1, 1))
 
     def forward(self, input, style, skip=None):
         out = self.conv(input, style)
@@ -397,11 +397,11 @@ class Generator(nn.Module):
 
         if small:
             self.channels = {
-                4: 64,
-                8: 64,
-                16: 64,
-                32: 64,
-                64: 64
+                4: 64*channel_multiplier,
+                8: 64*channel_multiplier,
+                16: 64*channel_multiplier,
+                32: 64*channel_multiplier,
+                64: 64*channel_multiplier
             }
         elif small_isaac:
             self.channels = {4: 256, 8: 256, 16: 256, 32: 256, 64: 128, 128: 128}

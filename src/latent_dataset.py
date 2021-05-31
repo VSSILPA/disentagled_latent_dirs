@@ -25,7 +25,11 @@ class LatentDataset(Dataset):
                 self._generate_data(generator=generator, generator_bs=self.opt.encoder.generator_bs, dataset=self.opt.dataset,
                                     N=self.opt.encoder.num_samples, save=True)
 
-        self.labels = self.labels @ latent_directions.weight.detach().cpu().numpy()
+        if opt.algorithm == 'LD' and opt.algo.ld.deformator_type == 'ortho':
+            directions = latent_directions.log_mat_half.data.detach().cpu().numpy()
+        else:
+            directions = latent_directions.weight.detach().cpu().numpy()
+        self.labels = self.labels @ directions
 
     def _try_load_cached(self, dataset):
         path = os.path.join(self.root, dataset + ".npz")

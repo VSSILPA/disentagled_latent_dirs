@@ -31,7 +31,7 @@ def get_model(opt):
     device = torch.device(opt.device + opt.device_id)
     gan_type = opt.gan_type
     if gan_type == 'StyleGAN2':
-        config_gan = {"latent": 64, "n_mlp": 3, "channel_multiplier": 4}
+        config_gan = {"latent": 64 if opt.dataset == 'dsprites' else 512, "n_mlp": 3, "channel_multiplier": 8 if opt.dataset != 'dsprites' else 1}
         G = Generator(
             size=64,
             style_dim=config_gan["latent"],
@@ -47,13 +47,13 @@ def get_model(opt):
         raise NotImplementedError
 
     if opt.algorithm == 'LD':
-        deformator = LatentDeformator(shift_dim=opt.algo.ld.latent_dim,
+        deformator = LatentDeformator(shift_dim=G.style_dim,
                                       input_dim=opt.algo.ld.directions_count,  # dimension of one-hot encoded vector
-                                      out_dim=opt.algo.ld.latent_dim,
+                                      out_dim=G.style_dim,
                                       type=opt.algo.ld.deformator_type,
                                       random_init=opt.algo.ld.deformator_randint).to(device)
         if opt.algo.ld.shift_predictor == 'ResNet':
-            shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.ld.shift_predictor_size).to(device)
+            shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.ld.shift_predictor_size,channels=1 if opt.dataset == 'dsprites' else 3).to(device)
         elif opt.algo.ld.shift_predictor == 'LeNet':
             shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
         else:

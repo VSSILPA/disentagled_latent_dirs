@@ -45,8 +45,8 @@ parser.add_argument('--evaluation', type=bool, default=False, help='whether to r
 parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'cars3d'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
@@ -63,7 +63,7 @@ opt.algo = CN()
 opt.algo.ld = CN()
 opt.algo.ld.batch_size = 32
 opt.algo.ld.latent_dim = 64
-opt.algo.ld.num_steps = 20000
+opt.algo.ld.num_steps = 5000
 opt.algo.ld.directions_count = 64
 opt.algo.ld.shift_scale = 6
 opt.algo.ld.min_shift = 0.5
@@ -72,8 +72,8 @@ opt.algo.ld.shift_predictor_lr = 0.0001
 opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
-opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']1
+opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
