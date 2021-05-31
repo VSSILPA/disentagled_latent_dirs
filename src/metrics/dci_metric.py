@@ -60,7 +60,8 @@ class DCIMetric(object):
         test_loss = []
         for i in range(num_factors):
             model = ensemble.GradientBoostingClassifier()
-            model.fit(x_train, y_train[:,i])            #TODO using Gradient boosting classifier use lasso and check results as well use git your infogan repo
+            model.fit(x_train, y_train[:,
+                               i])  # TODO using Gradient boosting classifier use lasso and check results as well use git your infogan repo
             importance_matrix[:, i] = np.abs(model.feature_importances_)
             train_loss.append(np.mean(model.predict(x_train) == y_train[:, i]))
             test_loss.append(np.mean(model.predict(x_test) == y_test[:, i]))

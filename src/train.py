@@ -6,8 +6,6 @@ from config import generator_kwargs
 
 log = logging.getLogger(__name__)
 
-torch.autograd.set_detect_anomaly(True)
-
 
 class Trainer(object):
 
@@ -29,23 +27,17 @@ class Trainer(object):
 
     def train_latent_discovery(self, generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
 
-        # should_gen_classes = is_conditional(generator)
-
         generator.zero_grad()
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.rand(self.opt.algo.ld.batch_size, 5).cuda()* 2 - 1
-        c_cond = torch.rand(self.opt.algo.ld.batch_size, 5).cuda() * 2 - 1
-        z = torch.cat((z, c_cond), dim=1)
+        z = torch.randn(self.opt.algo.ld.batch_size, generator.style_dim).cuda()
         target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
 
         shift = deformator(z_shift)
-        # w = generator.style(z)
-        # imgs, _ = generator([w], **generator_kwargs)
-        # imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        imgs = generator(z)
-        imgs_shifted = generator(z+shift)
+        w = generator.style(z)
+        imgs, _ = generator([w], **generator_kwargs)
+        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
         logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = self.cross_entropy(logits, target_indices.cuda())
@@ -58,9 +50,10 @@ class Trainer(object):
         shift_predictor_opt.step()
 
         return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
-        loss.item(), logit_loss.item(), shift_loss.item())
+            loss.item(), logit_loss.item(), shift_loss.item())
 
     def train_ganspace(self, generator):
+
         z = torch.randn(self.opt.algo.gs.num_samples, generator.style_dim).cuda()
         feats = generator.get_latent(z)
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
@@ -69,7 +62,8 @@ class Trainer(object):
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 
-    def train_closed_form(self,generator):
+    def train_closed_form(self, generator):
+
         modulate = {
             k: v
             for k, v in generator.state_dict().items()
@@ -86,6 +80,7 @@ class Trainer(object):
         return deformator_layer
 
     def make_shifts(self, latent_dim):
+
         target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.algo.ld.batch_size],
                                        device='cuda')
         if self.opt.algo.ld.shift_distribution == "normal":

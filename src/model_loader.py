@@ -11,8 +11,6 @@
 
 
 from utils import *
-from models.gan_load import make_big_gan, make_proggan, make_gan, make_style_gan2
-from models.StyleGAN.GAN import StyleGAN
 from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
@@ -29,34 +27,11 @@ def load(model, cpk_file):
     model.load_state_dict(model_dict)
 
 
-def get_model(config, opt):
+def get_model(opt):
     device = torch.device(opt.device + opt.device_id)
     gan_type = opt.gan_type
-    if gan_type == 'BigGAN':
-        G_weights = 'models/pretrained/generators/BigGAN/G_ema.pth',
-        G = make_big_gan(G_weights, config['target_class']).eval()
-    elif gan_type == 'StyleGAN':
-        style_gan = StyleGAN(structure='linear',
-                             resolution=64,
-                             num_channels=1,
-                             latent_size=opt.model.gen.latent_size,
-                             g_args=opt.model.gen,
-                             d_args=opt.model.dis,
-                             g_opt_args=opt.model.g_optim,
-                             d_opt_args=opt.model.d_optim,
-                             loss=opt.loss,
-                             drift=opt.drift,
-                             d_repeats=opt.d_repeats,
-                             use_ema=opt.use_ema,
-                             ema_decay=opt.ema_decay,
-                             device=device)
-        load(style_gan.gen, 'models/pretrained/stylegan_dsprites/GAN_GEN_4_9.pth')
-        G = style_gan.gen
-    elif gan_type == 'ProgGAN':
-        G_weights = 'models/pretrained/generators/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
-        G = make_proggan(G_weights)
-    elif gan_type == 'StyleGAN2':
-        config_gan = {"latent": 64, "n_mlp": 3, "channel_multiplier": 1}
+    if gan_type == 'StyleGAN2':
+        config_gan = {"latent": 64, "n_mlp": 3, "channel_multiplier": 4}
         G = Generator(
             size=64,
             style_dim=config_gan["latent"],
@@ -64,27 +39,10 @@ def get_model(config, opt):
             small=True,
             channel_multiplier=config_gan["channel_multiplier"],
         )
-        G.load_state_dict(torch.load('/media/adarsh/DATA/checkpoints_old/200000.pt')["g"])
+        G.load_state_dict(torch.load('/media/adarsh/DATA/new_check/270000.pt')["g"])
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
-    elif gan_type == 'SNGAN':
-        G_weights = 'models/pretrained/generators/SN_MNIST'
-        G = make_gan(G_weights)
-    elif gan_type == 'DCGAN':
-        G = Generator()
-        G.load_state_dict(torch.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators/new_generators/new_generators/dsprites/infogan_mig_0.22.pkl')['gen_state_dict'])
-        G.eval()
-        G.cuda()
-        # z = torch.rand(100, 5).cuda()* 2 - 1
-        # c_cond = torch.rand(100, 5).cuda() * 2 - 1
-        # z = torch.cat((z, c_cond), dim=1)
-        # images = G(z.cuda())
-        # from torchvision.utils import save_image
-        # save_image(images.detach(),
-        #            '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/stabilsation' + '/visualisations/gen_images.jpeg',
-        #            nrow=int(np.sqrt(len(images))), normalize=True,
-        #            scale_each=True, pad_value=128, padding=1)
     else:
         raise NotImplementedError
 
@@ -98,6 +56,8 @@ def get_model(config, opt):
             shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.ld.shift_predictor_size).to(device)
         elif opt.algo.ld.shift_predictor == 'LeNet':
             shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
+        else:
+            raise NotImplementedError
 
         deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ld.deformator_lr)
 

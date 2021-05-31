@@ -11,7 +11,7 @@ class MIG(object):
         Implementation of the metric in: MIG
     """
 
-    def __init__(self, dsprites, device_id,opt):
+    def __init__(self, dsprites, device_id, opt):
         super(MIG, self).__init__()
         self.data = dsprites
         self.device_id = device_id
@@ -22,19 +22,20 @@ class MIG(object):
         representations, ground_truth = self.generate_batch_factor_code(model, num_train, batch_size)
         mat, e = self._get_mi_matrix(representations, ground_truth, bins=20)
         sorted_m = np.sort(mat, axis=0)[::-1]
-        logging.info("MIG element wise " + str(sorted_m[0, :] - sorted_m[1, :]))
+        logging.info("MIG element wise " + str(np.divide(sorted_m[0, :] - sorted_m[1, :], e[:])))
         mig = np.mean(np.divide(sorted_m[0, :] - sorted_m[1, :], e[:]))
         return mig
 
-    def discrete_entropy(self,ys):
-        """Compute discrete mutual information."""
+    def discrete_entropy(self, ys):
+        """
+        Compute discrete mutual information."""
         num_factors = ys.shape[0]
         h = np.zeros(num_factors)
         for j in range(num_factors):
             h[j] = sklearn.metrics.mutual_info_score(ys[j, :], ys[j, :])
         return h
 
-    def discrete_mutual_info(self,z, v):
+    def discrete_mutual_info(self, z, v):
         """Compute discrete mutual information."""
         num_codes = z.shape[0]
         num_factors = v.shape[0]
@@ -76,7 +77,7 @@ class MIG(object):
             i += num_points_iter
         return np.transpose(representations), np.transpose(factors)
 
-    def _histogram_discretize(self,target, num_bins=20):
+    def _histogram_discretize(self, target, num_bins=20):
         discretized = np.zeros_like(target)
         for i in range(target.shape[0]):
             discretized[i, :] = np.digitize(

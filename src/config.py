@@ -9,11 +9,11 @@
 """
 
 import argparse
-import logging
 import os
 import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
+import logging
 
 test_mode = True
 if test_mode:
@@ -21,10 +21,12 @@ if test_mode:
     experiment_description = 'setting up working code base'
 else:
     experiment_name = input("Enter experiment name ")
-    experiment_description = input("Enter description of experiment ")
+    experiment_description = 'test'
     if experiment_name == '':
         print('enter valid experiment name')
         sys.exit()
+    else:
+        experiment_description = input("Enter description of experiment ")
     if experiment_description == '':
         print('enter proper description')
         sys.exit()
@@ -41,16 +43,15 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default=None, help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'CF'  # choices=['LD', 'CF', 'GS', 'Ours']
+opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
 opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
-# opt.pretrained_gen_path = 'models/pretrained/generators/new_generators/new_generators/cars3d/0.pt'
-opt.pretrained_gen_root = '/media/adarsh/DATA/checkpoints_old/200000.pt'
+opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.device = 'cuda:'
 opt.device_id = '0'
-opt.num_seeds = 8
+opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7
 opt.random_seed = 2
 
 # ---------------------------------------------------------------------------- #
@@ -59,7 +60,7 @@ opt.random_seed = 2
 opt.algo = CN()
 opt.algo.ld = CN()
 opt.algo.ld.batch_size = 32
-opt.algo.ld.latent_dim = 10  ## dimension of z
+opt.algo.ld.latent_dim = 10
 opt.algo.ld.num_steps = 20000
 opt.algo.ld.directions_count = 10
 opt.algo.ld.shift_scale = 6
@@ -76,8 +77,8 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 1000
-opt.algo.ld.saving_freq = 1000
+opt.algo.ld.logging_freq = 500
+opt.algo.ld.saving_freq = 500
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form
@@ -91,6 +92,14 @@ opt.algo.cf.num_directions = 10
 opt.algo.gs = CN()
 opt.algo.gs.num_directions = 10
 opt.algo.gs.num_samples = 20000
+
+# ---------------------------------------------------------------------------- #
+# Options for StyleGAN2
+# ---------------------------------------------------------------------------- #
+generator_kwargs = {
+    "input_is_latent": True,
+    "randomize_noise": False,
+    "truncation": 0.8}
 
 # # ---------------------------------------------------------------------------- #
 # # Options for StyleGAN
@@ -160,19 +169,12 @@ opt.encoder.latent_gamma = 0.5
 opt.encoder.create_new_data = True
 
 # ---------------------------------------------------------------------------- #
-# Options for StyleGAN2
-# ---------------------------------------------------------------------------- #
-generator_kwargs = {
-    "input_is_latent": True,
-    "randomize_noise": False,
-    "truncation": 0.8}
-
-# ---------------------------------------------------------------------------- #
 # Options for Encoder Backbone
 # ---------------------------------------------------------------------------- #
 BB_KWARGS = {
     "shapes3d": {"in_channel": 3, "size": 64},
     "mpi3d": {"in_channel": 3, "size": 64},
+    # grayscale -> rgb
     "dsprites": {"in_channel": 1, "size": 64},
     "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},

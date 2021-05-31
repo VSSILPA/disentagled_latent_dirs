@@ -29,16 +29,6 @@ class BetaVAEMetric(object):
         train_accuracy = np.mean(model.predict(train_points) == train_labels)
         eval_accuracy = model.score(eval_points, eval_labels)
 
-        # parameters = {"C": [0.001, 0.01, 0.1, 1]}
-        # model = linear_model.LogisticRegression(random_state=random_state, max_iter=1000, n_jobs=-1)
-        # model_cv = GridSearchCV(model, parameters, cv=10)
-        # model_cv.fit(train_points, train_labels)
-        # best_c = model_cv.best_params_['C']
-        #
-        # model_test = linear_model.LogisticRegression(C=best_c, random_state=random_state, max_iter=1000, n_jobs=-1)
-        # model_test.fit(train_points, train_labels)
-        # train_accuracy = model_test.score(train_points, train_labels)
-        # eval_accuracy = model_test.score(eval_points, eval_labels)
         scores_dict = {"train_accuracy": train_accuracy, "eval_accuracy": eval_accuracy}
         return scores_dict
 

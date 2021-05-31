@@ -397,11 +397,11 @@ class Generator(nn.Module):
 
         if small:
             self.channels = {
-                4: 64 * channel_multiplier,
-                8: 64 * channel_multiplier,
-                16: 64 * channel_multiplier,
-                32: 64 * channel_multiplier,
-                64: 32 * channel_multiplier,
+                4: 64,
+                8: 64,
+                16: 64,
+                32: 64,
+                64: 64
             }
         elif small_isaac:
             self.channels = {4: 256, 8: 256, 16: 256, 32: 256, 64: 128, 128: 128}

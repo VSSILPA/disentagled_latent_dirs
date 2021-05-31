@@ -27,10 +27,6 @@ def make_noise(batch, dim, truncation=None):
         return torch.from_numpy(truncated_noise([batch] + dim, truncation)).to(torch.float)
 
 
-def is_conditional(G):
-    return 'biggan' in G.__class__.__name__.lower()
-
-
 def one_hot(dims, value, indx):
     vec = torch.zeros(dims)
     vec[indx] = value
