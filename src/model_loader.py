@@ -39,7 +39,7 @@ def get_model(opt):
             small=True,
             channel_multiplier=config_gan["channel_multiplier"],
         )
-        G.load_state_dict(torch.load('/media/adarsh/DATA/new_check/180000.pt')["g_ema"])
+        G.load_state_dict(torch.load(opt.pretrained_gen_path))
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
@@ -47,9 +47,9 @@ def get_model(opt):
         raise NotImplementedError
 
     if opt.algorithm == 'LD':
-        deformator = LatentDeformator(shift_dim=opt.model.gen.latent_size,
+        deformator = LatentDeformator(shift_dim=opt.algo.ld.latent_dim,
                                       input_dim=opt.algo.ld.directions_count,  # dimension of one-hot encoded vector
-                                      out_dim=opt.model.gen.latent_size,
+                                      out_dim=opt.algo.ld.latent_dim,
                                       type=opt.algo.ld.deformator_type,
                                       random_init=opt.algo.ld.deformator_randint).to(device)
         if opt.algo.ld.shift_predictor == 'ResNet':

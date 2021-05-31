@@ -5,7 +5,6 @@ import torch
 
 import sklearn
 
-log = logging.getLogger(__name__)
 
 
 class MIG(object):

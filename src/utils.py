@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import torch
-import logging
 import fnmatch
 import shutil
 from typing import List, Tuple

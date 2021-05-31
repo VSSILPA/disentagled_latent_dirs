@@ -14,8 +14,6 @@ import os
 from config import BB_KWARGS
 import random
 
-log = logging.getLogger(__name__)
-
 
 class Evaluator(object):
     def __init__(self, config, opt):

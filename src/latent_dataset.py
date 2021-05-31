@@ -6,8 +6,6 @@ from config import generator_kwargs
 import random
 import logging
 
-log = logging.getLogger(__name__)
-
 
 class LatentDataset(Dataset):
     def __init__(self, generator, latent_directions, opt,root, create_new_data=False):
@@ -77,4 +75,4 @@ class LatentDataset(Dataset):
     def __getitem__(self, item):
         img = self.images[item]
         img = 2 * (img/255) - 1
-        return torch.from_numpy(img).float(), torch.from_numpy(self.labels[item]).float(),
+        return torch.from_numpy(img).float(), torch.from_numpy(self.labels[item]).float()

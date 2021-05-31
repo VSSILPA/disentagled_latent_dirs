@@ -13,7 +13,6 @@ import os
 import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
-import logging
 
 test_mode = True
 if test_mode:
@@ -46,7 +45,7 @@ parser.add_argument('--evaluation', type=bool, default=False, help='whether to r
 parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
 opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
@@ -54,6 +53,8 @@ opt.device = 'cuda:'
 opt.device_id = '0'
 opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7
 opt.random_seed = 2
+if opt.dataset == 'dsprites':
+    opt.num_generator_seeds = 1
 
 # ---------------------------------------------------------------------------- #
 # Options for Latent Discovery
@@ -61,9 +62,9 @@ opt.random_seed = 2
 opt.algo = CN()
 opt.algo.ld = CN()
 opt.algo.ld.batch_size = 32
-opt.algo.ld.latent_dim = 10
+opt.algo.ld.latent_dim = 64
 opt.algo.ld.num_steps = 20000
-opt.algo.ld.directions_count = 10
+opt.algo.ld.directions_count = 64
 opt.algo.ld.shift_scale = 6
 opt.algo.ld.min_shift = 0.5
 opt.algo.ld.deformator_lr = 0.0001
@@ -158,7 +159,7 @@ generator_kwargs = {
 
 opt.encoder = CN()
 opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 10  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.latent_dimension = 64  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
 opt.encoder.generator_bs = 50
 opt.encoder.batch_size = 128
 opt.encoder.root = 'generated_data'
@@ -181,13 +182,12 @@ BB_KWARGS = {
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
 }
 if opt.algorithm == 'LD':
-    assert opt.model.gen.latent_size == opt.algo.ld.latent_dim
     assert opt.encoder.latent_dimension == opt.algo.ld.directions_count
 
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
-    logging.info(opt)
+    print(opt)
     return config.__dict__, opt
 
 
