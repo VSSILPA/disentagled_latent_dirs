@@ -49,6 +49,7 @@ opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGA
 opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
 opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
 opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7

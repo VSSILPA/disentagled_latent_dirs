@@ -11,7 +11,7 @@ from model_loader import get_model
 from train import Trainer
 from evaluation import Evaluator
 from saver import Saver
-from visualiser import Visualiser
+from visualiser import Visualiser,plot_generated_images
 import logging
 import torch
 import time
@@ -19,11 +19,9 @@ from statistics import mean, stdev
 
 
 def run_training_wrapper(configuration, opt, data, perf_logger):
-    for key, values in configuration.items():
-        logging.info(' {} : {}'.format(key, values))
     device = torch.device(opt.device + opt.device_id)
     metrics_seed = {'betavae_metric': [], 'factorvae_metric': [], 'mig': [], 'dci': []}
-    for i in range(opt.num_seeds):
+    for i in range(opt.num_generator_seeds):
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
         models = get_model(opt)
@@ -35,7 +33,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
 
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
-            visualise_results.plot_generated_images(opt, generator)
+            plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
@@ -77,13 +75,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     loss, logit_loss, shift_loss = 0, 0, 0
         elif opt.algorithm == 'CF':
             generator = models
-            visualise_results.plot_generated_images(opt, generator)
+            plot_generated_images(opt, generator)
             directions = model_trainer.train_closed_form(generator)
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'GS':
             generator = models
-            visualise_results.plot_generated_images(opt, generator)
+            plot_generated_images(opt, generator)
             directions = model_trainer.train_ganspace(generator)
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)

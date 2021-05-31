@@ -27,7 +27,7 @@ def add_border(tensor):
 
 
 def plot_generated_images(opt, generator):
-    z = torch.randn(50, generator.style_dim).cuda()
+    z = torch.randn(100, generator.style_dim).cuda()
     w = generator.style(z)
     imgs = generator([w], **generator_kwargs)[0]
     save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),
@@ -89,10 +89,10 @@ class Visualiser(object):
         for i in range(directions.in_features):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
-        batch_tensor = torch.stack(imgs).view(-1, 1, 64, 64)
+        batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, 64, 64)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
 
-        save_image(batch_tensor.view(-1, 1, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
+        save_image(batch_tensor.view(-1, self.opt.num_channels, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
     def generate_plot_save_results(self, results, plot_type):

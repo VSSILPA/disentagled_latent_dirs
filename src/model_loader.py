@@ -39,7 +39,7 @@ def get_model(opt):
             small=True,
             channel_multiplier=config_gan["channel_multiplier"],
         )
-        G.load_state_dict(torch.load('/media/adarsh/DATA/new_check/270000.pt')["g"])
+        G.load_state_dict(torch.load('/media/adarsh/DATA/new_check/180000.pt')["g_ema"])
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)

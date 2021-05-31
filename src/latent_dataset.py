@@ -4,6 +4,9 @@ import numpy as np
 import os
 from config import generator_kwargs
 import random
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class LatentDataset(Dataset):
@@ -62,6 +65,7 @@ class LatentDataset(Dataset):
             labels.append(w.detach().cpu().numpy())
 
         self.images = np.concatenate(images, 0)
+        logging.info('max value in image :' + str(self.images.max()))
         self.labels = np.concatenate(labels, 0)
         if save:
             path = os.path.join(self.root, dataset + ".npz")
@@ -72,5 +76,5 @@ class LatentDataset(Dataset):
 
     def __getitem__(self, item):
         img = self.images[item]
-        img = 2 * (img ) - 1
-        return (torch.from_numpy(img).float(), torch.from_numpy(self.labels[item]).float(),)
+        img = 2 * (img/255) - 1
+        return torch.from_numpy(img).float(), torch.from_numpy(self.labels[item]).float(),
