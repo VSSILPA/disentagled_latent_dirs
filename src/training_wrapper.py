@@ -16,11 +16,20 @@ import logging
 import torch
 import time
 from statistics import mean, stdev
+from utils import *
 
 
 def run_training_wrapper(configuration, opt, data, perf_logger):
     device = torch.device(opt.device + opt.device_id)
     metrics_seed = {'betavae_metric': [], 'factorvae_metric': [], 'mig': [], 'dci': []}
+    directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt','__pycache__'])
+    filtered_dirs = []
+    for file in directories:
+        x,y = file
+        if x.count('/') < 3:
+            filtered_dirs.append((x,y))
+    files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
+    copy_files_and_create_dirs(files)
     for i in range(opt.num_generator_seeds):
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
