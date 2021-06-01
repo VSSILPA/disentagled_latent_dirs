@@ -80,7 +80,7 @@ class Trainer(object):
 
     def make_shifts(self, latent_dim):
 
-        target_indices = torch.randint(0, self.opt.algo.ld.directions_count, [self.opt.algo.ld.batch_size],
+        target_indices = torch.randint(0, self.opt.algo.ld.num_directions, [self.opt.algo.ld.batch_size],
                                        device='cuda')
         if self.opt.algo.ld.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape, device='cuda')

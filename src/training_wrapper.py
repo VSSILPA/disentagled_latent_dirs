@@ -33,7 +33,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
 
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
-            # plot_generated_images(opt, generator)
+            plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
@@ -66,16 +66,18 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     total_loss, logit_loss, shift_loss = losses
                     logging.info(
                         "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
-                            i, opt.algo.ld.num_steps, time.time() - start_time,
+                            k, opt.algo.ld.num_steps, time.time() - start_time,
                             total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
                             shift_loss / opt.algo.ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    visualise_results.make_interpolation_chart(i, generator, deformator, shift_r=10, shifts_count=5)
+                    deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, 64)
+                    deformator_layer.weight.data = torch.FloatTensor(deformator.log_mat_half.data.cpu())
+                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10, shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     loss, logit_loss, shift_loss = 0, 0, 0
         elif opt.algorithm == 'CF':
             generator = models
-            # plot_generated_images(opt, generator)
+            plot_generated_images(opt, generator)
             directions = model_trainer.train_closed_form(generator)
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)

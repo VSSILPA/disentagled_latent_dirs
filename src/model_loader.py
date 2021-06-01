@@ -48,7 +48,7 @@ def get_model(opt):
 
     if opt.algorithm == 'LD':
         deformator = LatentDeformator(shift_dim=G.style_dim,
-                                      input_dim=opt.algo.ld.directions_count,  # dimension of one-hot encoded vector
+                                      input_dim=opt.algo.ld.num_directions,  # dimension of one-hot encoded vector
                                       out_dim=G.style_dim,
                                       type=opt.algo.ld.deformator_type,
                                       random_init=opt.algo.ld.deformator_randint).to(device)

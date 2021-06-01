@@ -22,7 +22,7 @@ def add_border(tensor):
 
 
 def plot_generated_images(opt, generator):
-    z = torch.randn(100, generator.style_dim).cuda()
+    z = torch.randn(50, generator.style_dim).cuda()
     w = generator.style(z)
     imgs = generator([w], **generator_kwargs)[0]
     save_image(imgs, opt.result_dir + '/visualisations/generated_images.jpeg', nrow=int(np.sqrt(len(imgs))),
