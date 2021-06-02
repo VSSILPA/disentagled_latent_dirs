@@ -11,7 +11,7 @@ from model_loader import get_model
 from train import Trainer
 from evaluation import Evaluator
 from saver import Saver
-from visualiser import Visualiser,plot_generated_images
+from visualiser import Visualiser, plot_generated_images
 import logging
 import torch
 import time
@@ -22,15 +22,16 @@ from utils import *
 def run_training_wrapper(configuration, opt, data, perf_logger):
     device = torch.device(opt.device + opt.device_id)
     metrics_seed = {'betavae_metric': [], 'factorvae_metric': [], 'mig': [], 'dci': []}
-    directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt','__pycache__'])
+    directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt', '__pycache__'])
     filtered_dirs = []
     for file in directories:
-        x,y = file
+        x, y = file
         if x.count('/') < 3:
-            filtered_dirs.append((x,y))
+            filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
     for i in range(opt.num_generator_seeds):
+        resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
         models = get_model(opt)
@@ -39,15 +40,17 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
-
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
-            plot_generated_images(opt, generator)
+            if configuration['resume_train']:
+                deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
+                    (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
+            # plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
-            for k in range(opt.algo.ld.num_steps):
+            for k in range(resume_step+1, opt.algo.ld.num_steps):
                 start_time = time.time()
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
@@ -56,19 +59,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 loss = loss + losses[0]
                 logit_loss = logit_loss + losses[1]
                 shift_loss = shift_loss + losses[2]
-                if k % opt.algo.ld.saving_freq == 0 and k != 0:
-                    params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
-                    perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, i, algo='LD')
-                    total_loss, logit_loss, shift_loss = losses
-                    logging.info(
-                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
-                            k, opt.algo.ld.num_steps, time.time() - start_time,
-                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
-                            shift_loss / opt.algo.ld.logging_freq))
-                    loss, logit_loss, shift_loss = 0, 0, 0
-                    perf_logger.stop_monitoring("Saving Model")
-
                 if k % opt.algo.ld.logging_freq == 0 and k != 0:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
@@ -81,9 +71,22 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, 64)
                     deformator_layer.weight.data = torch.FloatTensor(deformator.log_mat_half.data.cpu())
-                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10, shifts_count=5)
+                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
+                                                               shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     loss, logit_loss, shift_loss = 0, 0, 0
+                if k % opt.algo.ld.saving_freq == 0 and k != 0:
+                    params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt, generator)
+                    perf_logger.start_monitoring("Saving Model")
+                    total_loss, logit_loss, shift_loss = losses
+                    logging.info(
+                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
+                            k, opt.algo.ld.num_steps, time.time() - start_time,
+                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
+                            shift_loss / opt.algo.ld.logging_freq))
+                    loss, logit_loss, shift_loss = 0, 0, 0
+                    saver.save_model(params, k, algo='LD')
+                    perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'CF':
             generator = models
             plot_generated_images(opt, generator)
@@ -104,7 +107,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         metrics_seed['dci'].append(metrics['dci'])
 
     if opt.dataset != 'dsprites':
-
         logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
             stdev(metrics_seed['betavae_metric'])) + '\n' +
                      'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(

@@ -42,7 +42,8 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='45_vae.pkl', help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='1000_model.pkl', help='name of the model to be loaded')
+parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
@@ -71,7 +72,7 @@ opt.algo.ld.deformator_lr = 0.0001
 opt.algo.ld.shift_predictor_lr = 0.0001
 opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
-opt.algo.ld.deformator_randint = True
+opt.algo.ld.deformator_randint = False
 opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
 opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
