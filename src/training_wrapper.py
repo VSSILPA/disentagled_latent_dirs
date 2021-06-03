@@ -43,8 +43,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
-                generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
-                    (generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
+                deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
+                    (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
             # plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
@@ -52,7 +52,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             loss, logit_loss, shift_loss = 0, 0, 0
             for k in range(resume_step+1, opt.algo.ld.num_steps):
                 start_time = time.time()
-                generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
                         generator, deformator, shift_predictor, deformator_opt,
                         shift_predictor_opt)
@@ -76,7 +76,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     loss, logit_loss, shift_loss = 0, 0, 0
                 if k % opt.algo.ld.saving_freq == 0 and k != 0:
-                    params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt, generator)
+                    params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
                     total_loss, logit_loss, shift_loss = losses
                     logging.info(

@@ -48,7 +48,7 @@ class Trainer(object):
         deformator_opt.step()
         shift_predictor_opt.step()
 
-        return generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
+        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
             loss.item(), logit_loss.item(), shift_loss.item())
 
     def train_ganspace(self, generator):

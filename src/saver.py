@@ -17,14 +17,13 @@ class Saver(object):
         if not os.path.exists(models_dir):
             os.makedirs(models_dir)
         if algo == 'LD':
-            deformator, shift_predictor, deformator_opt, shift_predictor_opt,generator = params
+            deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
             torch.save({
                 'step': step,
                 'deformator': deformator.state_dict(),
                 'shift_predictor': shift_predictor.state_dict(),
                 'deformator_opt': deformator_opt.state_dict(),
                 'shift_predictor_opt': shift_predictor_opt.state_dict(),
-                'generator': generator.state_dict(),
                 'torch_rng_state': torch.get_rng_state(),
                 'np_rng_state': np.random.get_state(),
                 'random_state': random.getstate()
@@ -37,17 +36,16 @@ class Saver(object):
         models_dir = os.path.dirname(os.getcwd()) + f'/pretrained_models/' + self.config['file_name']  # project root
         checkpoint = torch.load(models_dir)
         if algo == 'LD':
-            generator ,deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
+            deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
             deformator.load_state_dict(checkpoint['deformator'])
             shift_predictor.load_state_dict(checkpoint['shift_predictor'])
             deformator_opt.load_state_dict(checkpoint['deformator_opt'])
             shift_predictor_opt.load_state_dict(checkpoint['shift_predictor_opt'])
-            generator.load_state_dict(checkpoint['generator'])
             torch.set_rng_state(checkpoint['torch_rng_state'])
             np.random.set_state(checkpoint['np_rng_state'])
             random.setstate(checkpoint['random_state'])
 
-            return generator , deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
+            return deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
         else:
             raise NotImplementedError
 
