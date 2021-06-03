@@ -5,7 +5,6 @@ import torch.nn as nn
 from config import generator_kwargs
 
 
-
 class Trainer(object):
 
     def __init__(self, config, opt):

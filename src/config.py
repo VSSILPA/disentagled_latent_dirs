@@ -14,7 +14,7 @@ import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = True
+test_mode = False
 if test_mode:
     experiment_name = 'stabilsation'
     experiment_description = 'setting up working code base'
@@ -43,11 +43,11 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
 parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
-parser.add_argument('--resume_train', type=bool, default= True, help='name of the model to be loaded')
+parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','anime_face', 'shapes3d','mnist','CelebA]
+opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
@@ -80,8 +80,8 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 1500
-opt.algo.ld.saving_freq = 500
+opt.algo.ld.logging_freq = 2000
+opt.algo.ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form
@@ -160,7 +160,7 @@ generator_kwargs = {
 
 opt.encoder = CN()
 opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 64  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
+opt.encoder.latent_dimension = 10  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
 opt.encoder.generator_bs = 50
 opt.encoder.batch_size = 128
 opt.encoder.root = 'generated_data'
