@@ -62,7 +62,7 @@ if opt.dataset == 'dsprites':
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.ld = CN()
-opt.algo.ld.batch_size = 1
+opt.algo.ld.batch_size = 32
 opt.algo.ld.latent_dim = 64
 opt.algo.ld.num_steps = 5000
 opt.algo.ld.num_directions = 64
@@ -73,7 +73,7 @@ opt.algo.ld.shift_predictor_lr = 0.0001
 opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
-opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
 opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
