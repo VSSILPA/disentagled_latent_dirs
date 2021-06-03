@@ -37,16 +37,17 @@ class Saver(object):
         models_dir = os.path.dirname(os.getcwd()) + f'/pretrained_models/' + self.config['file_name']  # project root
         checkpoint = torch.load(models_dir)
         if algo == 'LD':
-            deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
+            generator ,deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
             deformator.load_state_dict(checkpoint['deformator'])
             shift_predictor.load_state_dict(checkpoint['shift_predictor'])
             deformator_opt.load_state_dict(checkpoint['deformator_opt'])
             shift_predictor_opt.load_state_dict(checkpoint['shift_predictor_opt'])
+            generator.load_state_dict(checkpoint['generator'])
             torch.set_rng_state(checkpoint['torch_rng_state'])
             np.random.set_state(checkpoint['np_rng_state'])
             random.setstate(checkpoint['random_state'])
 
-            return deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
+            return generator , deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
         else:
             raise NotImplementedError
 

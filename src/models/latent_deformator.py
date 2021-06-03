@@ -40,7 +40,7 @@ class LatentDeformator(nn.Module):
         elif self.type == 'ortho':
             assert self.input_dim == self.out_dim, 'In/out dims must be equal for ortho'
             self.log_mat_half = nn.Parameter((1.0 if random_init else 0.001) * torch.randn(
-                [self.input_dim, self.input_dim], device='cuda'), True)
+                [self.input_dim, self.input_dim]).cuda(), True)
 
         elif self.type == 'random':
             self.linear = torch.empty([self.out_dim, self.input_dim])
@@ -78,7 +78,7 @@ class LatentDeformator(nn.Module):
 
         flat_shift_dim = np.product(self.shift_dim)
         if out.shape[1] < flat_shift_dim:
-            padding = torch.zeros([out.shape[0], flat_shift_dim - out.shape[1]], device=out.device)
+            padding = torch.zeros([out.shape[0], flat_shift_dim - out.shape[1]]).cuda()
             out = torch.cat([out, padding], dim=1)
         elif out.shape[1] > flat_shift_dim:
             out = out[:, :flat_shift_dim]
@@ -94,7 +94,7 @@ class LatentDeformator(nn.Module):
 
 def normal_projection_stat(x):
     x = x.view([x.shape[0], -1])
-    direction = torch.randn(x.shape[1], requires_grad=False, device=x.device)
+    direction = torch.randn(x.shape[1], requires_grad=False).cuda()
     direction = direction / torch.norm(direction)
     projection = torch.matmul(x, direction)
 

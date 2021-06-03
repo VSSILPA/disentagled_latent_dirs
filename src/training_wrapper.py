@@ -43,8 +43,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
-                    (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
+                generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
+                    (generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
             # plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
@@ -52,7 +52,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             loss, logit_loss, shift_loss = 0, 0, 0
             for k in range(resume_step+1, opt.algo.ld.num_steps):
                 start_time = time.time()
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
                         generator, deformator, shift_predictor, deformator_opt,
                         shift_predictor_opt)

@@ -48,7 +48,7 @@ class Trainer(object):
         deformator_opt.step()
         shift_predictor_opt.step()
 
-        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
+        return generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
             loss.item(), logit_loss.item(), shift_loss.item())
 
     def train_ganspace(self, generator):
@@ -80,12 +80,11 @@ class Trainer(object):
 
     def make_shifts(self, latent_dim):
 
-        target_indices = torch.randint(0, self.opt.algo.ld.num_directions, [self.opt.algo.ld.batch_size],
-                                       device='cuda')
+        target_indices = torch.randint(0, self.opt.algo.ld.num_directions, [self.opt.algo.ld.batch_size]).cuda()
         if self.opt.algo.ld.shift_distribution == "normal":
-            shifts = torch.randn(target_indices.shape, device='cuda')
+            shifts = torch.randn(target_indices.shape)
         elif self.opt.algo.ld.shift_distribution == "uniform":
-            shifts = 2.0 * torch.rand(target_indices.shape, device='cuda') - 1.0
+            shifts = 2.0 * torch.rand(target_indices.shape).cuda() - 1.0
 
         shifts = self.opt.algo.ld.shift_scale * shifts
         shifts[(shifts < self.opt.algo.ld.min_shift) & (shifts > 0)] = self.opt.algo.ld.min_shift
@@ -96,7 +95,7 @@ class Trainer(object):
             latent_dim = list(latent_dim)
         except Exception:
             latent_dim = [latent_dim]
-        z_shift = torch.zeros([self.opt.algo.ld.batch_size] + latent_dim, device='cuda')
+        z_shift = torch.zeros([self.opt.algo.ld.batch_size] + latent_dim).cuda()
         for i, (index, val) in enumerate(zip(target_indices, shifts)):
             z_shift[i][index] += val
 
