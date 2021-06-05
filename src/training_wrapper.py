@@ -70,7 +70,10 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                             shift_loss / opt.algo.ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, opt.algo.ld.latent_dim)
-                    deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
+                    if opt.algo.ld.deformator_type == 'ortho':
+                        deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
+                    else:
+                        deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
                     visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
@@ -78,13 +81,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 if k % opt.algo.ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
-                    total_loss, logit_loss, shift_loss = losses
-                    logging.info(
-                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
-                            k, opt.algo.ld.num_steps, time.time() - start_time,
-                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
-                            shift_loss / opt.algo.ld.logging_freq))
-                    loss, logit_loss, shift_loss = 0, 0, 0
                     saver.save_model(params, k, algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'CF':

@@ -15,13 +15,13 @@ import logging
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = True
+test_mode = False
 if test_mode:
     experiment_name = 'latent discovery shapes 3d'
     experiment_description = 'setting up working code base'
 else:
     experiment_name = input("Enter experiment name ")
-    experiment_description = 'first run of shapes 3d for dsprites'
+    experiment_description = 'first run of shapes 3d for latent discovert with ortho'
     if experiment_name == '':
         print('enter valid experiment name')
         sys.exit()
@@ -74,7 +74,7 @@ opt.algo.ld.shift_predictor_lr = 0.0001
 opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
-opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
 opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
