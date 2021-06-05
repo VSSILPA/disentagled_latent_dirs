@@ -11,16 +11,17 @@
 import argparse
 import os
 import sys
+import logging
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = False
+test_mode = True
 if test_mode:
-    experiment_name = 'stabilsation'
+    experiment_name = 'latent discovery shapes 3d'
     experiment_description = 'setting up working code base'
 else:
     experiment_name = input("Enter experiment name ")
-    experiment_description = 'test'
+    experiment_description = 'first run of shapes 3d for dsprites'
     if experiment_name == '':
         print('enter valid experiment name')
         sys.exit()
@@ -46,9 +47,9 @@ parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name
 parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'CF'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
+opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
+opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -63,9 +64,9 @@ if opt.dataset == 'dsprites':
 opt.algo = CN()
 opt.algo.ld = CN()
 opt.algo.ld.batch_size = 32
-opt.algo.ld.latent_dim = 64
-opt.algo.ld.num_steps = 5000
-opt.algo.ld.num_directions = 64
+opt.algo.ld.latent_dim = 512
+opt.algo.ld.num_steps = 5001
+opt.algo.ld.num_directions = 10
 opt.algo.ld.shift_scale = 6
 opt.algo.ld.min_shift = 0.5
 opt.algo.ld.deformator_lr = 0.0001
@@ -80,7 +81,7 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 2000
+opt.algo.ld.logging_freq = 1000
 opt.algo.ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
@@ -188,7 +189,7 @@ if opt.algorithm == 'LD':
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
-    print(opt)
+    logging.info(opt)
     return config.__dict__, opt
 
 

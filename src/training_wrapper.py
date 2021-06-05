@@ -69,8 +69,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                             total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
                             shift_loss / opt.algo.ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, 64)
-                    deformator_layer.weight.data = torch.FloatTensor(deformator.log_mat_half.data.cpu())
+                    deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, opt.algo.ld.latent_dim)
+                    deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
                     visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")

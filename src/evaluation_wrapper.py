@@ -1,5 +1,5 @@
 from model_loader import get_model
-from src.evaluation import Evaluator
+from evaluation import Evaluator
 from train import Trainer
 from saver import Saver
 from visualiser import Visualiser
