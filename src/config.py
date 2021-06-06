@@ -81,7 +81,7 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 1000
+opt.algo.ld.logging_freq = 5000
 opt.algo.ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
