@@ -106,6 +106,7 @@ opt.algo.linear_combo.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
 opt.algo.linear_combo.truncation = None
+opt.algo.linear_combo.file_name = None
 opt.algo.linear_combo.logging_freq = 5000
 opt.algo.linear_combo.saving_freq = 1000
 

@@ -73,6 +73,9 @@ def get_model(opt):
                                       out_dim=G.style_dim,
                                       type=opt.algo.linear_combo.deformator_type,
                                       random_init=opt.algo.linear_combo.deformator_randint).to(device)
+        models_dir = os.path.dirname(os.getcwd()) + f'/pretrained_models/' + opt.algo.linear_combo.file_name  # project root
+        checkpoint = torch.load(models_dir)
+        deformator.load_state_dict(checkpoint['deformator'])
         if opt.algo.linear_combo.shift_predictor == 'ResNet':
             shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,channels=1 if opt.dataset == 'dsprites' else 3).to(device)
         elif opt.algo.linear_combo.shift_predictor == 'LeNet':
