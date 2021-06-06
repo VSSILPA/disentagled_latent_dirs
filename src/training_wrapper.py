@@ -81,7 +81,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 if k % opt.algo.ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, algo='LD')
+                    saver.save_model(params, k, i , algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'CF':
             generator = models
