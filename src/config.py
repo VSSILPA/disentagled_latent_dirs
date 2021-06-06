@@ -15,7 +15,7 @@ import logging
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = False
+test_mode = True
 if test_mode:
     experiment_name = 'latent discovery shapes 3d'
     experiment_description = 'setting up working code base'

@@ -6,7 +6,7 @@ from config import generator_kwargs
 import random
 import logging
 
-
+##todo dependent on image quality...thus use dataset as proxy somehow
 class LatentDataset(Dataset):
     def __init__(self, generator, latent_directions, opt,root, create_new_data=False):
         super().__init__()
@@ -26,7 +26,7 @@ class LatentDataset(Dataset):
                                     N=self.opt.encoder.num_samples, save=True)
 
         if opt.algorithm == 'LD' and opt.algo.ld.deformator_type == 'ortho':
-            directions = latent_directions.log_mat_half.data.detach().cpu().numpy()
+            directions = latent_directions.ortho_mat.data.detach().cpu().numpy()
         else:
             directions = latent_directions.linear.weight.detach().cpu().numpy()
         self.labels = self.labels @ directions
