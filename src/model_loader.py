@@ -63,8 +63,27 @@ def get_model(opt):
 
         shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
         models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
-    elif opt.algorithm == 'CF' or 'GS':
+    elif opt.algorithm == 'CF':
         return G
+    elif opt.algorithm == 'GS':
+        return G
+    elif opt.algorithm =='linear_combo':
+        deformator = LatentDeformator(shift_dim=G.style_dim,
+                                      input_dim=opt.algo.linear_combo.num_directions,  # dimension of one-hot encoded vector
+                                      out_dim=G.style_dim,
+                                      type=opt.algo.linear_combo.deformator_type,
+                                      random_init=opt.algo.linear_combo.deformator_randint).to(device)
+        if opt.algo.linear_combo.shift_predictor == 'ResNet':
+            shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,channels=1 if opt.dataset == 'dsprites' else 3).to(device)
+        elif opt.algo.linear_combo.shift_predictor == 'LeNet':
+            shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
+        else:
+            raise NotImplementedError
+
+        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.linear_combo.deformator_lr)
+
+        shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.linear_combo.shift_predictor_lr)
+        models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     else:
         raise NotImplementedError
     return models

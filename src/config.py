@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'latent discovery shapes 3d'
+    experiment_name = 'test'
     experiment_description = 'setting up working code base'
 else:
     experiment_name = input("Enter experiment name ")
@@ -47,9 +47,9 @@ parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name
 parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
-opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-opt.pretrained_gen_root = 'models/pretrained/new_generators/'
+opt.algorithm = 'linear_combo'  # choices=['LD', 'CF', 'linear_combo', 'GS']
+opt.dataset = 'dsprites'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
+opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -83,6 +83,31 @@ opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
 opt.algo.ld.logging_freq = 5000
 opt.algo.ld.saving_freq = 1000
+
+# ---------------------------------------------------------------------------- #
+# Options for Linear Combination latent discovery(pretrained)
+# ---------------------------------------------------------------------------- #
+opt.algo = CN()
+opt.algo.linear_combo = CN()
+opt.algo.linear_combo.batch_size = 32
+opt.algo.linear_combo.latent_dim = 512
+opt.algo.linear_combo.num_steps = 5001
+opt.algo.linear_combo.num_directions = 10
+opt.algo.linear_combo.combo_dirs = 2
+opt.algo.linear_combo.shift_scale = 6
+opt.algo.linear_combo.min_shift = 0.5
+opt.algo.linear_combo.deformator_lr = 0.0001
+opt.algo.linear_combo.shift_predictor_lr = 0.0001
+opt.algo.linear_combo.beta1 = 0.9
+opt.algo.linear_combo.beta2 = 0.999
+opt.algo.linear_combo.deformator_randint = True
+opt.algo.linear_combo.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.linear_combo.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
+opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
+opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
+opt.algo.linear_combo.truncation = None
+opt.algo.linear_combo.logging_freq = 5000
+opt.algo.linear_combo.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form

@@ -29,17 +29,17 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.ld.batch_size, generator.style_dim).cuda()
-        target_indices, shifts, z_shift = self.make_shifts(deformator.input_dim)
+        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
+        z_shift = self.make_shifts_linear_combo()
 
         shift = deformator(z_shift)
         w = generator.style(z)
         imgs, _ = generator([w], **generator_kwargs)
         imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
-        logits, shift_prediction = shift_predictor(imgs, imgs_shifted)
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
-        shift_loss = self.opt.algo.ld.shift_weight * torch.mean(torch.abs(shift_prediction - shifts))
+        _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
+        logit_loss = 0
+        shift_loss = torch.mean(torch.abs(shift_prediction - z_shift))
 
         loss = logit_loss + shift_loss
         loss.backward()
@@ -48,7 +48,7 @@ class Trainer(object):
         shift_predictor_opt.step()
 
         return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
-            loss.item(), logit_loss.item(), shift_loss.item())
+            loss.item(), 0, shift_loss.item())
 
     def train_ganspace(self, generator):
 
@@ -99,3 +99,19 @@ class Trainer(object):
             z_shift[i][index] += val
 
         return target_indices, shifts, z_shift
+
+    def make_shifts_linear_combo(self):
+
+        directions_count = list(range(self.opt.algo.linear_combo.num_directions))
+        sampled_directions_batch = [random.sample(directions_count,2) for x in range(self.opt.algo.linear_combo.batch_size)]
+        selected_directions = torch.zeros((self.opt.algo.linear_combo.batch_size, self.opt.algo.linear_combo.num_directions)).cuda()
+        for idx,nonzero_idx in enumerate(sampled_directions_batch):
+            for i in nonzero_idx:
+                selected_directions[idx][i] = 1
+        epsilon = torch.FloatTensor(self.opt.algo.linear_combo.batch_size, self.opt.algo.linear_combo.num_directions).uniform_(-self.opt.algo.linear_combo.shift_scale, self.opt.algo.linear_combo.shift_scale).cuda()
+        z_shift = selected_directions * epsilon
+        z_shift[(z_shift < self.opt.algo.linear_combo.min_shift) & (z_shift > 0)] = self.opt.algo.linear_combo.min_shift
+        z_shift[(z_shift > -self.opt.algo.linear_combo.min_shift) & (z_shift < 0)] = -self.opt.algo.linear_combo.min_shift
+
+
+        return z_shift
