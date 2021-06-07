@@ -27,6 +27,10 @@ class LatentDataset(Dataset):
 
         if opt.algorithm == 'LD' and opt.algo.ld.deformator_type == 'ortho':
             directions = latent_directions.ortho_mat.data.detach().cpu().numpy()
+        elif opt.algorithm == 'GS' and opt.dataset =='dsprites':
+            directions = latent_directions.weight.detach().cpu().numpy()
+        elif opt.algorithm == 'CF' and opt.dataset =='dsprites':
+            directions = latent_directions.weight.detach().cpu().numpy()
         else:
             directions = latent_directions.linear.weight.detach().cpu().numpy()
         self.labels = self.labels @ directions
@@ -57,7 +61,6 @@ class LatentDataset(Dataset):
         labels = []
 
         for _ in range(N // generator_bs):
-
             z = torch.randn(generator_bs, generator.style_dim).to(self.device)
             w = generator.style(z)
             x = generator([w], **generator_kwargs)[0]

@@ -102,7 +102,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         metrics_seed['mig'].append(metrics['mig'])
         metrics_seed['dci'].append(metrics['dci'])
 
-    if opt.dataset != 'dsprites':
+    if opt.dataset != 'shapes3d':  # since running only for one seed ..not enough points for std dev calculation
         logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
             stdev(metrics_seed['betavae_metric'])) + '\n' +
                      'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(

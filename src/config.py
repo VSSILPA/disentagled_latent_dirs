@@ -15,10 +15,10 @@ import logging
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
-test_mode = True
+test_mode = False
 if test_mode:
-    experiment_name = 'latent discovery shapes 3d'
-    experiment_description = 'setting up working code base'
+    experiment_name = 'test'
+    experiment_description = 'test'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -49,6 +49,7 @@ opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'LD'  # choices=['LD', 'CF', 'Ours', 'GS']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
+#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
@@ -189,7 +190,7 @@ if opt.algorithm == 'LD':
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
-    logging.info(opt)
+    print(opt)
     return config.__dict__, opt
 
 
