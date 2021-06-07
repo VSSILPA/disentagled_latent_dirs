@@ -24,7 +24,7 @@ class ResNetShiftPredictor(nn.Module):
 
         # half dimension as we expect the model to be symmetric
         self.type_estimator = nn.Linear(512, np.product(dim))
-        self.shift_estimator = nn.Linear(512, 10)
+        self.shift_estimator = nn.Linear(512, 2)
         ## regressing on 10 directions
 
     def forward(self, x1, x2):

@@ -30,7 +30,7 @@ class Trainer(object):
         shift_predictor.zero_grad()
 
         z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        z_shift = self.make_shifts_linear_combo()
+        z_shift,ground_truths = self.make_shifts_linear_combo()
 
         shift = deformator(z_shift)
         w = generator.style(z)
@@ -39,7 +39,7 @@ class Trainer(object):
 
         _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
         logit_loss = 0
-        shift_loss = torch.mean(torch.abs(shift_prediction - z_shift))
+        shift_loss = torch.mean(torch.abs(shift_prediction - ground_truths))
 
         loss = logit_loss + shift_loss
         loss.backward()
@@ -104,6 +104,7 @@ class Trainer(object):
 
         directions_count = list(range(self.opt.algo.linear_combo.num_directions))
         sampled_directions_batch = [random.sample(directions_count,self.opt.algo.linear_combo.combo_dirs) for x in range(self.opt.algo.linear_combo.batch_size)]
+        ground_truths = torch.Tensor(np.array(sampled_directions_batch)).cuda()
         selected_directions = torch.zeros((self.opt.algo.linear_combo.batch_size, self.opt.algo.linear_combo.num_directions)).cuda()
         for idx,nonzero_idx in enumerate(sampled_directions_batch):
             for i in nonzero_idx:
@@ -114,4 +115,4 @@ class Trainer(object):
         z_shift[(z_shift > -self.opt.algo.linear_combo.min_shift) & (z_shift < 0)] = -self.opt.algo.linear_combo.min_shift
 
 
-        return z_shift
+        return z_shift ,ground_truths
