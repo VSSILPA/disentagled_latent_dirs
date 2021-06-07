@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(opt.num_generator_seeds):
+    for i in range(7, opt.num_generator_seeds):
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
@@ -81,7 +81,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 if k % opt.algo.ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, algo='LD')
+                    saver.save_model(params, k, i , algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'linear_combo':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
@@ -124,7 +124,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 if k % opt.algo.ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, algo='LD')
+                    saver.save_model(params, k,i, algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'CF':
             generator = models
@@ -145,7 +145,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         metrics_seed['mig'].append(metrics['mig'])
         metrics_seed['dci'].append(metrics['dci'])
 
-    if opt.dataset != 'dsprites':
+    if opt.dataset != 'shapes3d':  # since running only for one seed ..not enough points for std dev calculation
         logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
             stdev(metrics_seed['betavae_metric'])) + '\n' +
                      'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(
