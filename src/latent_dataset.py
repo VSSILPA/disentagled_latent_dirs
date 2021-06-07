@@ -25,7 +25,7 @@ class LatentDataset(Dataset):
                 self._generate_data(generator=generator, generator_bs=self.opt.encoder.generator_bs, dataset=self.opt.dataset,
                                     N=self.opt.encoder.num_samples, save=True)
 
-        if opt.algorithm == 'LD' and opt.algo.ld.deformator_type == 'ortho':
+        if opt.algorithm == 'linear_combo' and opt.algo.linear_combo.deformator_type == 'ortho':
             directions = latent_directions.ortho_mat.data.detach().cpu().numpy()
         else:
             directions = latent_directions.linear.weight.detach().cpu().numpy()

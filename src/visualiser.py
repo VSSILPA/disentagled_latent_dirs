@@ -83,6 +83,8 @@ class Visualiser(object):
         imgs = []
         if self.opt.algorithm == 'LD':
             num_directions = self.opt.algo.ld.num_directions
+        elif self.opt.algorithm == 'linear_combo':
+            num_directions = self.opt.algo.linear_combo.num_directions
         elif self.opt.algorithm =='GS':
             num_directions = self.opt.algo.gs.num_directions
         elif self.opt.algorithm == 'CF' :
