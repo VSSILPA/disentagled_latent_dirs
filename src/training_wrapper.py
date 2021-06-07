@@ -102,18 +102,18 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 loss = loss + losses[0]
                 logit_loss = logit_loss + losses[1]
                 shift_loss = shift_loss + losses[2]
-                if k % opt.algo.ld.logging_freq == 0 and k != 0:
+                if k % opt.algo.linear_combo.logging_freq == 0 and k != 0:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
                     total_loss, logit_loss, shift_loss = losses
                     logging.info(
                         "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
-                            k, opt.algo.ld.num_steps, time.time() - start_time,
-                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
-                            shift_loss / opt.algo.ld.logging_freq))
+                            k, opt.algo.linear_combo.num_steps, time.time() - start_time,
+                            total_loss / opt.algo.linear_combo.logging_freq, logit_loss / opt.algo.linear_combo.logging_freq,
+                            shift_loss / opt.algo.linear_combo.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, opt.algo.ld.latent_dim)
-                    if opt.algo.ld.deformator_type == 'ortho':
+                    deformator_layer = torch.nn.Linear(opt.algo.linear_combo.num_directions, opt.algo.linear_combo.latent_dim)
+                    if opt.algo.linear_combo.deformator_type == 'ortho':
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     else:
                         deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
@@ -121,7 +121,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     loss, logit_loss, shift_loss = 0, 0, 0
-                if k % opt.algo.ld.saving_freq == 0 and k != 0:
+                if k % opt.algo.linear_combo.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
                     saver.save_model(params, k,i, algo='LD')
