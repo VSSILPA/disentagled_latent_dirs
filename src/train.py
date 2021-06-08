@@ -30,7 +30,24 @@ class Trainer(object):
         shift_predictor.zero_grad()
 
         z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        z_shift,ground_truths = self.make_shifts_linear_combo()
+        z_shift, ground_truths = self.make_shifts_linear_combo()
+
+        shift = deformator(z_shift)
+        w = generator.style(z)
+        imgs, _ = generator([w], **generator_kwargs)
+        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
+        _, shift_prediction = shift_predictor(imgs.detach(), imgs_shifted.detach())
+        shift_loss = torch.mean(torch.abs(shift_prediction - ground_truths))
+        shift_loss.backward()
+        shift_predictor_opt.step()
+
+
+        generator.zero_grad()
+        deformator.zero_grad()
+        shift_predictor.zero_grad()
+
+        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
+        z_shift, ground_truths = self.make_shifts_linear_combo()
 
         shift = deformator(z_shift)
         w = generator.style(z)
@@ -38,17 +55,15 @@ class Trainer(object):
         imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
         _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
-        logit_loss = 0
         shift_loss = torch.mean(torch.abs(shift_prediction - ground_truths))
 
-        loss = logit_loss + shift_loss
-        loss.backward()
+        shift_loss.backward()
 
         deformator_opt.step()
-        shift_predictor_opt.step()
+
 
         return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
-            loss.item(), 0, shift_loss.item())
+            0, 0, shift_loss.item())
 
     def train_ganspace(self, generator):
 
