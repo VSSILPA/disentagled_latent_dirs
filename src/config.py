@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'linear_combination_infogan_cr_2dim_regressor'
-    experiment_description ='latent regressorextending dim to 2'
+    experiment_name = 'linear_combination_uniform-11_10dim_infogan_similar_from scratch'
+    experiment_description ='running infogan task on pretrained latent discovert model_from scartch rather than pretrained'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
