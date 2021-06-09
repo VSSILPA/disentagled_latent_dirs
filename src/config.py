@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'linear_combination_uniform-11_10dim_infogan_similar_from scratch'
-    experiment_description ='running infogan task on pretrained latent discovert model_from scartch rather than pretrained'
+    experiment_name = 'trying_infogan_cr_based_method_on_pretrained_via_infogan'
+    experiment_description ='running infogan cr task on model trained via infogan mode'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -107,7 +107,7 @@ opt.algo.linear_combo.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
 opt.algo.linear_combo.truncation = None
-opt.algo.linear_combo.file_name = '5000_model_ld_gen7.pkl'
+opt.algo.linear_combo.file_name = '5000_infogan.pkl'
 opt.algo.linear_combo.logging_freq = 5000
 opt.algo.linear_combo.saving_freq = 1000
 

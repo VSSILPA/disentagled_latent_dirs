@@ -25,21 +25,21 @@ class Trainer(object):
 
     def train_latent_discovery(self, generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
 
-#        generator.zero_grad()
-#        deformator.zero_grad()
-#        shift_predictor.zero_grad()
+        generator.zero_grad()
+        deformator.zero_grad()
+        shift_predictor.zero_grad()
 
-#        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-#        epsilon  = self.make_shifts_linear_combo()
+        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
+        target_indices,_, z_shift=self.make_shifts()
 
-#        shift = deformator(epsilon)
-#        w = generator.style(z)
-#        imgs, _ = generator([w], **generator_kwargs)
-#        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-#        _, shift_prediction = shift_predictor(imgs.detach(), imgs_shifted.detach())
-#        shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
-#        shift_loss.backward()
-#        shift_predictor_opt.step()
+        shift = deformator(z_shift)
+        w = generator.style(z)
+        imgs, _ = generator([w], **generator_kwargs)
+        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
+        logits, _ = shift_predictor(imgs.detach(), imgs_shifted.detach())
+        logit_loss = self.cross_entropy(logits, target_indices.cuda())
+        logit_loss.backward()
+        shift_predictor_opt.step()
 
 
         generator.zero_grad()
@@ -54,17 +54,18 @@ class Trainer(object):
         imgs, _ = generator([w], **generator_kwargs)
         imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
-        _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
+        logits , shift_prediction = shift_predictor(imgs, imgs_shifted)
         shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
+        loss = logit_loss + 0.1*shift_loss
 
-        shift_loss.backward()
-        shift_predictor_opt.step()
+        loss.backward()
+#        shift_predictor_opt.step()
 
         deformator_opt.step()
 
 
         return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (
-            0, 0, shift_loss.item())
+            0, 0, loss.item())
 
     def train_ganspace(self, generator):
 
