@@ -119,7 +119,7 @@ class Trainer(object):
 
         directions_count = list(range(self.opt.algo.linear_combo.num_directions))
         sampled_directions_batch = [random.sample(directions_count,self.opt.algo.linear_combo.combo_dirs) for x in range(self.opt.algo.linear_combo.batch_size)]
-        ground_truths = torch.Tensor(np.array(sampled_directions_batch)).cuda()
+        ground_truth_idx = torch.Tensor(np.array(sampled_directions_batch)).cuda()
         selected_directions = torch.zeros((self.opt.algo.linear_combo.batch_size, self.opt.algo.linear_combo.num_directions)).cuda()
         for idx,nonzero_idx in enumerate(sampled_directions_batch):
             for i in nonzero_idx:
@@ -128,6 +128,6 @@ class Trainer(object):
         z_shift = selected_directions * epsilon
         z_shift[(z_shift < self.opt.algo.linear_combo.min_shift) & (z_shift > 0)] = self.opt.algo.linear_combo.min_shift
         z_shift[(z_shift > -self.opt.algo.linear_combo.min_shift) & (z_shift < 0)] = -self.opt.algo.linear_combo.min_shift
-
+        ground_truths = z_shift.gather(dim=1, index = ground_truth_idx.long())
 
         return z_shift ,ground_truths
