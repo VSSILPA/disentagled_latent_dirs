@@ -84,7 +84,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     saver.save_model(params, k, i , algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'linear_combo':
-            generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
+            generator, deformator, shift_predictor,cr_discriminator, cr_optimizer, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
@@ -92,12 +92,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
+            cr_discriminator.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
             for k in range(resume_step+1, opt.algo.linear_combo.num_steps):
                 start_time = time.time()
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                deformator, shift_predictor, cr_discriminator, cr_optimizer, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
-                        generator, deformator, shift_predictor, deformator_opt,
+                        generator, deformator, shift_predictor, cr_discriminator, cr_optimizer, deformator_opt,
                         shift_predictor_opt)
                 loss = loss + losses[0]
                 logit_loss = logit_loss + losses[1]
