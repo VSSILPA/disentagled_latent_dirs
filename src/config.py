@@ -49,8 +49,8 @@ opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'linear_combo'  # choices=['LD', 'CF', 'linear_combo', 'GS']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-# opt.pretrained_gen_root = 'models/pretrained/new_generators/'
+#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -90,7 +90,7 @@ opt.algo.ld.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.linear_combo = CN()
-opt.algo.linear_combo.batch_size = 1
+opt.algo.linear_combo.batch_size = 32
 opt.algo.linear_combo.latent_dim = 512
 opt.algo.linear_combo.num_steps = 5001
 opt.algo.linear_combo.num_directions = 10
@@ -108,7 +108,7 @@ opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'unif
 opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
 opt.algo.linear_combo.truncation = None
 opt.algo.linear_combo.file_name = '5000_infogan.pkl'
-opt.algo.linear_combo.logging_freq = 5000
+opt.algo.linear_combo.logging_freq = 1000
 opt.algo.linear_combo.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
