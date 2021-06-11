@@ -30,6 +30,7 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
         shift_predictor.zero_grad()
+        cr_discriminator.zero_grad()
 
         label_dis = torch.full((int(self.opt.algo.linear_combo.batch_size / 2),), 1, dtype=torch.long, device='cuda')
         label_ent = torch.full((int(self.opt.algo.linear_combo.batch_size / 2),), 0, dtype=torch.long, device='cuda')
@@ -51,8 +52,8 @@ class Trainer(object):
         shift = deformator(shift_entangled)
         imgs_entangled, _ = generator([w + shift], **generator_kwargs)
 
-        gen_images = torch.cat((imgs_disentangled, imgs_entangled))
-        ref_images = torch.cat((imgs, imgs))
+        gen_images = torch.cat((imgs_disentangled.detach(), imgs_entangled.detach()))
+        ref_images = torch.cat((imgs.detach(), imgs.detach()))
 
         shuffled_indices = torch.randint(0, gen_images.size(0), (gen_images.size(0),))
         ref_images = ref_images[shuffled_indices]
@@ -80,6 +81,12 @@ class Trainer(object):
 
         _, shift_prediction = shift_predictor(imgs, imgs_shifted)
         shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
+
+        ## disentagled or not part
+
+        label_dis = torch.full((int(self.opt.algo.linear_combo.batch_size / 2),), 1, dtype=torch.long, device='cuda')
+        label_ent = torch.full((int(self.opt.algo.linear_combo.batch_size / 2),), 0, dtype=torch.long, device='cuda')
+        labels = torch.cat((label_dis, label_ent))
 
         z = torch.randn(int(self.opt.algo.linear_combo.batch_size/2), generator.style_dim).cuda()
         _, _, shift_disentangled = self.make_shifts(deformator.input_dim)
