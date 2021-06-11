@@ -31,44 +31,80 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        target_indices, _, z_shift = self.make_shifts(deformator.input_dim)
+        label_dis = torch.full((int(self.opt.algo.linear_combo.batch_size / 2),), 1, dtype=torch.long, device='cuda')
+        label_ent = torch.full((int(self.opt.algo.linear_combo.batch_size / 2),), 0, dtype=torch.long, device='cuda')
+        labels = torch.cat((label_dis, label_ent))
 
-        shift = deformator(z_shift)
+        z = torch.randn(int(self.opt.algo.linear_combo.batch_size / 2), generator.style_dim).cuda()
+
+        ##TODO same images disentagled and entangled ,try other case
+        ##TODO weightage of loss
+        ##TODO epsilon -1,1 for entaglement?
+
+        _, _, shift_disentangled = self.make_shifts(deformator.input_dim)
+        shift = deformator(shift_disentangled)
         w = generator.style(z)
         imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        logits, _ = cr_discriminator(imgs.detach(), imgs_shifted.detach())
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
-        logit_loss.backward()
+        imgs_disentangled, _ = generator([w + shift], **generator_kwargs)
+
+        shift_entangled = self.get_entangled_vectors()
+        shift = deformator(shift_entangled)
+        imgs_entangled, _ = generator([w + shift], **generator_kwargs)
+
+        gen_images = torch.cat((imgs_disentangled, imgs_entangled))
+        ref_images = torch.cat((imgs, imgs))
+
+        shuffled_indices = torch.randint(0, gen_images.size(0), (gen_images.size(0),))
+        ref_images = ref_images[shuffled_indices]
+        gen_images = gen_images[shuffled_indices]
+        labels = labels[shuffled_indices]
+
+        cr_logits, _ = cr_discriminator(ref_images.cuda(), gen_images.cuda())
+        loss_cr_new = self.cross_entropy(cr_logits, labels)
+        loss_cr_new.backward()
         cr_optimizer.step()
+
+        ###################
 
         generator.zero_grad()
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        epsilon  = self.make_shifts_linear_combo()
+        z = torch.randn(int(self.opt.algo.linear_combo.batch_size), generator.style_dim).cuda()
+        epsilon = self.make_shifts_linear_combo()
 
         shift = deformator(epsilon)
         w = generator.style(z)
         imgs, _ = generator([w], **generator_kwargs)
         imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
-        _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
+        _, shift_prediction = shift_predictor(imgs, imgs_shifted)
         shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        target_indices, _, z_shift = self.make_shifts(deformator.input_dim)
-
-        shift = deformator(z_shift)
+        z = torch.randn(int(self.opt.algo.linear_combo.batch_size/2), generator.style_dim).cuda()
+        _, _, shift_disentangled = self.make_shifts(deformator.input_dim)
+        shift = deformator(shift_disentangled)
         w = generator.style(z)
         imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        logits, _ = cr_discriminator(imgs, imgs_shifted)
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
+        imgs_disentangled, _ = generator([w + shift], **generator_kwargs)
 
-        loss = logit_loss + shift_loss
+        shift_entangled = self.get_entangled_vectors()
+        shift = deformator(shift_entangled)
+        w = generator.style(z)
+        imgs_entangled, _ = generator([w + shift], **generator_kwargs)
+
+        gen_images = torch.cat((imgs_disentangled, imgs_entangled))
+        ref_images = torch.cat((imgs, imgs))
+
+        shuffled_indices = torch.randint(0, gen_images.size(0), (gen_images.size(0),))
+        ref_images = ref_images[shuffled_indices]
+        gen_images = gen_images[shuffled_indices]
+        labels = labels[shuffled_indices]
+
+        cr_logits ,_ = cr_discriminator(ref_images.cuda(), gen_images.cuda())
+        loss_cr_new = self.cross_entropy(cr_logits, labels)
+
+        loss = loss_cr_new + shift_loss
 
         loss.backward()
 
@@ -108,7 +144,7 @@ class Trainer(object):
     def make_shifts(self, latent_dim):
 
         target_indices = torch.randint(0, self.opt.algo.linear_combo.num_directions,
-                                       [self.opt.algo.linear_combo.batch_size]).cuda()
+                                       [int(self.opt.algo.linear_combo.batch_size / 2)]).cuda()
         if self.opt.algo.linear_combo.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape)
         elif self.opt.algo.linear_combo.shift_distribution == "uniform":
@@ -123,11 +159,20 @@ class Trainer(object):
             latent_dim = list(latent_dim)
         except Exception:
             latent_dim = [latent_dim]
-        z_shift = torch.zeros([self.opt.algo.linear_combo.batch_size] + latent_dim).cuda()
+        z_shift = torch.zeros([int(self.opt.algo.linear_combo.batch_size / 2)] + latent_dim).cuda()
         for i, (index, val) in enumerate(zip(target_indices, shifts)):
             z_shift[i][index] += val
 
         return target_indices, shifts, z_shift
+
+    def get_entangled_vectors(self):
+
+        epsilon = torch.FloatTensor(int(self.opt.algo.linear_combo.batch_size / 2),
+                                    self.opt.algo.linear_combo.num_directions).uniform_(-1, 1).cuda()
+        m = nn.Dropout(p=0.3)
+        for i in range(epsilon.shape[0]):
+            epsilon[i] = m(epsilon[i])
+        return epsilon
 
     def make_shifts_linear_combo(self):
 

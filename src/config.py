@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'trying_infogan_cr_based_method_on_pretrained_via_infogan'
-    experiment_description ='running infogan cr task on model trained via infogan mode'
+    experiment_name = 'disentangled_or_not_on_pretrained_via_infogan'
+    experiment_description ='disentangled_or_not on model trained via infogan mode'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -49,7 +49,7 @@ opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'linear_combo'  # choices=['LD', 'CF', 'linear_combo', 'GS']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+# opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
