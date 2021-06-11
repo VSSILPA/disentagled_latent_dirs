@@ -64,7 +64,7 @@ if opt.dataset == 'dsprites':
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.ld = CN()
-opt.algo.ld.batch_size = 32
+opt.algo.ld.batch_size = 1
 opt.algo.ld.latent_dim = 512
 opt.algo.ld.num_steps = 5001
 opt.algo.ld.num_directions = 10
