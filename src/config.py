@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'disentangled_or_not_on_pretrained_via_infogan'
+    experiment_name = 'disentangled_or_not_on_pretrained_via_infogan_more_steps'
     experiment_description ='disentangled_or_not on model trained via infogan mode'
 else:
     experiment_name = input("Enter experiment name ")
@@ -90,9 +90,9 @@ opt.algo.ld.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.linear_combo = CN()
-opt.algo.linear_combo.batch_size = 32
+opt.algo.linear_combo.batch_size = 16
 opt.algo.linear_combo.latent_dim = 512
-opt.algo.linear_combo.num_steps = 5001
+opt.algo.linear_combo.num_steps = 15001
 opt.algo.linear_combo.num_directions = 10
 opt.algo.linear_combo.combo_dirs = 2
 opt.algo.linear_combo.shift_scale = 6
@@ -108,8 +108,8 @@ opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'unif
 opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
 opt.algo.linear_combo.truncation = None
 opt.algo.linear_combo.file_name = '5000_infogan.pkl'
-opt.algo.linear_combo.logging_freq = 1000
-opt.algo.linear_combo.saving_freq = 1000
+opt.algo.linear_combo.logging_freq = 3000
+opt.algo.linear_combo.saving_freq = 3000
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form
