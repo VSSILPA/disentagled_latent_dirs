@@ -12,6 +12,7 @@ class Trainer(object):
         self.config = config
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
+        self.ranking_loss = nn.BCEWithLogitsLoss()
 
     @staticmethod
     def set_seed(seed):
@@ -32,15 +33,18 @@ class Trainer(object):
         shift_predictor.zero_grad()
 
         z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        target_indices, _, z_shift = self.make_shifts(deformator.input_dim)
+        epsilon, ground_truths = self.make_shifts_rank()
+        shift_epsilon = deformator(epsilon)
 
-        shift = deformator(z_shift)
         w = generator.style(z)
-        imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        logits, _ = cr_discriminator(imgs.detach(), imgs_shifted.detach())
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
-        logit_loss.backward()
+
+        imgs, _ = generator([w + shift_epsilon], **generator_kwargs)
+        logits = cr_discriminator(imgs.detach())
+
+        epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.linear_combo.batch_size / 2))
+        epsilon_diff = epsilon1 - epsilon2
+        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
+        ranking_loss.backward()
         cr_optimizer.step()
 
         generator.zero_grad()
@@ -48,27 +52,30 @@ class Trainer(object):
         shift_predictor.zero_grad()
 
         z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        epsilon  = self.make_shifts_linear_combo()
+        epsilon = self.make_shifts_linear_combo()
 
         shift = deformator(epsilon)
         w = generator.style(z)
         imgs, _ = generator([w], **generator_kwargs)
         imgs_shifted, _ = generator([w + shift], **generator_kwargs)
 
-        _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
+        _, shift_prediction = shift_predictor(imgs, imgs_shifted)
         shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
 
         z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        target_indices, _, z_shift = self.make_shifts(deformator.input_dim)
+        epsilon, ground_truths = self.make_shifts_rank()
+        shift_epsilon = deformator(epsilon)
 
-        shift = deformator(z_shift)
         w = generator.style(z)
-        imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        logits, _ = cr_discriminator(imgs, imgs_shifted)
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
 
-        loss = logit_loss + shift_loss
+        imgs, _ = generator([w + shift_epsilon], **generator_kwargs)
+        logits = cr_discriminator(imgs)
+
+        epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.linear_combo.batch_size / 2))
+        epsilon_diff = epsilon1 - epsilon2
+        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
+
+        loss = ranking_loss + shift_loss
 
         loss.backward()
 
@@ -128,6 +135,16 @@ class Trainer(object):
             z_shift[i][index] += val
 
         return target_indices, shifts, z_shift
+
+    def make_shifts_rank(self):
+
+        epsilon = torch.FloatTensor(int(self.opt.algo.linear_combo.batch_size),
+                                    self.opt.algo.linear_combo.num_directions).uniform_(-1,1).cuda()
+
+        epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.linear_combo.batch_size / 2))
+        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
+        epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
+        return epsilon, ground_truths
 
     def make_shifts_linear_combo(self):
 

@@ -13,6 +13,7 @@ from utils import *
 from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
+from models.cr_discriminator import ResNetRankPredictor
 
 import sys
 
@@ -83,7 +84,7 @@ def get_model(opt):
         if opt.algo.linear_combo.shift_predictor == 'ResNet':
             shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,
                                                    channels=1 if opt.dataset == 'dsprites' else 3).to(device)
-            cr_discriminator = ResNetShiftPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,
+            cr_discriminator = ResNetRankPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,
                                                     channels=1 if opt.dataset == 'dsprites' else 3).to(device)
         elif opt.algo.linear_combo.shift_predictor == 'LeNet':
             shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
