@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'same_z_different_epsilom'
-    experiment_description ='running variant by keeping z fxed'
+    experiment_name = 'ranking loss to margin loss'
+    experiment_description ='best so far rank parining loss change'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'

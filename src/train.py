@@ -12,7 +12,7 @@ class Trainer(object):
         self.config = config
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
-        self.ranking_loss = nn.BCEWithLogitsLoss()
+        self.ranking_loss = nn.MarginRankingLoss()
 
     @staticmethod
     def set_seed(seed):
@@ -44,8 +44,8 @@ class Trainer(object):
         logits = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.linear_combo.batch_size / 2))
-        epsilon_diff = epsilon1 - epsilon2
-        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
+        # epsilon_diff = epsilon1 - epsilon2
+        ranking_loss = self.ranking_loss(epsilon1, epsilon2, ground_truths)
         ranking_loss.backward()
         cr_optimizer.step()
 
@@ -75,8 +75,8 @@ class Trainer(object):
         logits = cr_discriminator(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.linear_combo.batch_size / 2))
-        epsilon_diff = epsilon1 - epsilon2
-        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
+        # epsilon_diff = epsilon1 - epsilon2
+        ranking_loss = self.ranking_loss(epsilon1, epsilon2, ground_truths)
 
         loss = ranking_loss + shift_loss
 
@@ -146,6 +146,7 @@ class Trainer(object):
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.linear_combo.batch_size / 2))
         ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
+        ground_truths = ground_truths * 2 - 1
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths
 
