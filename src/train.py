@@ -32,7 +32,9 @@ class Trainer(object):
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.linear_combo.batch_size/2), generator.style_dim).cuda()
+        z = torch.cat((z_, z_),dim=0)
+
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
 
@@ -62,7 +64,8 @@ class Trainer(object):
         _, shift_prediction = shift_predictor(imgs, imgs_shifted)
         shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.linear_combo.batch_size/2), generator.style_dim).cuda()
+        z = torch.cat((z_,z_),dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
 
