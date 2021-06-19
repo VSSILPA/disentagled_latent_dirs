@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed orm initialisation'
-    experiment_description ='to study wether linear combo is essentail'
+    experiment_name = 'ours with closed orm initialisation--ortho'
+    experiment_description ='best setting expected'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -116,7 +116,7 @@ opt.algo.linear_combo.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 5000
+opt.algo.ours.num_steps = 5001
 opt.algo.ours.batch_size = 32
 opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
