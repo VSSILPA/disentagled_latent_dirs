@@ -70,6 +70,18 @@ def get_model(opt):
         return G
     elif opt.algorithm == 'GS':
         return G
+    elif opt.algorithm == 'ours':
+        deformator = LatentDeformator(shift_dim=G.style_dim,
+                                      input_dim=opt.algo.ours.num_directions,  # dimension of one-hot encoded vector
+                                      out_dim=G.style_dim,
+                                      type=opt.algo.ours.deformator_type,
+                                      random_init=opt.algo.ours.deformator_randint).to(device)
+        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
+        cr_discriminator = ResNetRankPredictor(deformator.input_dim, opt.algo.ours.shift_predictor_size,
+                                               channels=1 if opt.dataset == 'dsprites' else 3).to(device)
+        cr_optimizer = torch.optim.Adam(cr_discriminator.parameters(), lr=opt.algo.ours.shift_predictor_lr)
+        return G, deformator, deformator_opt ,cr_discriminator,cr_optimizer
+
     elif opt.algorithm == 'linear_combo':
         deformator = LatentDeformator(shift_dim=G.style_dim,
                                       input_dim=opt.algo.linear_combo.num_directions,

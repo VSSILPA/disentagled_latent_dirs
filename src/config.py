@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ranking loss to margin loss'
-    experiment_description ='best so far rank parining loss change'
+    experiment_name = 'ours with closed form initialisation'
+    experiment_description ='to study wether linear combo is essentail'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -47,7 +47,7 @@ parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name
 parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'linear_combo'  # choices=['LD', 'CF', 'linear_combo', 'GS']
+opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 #opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
@@ -110,6 +110,23 @@ opt.algo.linear_combo.truncation = None
 opt.algo.linear_combo.file_name = '5000_infogan.pkl'
 opt.algo.linear_combo.logging_freq = 1000
 opt.algo.linear_combo.saving_freq = 1000
+
+# ---------------------------------------------------------------------------- #
+# Options for Ours
+# ---------------------------------------------------------------------------- #
+opt.algo.ours = CN()
+opt.algo.ours.initialisation = 'cf'
+opt.algo.ours.num_steps = 5000
+opt.algo.ours.batch_size = 32
+opt.algo.ours.deformator_type = 'ortho'
+opt.algo.ours.deformator_randint = True
+opt.algo.ours.deformator_lr = 0.0001
+opt.algo.ours.num_directions = 10
+opt.algo.ours.latent_dim = 512
+opt.algo.ours.shift_predictor_size = None
+opt.algo.ours.logging_freq = 10
+opt.algo.ours.saving_freq = 10
+opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form

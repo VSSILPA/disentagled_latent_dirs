@@ -139,6 +139,28 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             directions = model_trainer.train_ganspace(generator)
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
+        elif opt.algorithm =='ours':
+            generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
+            initialisation = model_trainer.train_closed_form(generator)
+            deformator.ortho_mat.data = initialisation.weight
+            deformator.train()
+            deformator.cuda()
+            for k in range(opt.algo.ours.num_steps):
+                deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
+                    model_trainer.train_ours(
+                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                if k % opt.algo.ours.logging_freq == 0 and k != 0:
+                    metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+                    perf_logger.start_monitoring("Latent Traversal Visualisations")
+                    deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
+                                                       opt.algo.ours.latent_dim)
+                    if opt.algo.linear_combo.deformator_type == 'ortho':
+                        deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
+                    else:
+                        deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
+                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
+                                                               shifts_count=5)
+                    perf_logger.stop_monitoring("Latent Traversal Visualisations")
         else:
             raise NotImplementedError
         metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])

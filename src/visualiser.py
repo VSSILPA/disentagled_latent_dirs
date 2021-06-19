@@ -89,6 +89,8 @@ class Visualiser(object):
             num_directions = self.opt.algo.gs.num_directions
         elif self.opt.algorithm == 'CF' :
             num_directions = self.opt.algo.cf.num_directions
+        elif self.opt.algorithm == 'ours':
+            num_directions = self.opt.algo.ours.num_directions
 
         for i in range(num_directions):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
