@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed form initialisation'
+    experiment_name = 'ours with closed orm initialisation'
     experiment_description ='to study wether linear combo is essentail'
 else:
     experiment_name = input("Enter experiment name ")
@@ -124,8 +124,8 @@ opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 10
-opt.algo.ours.saving_freq = 10
+opt.algo.ours.logging_freq = 1000
+opt.algo.ours.saving_freq = 1000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #
