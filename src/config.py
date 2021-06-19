@@ -118,14 +118,14 @@ opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 5000
 opt.algo.ours.batch_size = 32
-opt.algo.ours.deformator_type = 'ortho'
+opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 10
-opt.algo.ours.saving_freq = 10
+opt.algo.ours.logging_freq = 1000
+opt.algo.ours.saving_freq = 1000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #

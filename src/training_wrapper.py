@@ -140,9 +140,11 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm =='ours':
-            generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
-            initialisation = model_trainer.train_closed_form(generator)
-            deformator.ortho_mat.data = initialisation.weight
+            print("ours")
+            generator, _, _, cr_discriminator, cr_optimizer = models
+            deformator  = model_trainer.train_closed_form(generator)
+            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
+            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
             deformator.train()
             deformator.cuda()
             for k in range(opt.algo.ours.num_steps):
@@ -154,10 +156,10 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
                                                        opt.algo.ours.latent_dim)
-                    if opt.algo.linear_combo.deformator_type == 'ortho':
+                    if opt.algo.ours.deformator_type == 'ortho':
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     else:
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
+                        deformator_layer.weight.data = torch.FloatTensor(deformator.weight.data.cpu())
                     visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
