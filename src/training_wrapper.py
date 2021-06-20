@@ -36,7 +36,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
         models = get_model(opt)
         model_trainer = Trainer(configuration, opt)
-        evaluator = Evaluator(configuration, opt)
+        # evaluator = Evaluator(configuration, opt)
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
@@ -104,7 +104,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 logit_loss = logit_loss + losses[1]
                 shift_loss = shift_loss + losses[2]
                 if k % opt.algo.linear_combo.logging_freq == 0 and k != 0:
-                    metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+                    # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
                     total_loss, logit_loss, shift_loss = losses
                     logging.info(

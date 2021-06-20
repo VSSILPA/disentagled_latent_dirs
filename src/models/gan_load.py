@@ -104,6 +104,13 @@ def make_gan(gan_dir):
 
     return G
 
+def make_sngan(gan_dir):
+    gan = load_model_from_state_dict(gan_dir)
+    G = gan.model.eval()
+    setattr(G, 'dim_z', gan.distribution.dim)
+
+    return G
+
 
 def make_style_gan2(size, weights, shift_in_w=True):
     G = StyleGAN2Generator(size, 512, 8)

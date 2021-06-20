@@ -27,56 +27,31 @@ class Trainer(object):
                                deformator_opt,
                                shift_predictor_opt):
 
-        generator.zero_grad()
-        deformator.zero_grad()
-        shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        target_indices, _, z_shift = self.make_shifts(deformator.input_dim)
-
-        shift = deformator(z_shift)
-        w = generator.style(z)
-        imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        logits, _ = cr_discriminator(imgs.detach(), imgs_shifted.detach())
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
-        logit_loss.backward()
-        cr_optimizer.step()
 
         generator.zero_grad()
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
+        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.dim_z).cuda()
         epsilon  = self.make_shifts_linear_combo()
+        epsilon = epsilon.type(torch.float32)
 
         shift = deformator(epsilon)
-        w = generator.style(z)
-        imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
+        # w = generator.style(z)
+        # imgs, _ = generator([w], **generator_kwargs)
+        imgs_shifted= generator(z + shift)
 
-        _ , shift_prediction = shift_predictor(imgs, imgs_shifted)
-        shift_loss = torch.mean(torch.abs(shift_prediction - epsilon))
-
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.style_dim).cuda()
-        target_indices, _, z_shift = self.make_shifts(deformator.input_dim)
-
-        shift = deformator(z_shift)
-        w = generator.style(z)
-        imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted, _ = generator([w + shift], **generator_kwargs)
-        logits, _ = cr_discriminator(imgs, imgs_shifted)
-        logit_loss = self.cross_entropy(logits, target_indices.cuda())
-
-        loss = logit_loss + shift_loss
-
-        loss.backward()
+        logits = shift_predictor(imgs_shifted)
+        targets = torch.argmax(epsilon, dim=1)
+        shift_loss = self.cross_entropy(logits, targets.cuda())
+        shift_loss.backward()
 
         deformator_opt.step()
         shift_predictor_opt.step()
 
         return deformator, shift_predictor, cr_discriminator, cr_optimizer, deformator_opt, shift_predictor_opt, (
-            0, 0, loss.item())
+            0, 0, shift_loss.item())
 
     def train_ganspace(self, generator):
 
@@ -137,8 +112,8 @@ class Trainer(object):
         # sampled_directions_batch)).cuda() selected_directions = torch.zeros((self.opt.algo.linear_combo.batch_size,
         # self.opt.algo.linear_combo.num_directions)).cuda() for idx,nonzero_idx in enumerate(
         # sampled_directions_batch): for i in nonzero_idx: selected_directions[idx][i] = 1
-        epsilon = torch.FloatTensor(self.opt.algo.linear_combo.batch_size,
-                                    self.opt.algo.linear_combo.num_directions).uniform_(-1, 1).cuda()
+        target = torch.randint(0, self.opt.algo.linear_combo.num_directions, (self.opt.algo.linear_combo.batch_size,))
+        epsilon = torch.nn.functional.one_hot(target).cuda()
         # z_shift = selected_directions * epsilon z_shift[(z_shift < self.opt.algo.linear_combo.min_shift) & (z_shift
         # > 0)] = self.opt.algo.linear_combo.min_shift z_shift[(z_shift > -self.opt.algo.linear_combo.min_shift) & (
         # z_shift < 0)] = -self.opt.algo.linear_combo.min_shift ground_truths = z_shift.gather(dim=1,

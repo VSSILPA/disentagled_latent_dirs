@@ -15,6 +15,14 @@ def get_data_loader(config, opt):
         from data.cars3d import Cars3D
         data = Cars3D(config, opt)
         return data
+    elif opt.dataset == 'mnist':
+        import torchvision
+        data = torchvision.datasets.MNIST('../data/mnist/', train=True, download=True,
+                                          transform=torchvision.transforms.Compose([
+                                              torchvision.transforms.ToTensor(),
+                                              torchvision.transforms.Normalize(
+                                                  (0.5,), (0.5,))]))
+        return data
     elif opt.dataset == 'celebA':
         raise NotImplementedError
     else:

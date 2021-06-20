@@ -13,6 +13,7 @@ from utils import *
 from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
+from loading import load_generator
 
 import sys
 
@@ -44,6 +45,9 @@ def get_model(opt):
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
+    elif gan_type == 'SNGAN':
+        G = load_generator({'gan_type' : 'SNGAN'}, 'models/pretrained/generators/SN_MNIST/')
+
     else:
         raise NotImplementedError
 
@@ -70,26 +74,26 @@ def get_model(opt):
     elif opt.algorithm == 'GS':
         return G
     elif opt.algorithm == 'linear_combo':
-        deformator = LatentDeformator(shift_dim=G.style_dim,
+        deformator = LatentDeformator(shift_dim=G.dim_z,
                                       input_dim=opt.algo.linear_combo.num_directions,
                                       # dimension of one-hot encoded vector
-                                      out_dim=G.style_dim,
+                                      out_dim=G.dim_z,
                                       type=opt.algo.linear_combo.deformator_type,
                                       random_init=opt.algo.linear_combo.deformator_randint).to(device)
-        models_dir = os.path.dirname(
-            os.getcwd()) + f'/pretrained_models/' + opt.algo.linear_combo.file_name  # project root
-        checkpoint = torch.load(models_dir)
-        deformator.load_state_dict(checkpoint['deformator'])
+        # models_dir = os.path.dirname(
+        #     os.getcwd()) + f'/pretrained_models/' + opt.algo.linear_combo.file_name  # project root
+        # checkpoint = torch.load(models_dir)
+        # deformator.load_state_dict(checkpoint['deformator'])
         if opt.algo.linear_combo.shift_predictor == 'ResNet':
             shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,
-                                                   channels=1 if opt.dataset == 'dsprites' else 3).to(device)
+                                                   channels=1 if opt.dataset == 'dsprites' or 'mnist' else 3).to(device)
             cr_discriminator = ResNetShiftPredictor(deformator.input_dim, opt.algo.linear_combo.shift_predictor_size,
-                                                    channels=1 if opt.dataset == 'dsprites' else 3).to(device)
+                                                    channels=1 if opt.dataset == 'dsprites' or 'mnist' else 3).to(device)
         elif opt.algo.linear_combo.shift_predictor == 'LeNet':
             shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
         else:
             raise NotImplementedError
-        shift_predictor.load_state_dict(checkpoint['shift_predictor'])
+        # shift_predictor.load_state_dict(checkpoint['shift_predictor'])
 
         deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.linear_combo.deformator_lr)
         cr_optimizer = torch.optim.Adam(cr_discriminator.parameters(), lr=opt.algo.linear_combo.shift_predictor_lr)
