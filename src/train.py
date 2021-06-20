@@ -52,10 +52,13 @@ class Trainer(object):
         loss_D_real.backward()
 
         epsilon_ref, pos, neg, targets = self._get_samples()
+        postive_images = self.real_images[pos]
+        # negative_images = self.real_images[neg]
         shift = deformator(epsilon_ref)
         imgs_shifted = generator(z + shift)
 
         prob_fake_D, _, _ = discriminator(imgs_shifted.detach())
+
         loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
         loss_D_fake.backward()
 
@@ -63,9 +66,7 @@ class Trainer(object):
 
         generator.zero_grad()
         deformator.zero_grad()
-        postive_images = self.real_images[pos]
-        # negative_images = self.real_images[neg]
-        imgs_shifted = generator(z + 2.5*shift)
+        imgs_shifted = generator(z + shift)
         # imgs_final = torch.cat((imgs_shifted,postive_images.cuda(),negative_images.cuda()),dim=0)
 
         prob_fake, _, _ = discriminator(imgs_shifted)

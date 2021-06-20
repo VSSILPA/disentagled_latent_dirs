@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'similarity_based_disentanglement-corrected'
+    experiment_name = 'discrete_Reopened'
     experiment_description = 'checking if similarity is sufficient for getting class identities'
 else:
     experiment_name = input("Enter experiment name ")
