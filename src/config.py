@@ -110,7 +110,7 @@ opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
 opt.algo.linear_combo.truncation = None
 opt.algo.linear_combo.file_name = '5000_infogan.pkl'
 opt.algo.linear_combo.logging_freq = 1000
-opt.algo.linear_combo.saving_freq = 10
+opt.algo.linear_combo.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form
