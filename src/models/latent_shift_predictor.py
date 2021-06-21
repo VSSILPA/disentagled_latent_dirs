@@ -45,7 +45,7 @@ class LeNetShiftPredictor(nn.Module):
         super(LeNetShiftPredictor, self).__init__()
 
         self.convnet = nn.Sequential(
-            nn.Conv2d(channels * 2, 3 * width, kernel_size=(5, 5)),
+            nn.Conv2d(channels, 3 * width, kernel_size=(5, 5)),
             nn.BatchNorm2d(3 * width),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=2),
@@ -71,13 +71,13 @@ class LeNetShiftPredictor(nn.Module):
             nn.Linear(42 * width, 1)
         )
 
-    def forward(self, x1, x2):
+    def forward(self, x1):
         batch_size = x1.shape[0]
-        features = self.convnet(torch.cat([x1, x2], dim=1))
+        features = self.convnet(x1)
         features = features.mean(dim=[-1, -2])
         features = features.view(batch_size, -1)
 
         logits = self.fc_logits(features)
-        shift = self.fc_shift(features)
+        # shift = self.fc_shift(features)
 
-        return logits, shift.squeeze()
+        return logits

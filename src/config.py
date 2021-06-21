@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'infogan to identify discrete classes'
-    experiment_description ='checking if its possible to learn discrete classes '
+    experiment_name = 'dicrete_ld--linear'
+    experiment_description ='checking if its possible to learn discrete classes with diversity'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -47,13 +47,14 @@ parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name
 parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'SNGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'linear_combo'  # choices=['LD', 'CF', 'linear_combo', 'GS']
+opt.algorithm = 'discrete_ld'  # choices=['LD', 'CF', 'discrete_ld', 'GS']
 opt.dataset = 'mnist'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 #opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 # opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.num_channels = 1 ##TODO Changed for mnist
 opt.device = 'cuda:'
+opt.image_size = 32
 opt.device_id = '0'
 opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7
 opt.random_seed = 2
@@ -76,7 +77,7 @@ opt.algo.ld.shift_predictor_lr = 0.0001
 opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
-opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
 opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
@@ -87,30 +88,26 @@ opt.algo.ld.logging_freq = 1
 opt.algo.ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
-# Options for Linear Combination latent discovery(pretrained)
+# Options for Discrete latent discovery
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
-opt.algo.linear_combo = CN()
-opt.algo.linear_combo.batch_size = 32
-opt.algo.linear_combo.latent_dim = 512
-opt.algo.linear_combo.num_steps = 5001
-opt.algo.linear_combo.num_directions = 10
-opt.algo.linear_combo.combo_dirs = 2
-opt.algo.linear_combo.shift_scale = 6
-opt.algo.linear_combo.min_shift = 0.5
-opt.algo.linear_combo.deformator_lr = 0.0001
-opt.algo.linear_combo.shift_predictor_lr = 0.0001
-opt.algo.linear_combo.beta1 = 0.9
-opt.algo.linear_combo.beta2 = 0.999
-opt.algo.linear_combo.deformator_randint = True
-opt.algo.linear_combo.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.linear_combo.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
-opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
-opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
-opt.algo.linear_combo.truncation = None
-opt.algo.linear_combo.file_name = '5000_infogan.pkl'
-opt.algo.linear_combo.logging_freq = 1000
-opt.algo.linear_combo.saving_freq = 1000
+opt.algo.discrete_ld = CN()
+opt.algo.discrete_ld.batch_size = 32
+opt.algo.discrete_ld.latent_dim = 128
+opt.algo.discrete_ld.num_steps = 100001
+opt.algo.discrete_ld.num_directions = 10
+opt.algo.discrete_ld.deformator_lr = 0.001
+opt.algo.discrete_ld.shift_predictor_lr = 0.001
+opt.algo.discrete_ld.beta1 = 0.9
+opt.algo.discrete_ld.beta2 = 0.999
+opt.algo.discrete_ld.deformator_randint = True
+opt.algo.discrete_ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.discrete_ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
+opt.algo.discrete_ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
+opt.algo.discrete_ld.shift_predictor_size = None  # reconstructor resolution
+opt.algo.discrete_ld.truncation = None
+opt.algo.discrete_ld.logging_freq = 1000
+opt.algo.discrete_ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form

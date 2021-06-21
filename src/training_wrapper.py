@@ -21,7 +21,6 @@ from utils import *
 
 def run_training_wrapper(configuration, opt, data, perf_logger):
     device = torch.device(opt.device + opt.device_id)
-    metrics_seed = {'betavae_metric': [], 'factorvae_metric': [], 'mig': [], 'dci': []}
     directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt', '__pycache__'])
     filtered_dirs = []
     for file in directories:
@@ -36,7 +35,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
         models = get_model(opt)
         model_trainer = Trainer(configuration, opt)
-        # evaluator = Evaluator(configuration, opt)
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
@@ -83,49 +81,44 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.start_monitoring("Saving Model")
                     saver.save_model(params, k, i , algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
-        elif opt.algorithm == 'linear_combo':
-            generator, deformator, shift_predictor,cr_discriminator, cr_optimizer, deformator_opt, shift_predictor_opt = models
+        elif opt.algorithm == 'discrete_ld':
+            generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
             # plot_generated_images(opt, generator)
-            generator.to(device).eval()
-            deformator.to(device).train()
-            shift_predictor.to(device).train()
-            cr_discriminator.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
-            for k in range(resume_step+1, opt.algo.linear_combo.num_steps):
+            z = torch.randn(100, generator.dim_z)
+            for k in range(resume_step+1, opt.algo.discrete_ld.num_steps):
+                generator.to(device).eval()
+                deformator.to(device).train()
+                shift_predictor.to(device).train()
                 start_time = time.time()
-                deformator, shift_predictor, cr_discriminator, cr_optimizer, deformator_opt, shift_predictor_opt, losses = \
-                    model_trainer.train_latent_discovery(
-                        generator, deformator, shift_predictor, cr_discriminator, cr_optimizer, deformator_opt,
+                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                    model_trainer.train_discrete_ld(
+                        generator, deformator, shift_predictor, deformator_opt,
                         shift_predictor_opt)
-                loss = loss + losses[0]
                 logit_loss = logit_loss + losses[1]
-                shift_loss = shift_loss + losses[2]
-                if k % opt.algo.linear_combo.logging_freq == 0 and k != 0:
-                    # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-                    # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
+                if k % opt.algo.discrete_ld.logging_freq == 0 and k != 0:
                     total_loss, logit_loss, shift_loss = losses
                     logging.info(
-                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
-                            k, opt.algo.linear_combo.num_steps, time.time() - start_time,
-                            total_loss / opt.algo.linear_combo.logging_freq, logit_loss / opt.algo.linear_combo.logging_freq,
-                            shift_loss / opt.algo.linear_combo.logging_freq))
+                        "Step  %d / %d Time taken %d sec , logitLoss: %.5f " % (
+                            k, opt.algo.discrete_ld.num_steps, time.time() - start_time,
+                            logit_loss / opt.algo.discrete_ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.linear_combo.num_directions, opt.algo.linear_combo.latent_dim)
-                    if opt.algo.linear_combo.deformator_type == 'ortho':
+                    deformator_layer = torch.nn.Linear(opt.algo.discrete_ld.num_directions, generator.dim_z, bias=False)
+                    if opt.algo.discrete_ld.deformator_type == 'ortho':
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     else:
                         deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
-                    # visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
-                    #                                            shifts_count=5)
+                    visualise_results.make_interpolation_chart(k,z, generator, deformator_layer, shift_r=10,
+                                                               shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
-                    loss, logit_loss, shift_loss = 0, 0, 0
-                if k % opt.algo.linear_combo.saving_freq == 0 and k != 0:
+                    logit_loss  = 0
+                if k % opt.algo.discrete_ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k,i, algo='LD')
+                    saver.save_model(params, k, i, algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'CF':
             generator = models

@@ -54,22 +54,18 @@ class Visualiser(object):
             return ToPILImage()((255 * tensor.cpu().detach()).to(torch.uint8))
 
     @torch.no_grad()
-    def interpolate(self, generator, z, shifts_r, shifts_count, dim, directions, with_central_border=False):
-        shifted_images = []
+    def interpolate(self, generator,z, shifts_r, shifts_count, dim, directions, with_central_border=False):
+        n_cols = 10
+        z = z[dim*10:(dim+1)*10]
         directions.cuda()
-        for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count): # TODO change traversal in z space to wspace
-            if directions is not None:
-                z_deformed = z.cuda() + directions(one_hot(directions.in_features, shift, dim).cuda())
-            else:
-                z_deformed = z.cuda() + one_hot(z.shape[1:], shift, dim).cuda()
-            w = generator.style(z_deformed)
-            shifted_image = generator([w], **generator_kwargs)[0]
-            if shift == 0.0 and with_central_border:
-                shifted_image = add_border(shifted_image)
-            shifted_images.append(shifted_image)
-        return torch.stack(shifted_images)
+        dir_required = directions.weight[:,dim]
+        dir_required = dir_required.repeat(n_cols, 1)
+        z_deformed = z.cuda() + dir_required.cuda()
+        images = generator(z_deformed)
 
-    def make_interpolation_chart(self, step, generator, directions, shift_r=10, shifts_count=5):
+        return images
+
+    def make_interpolation_chart(self, step, z,generator, directions, shift_r=10, shifts_count=5):
 
         file_location = self.opt.result_dir + '/visualisations/latent_traversal/'
         if not os.path.exists(file_location):
@@ -79,24 +75,22 @@ class Visualiser(object):
         directions.eval()
         generator.eval()
 
-        z = torch.randn(1, generator.style_dim)
         imgs = []
         if self.opt.algorithm == 'LD':
             num_directions = self.opt.algo.ld.num_directions
-        elif self.opt.algorithm == 'linear_combo':
-            num_directions = self.opt.algo.linear_combo.num_directions
+        elif self.opt.algorithm == 'discrete_ld':
+            num_directions = self.opt.algo.discrete_ld.num_directions
         elif self.opt.algorithm =='GS':
             num_directions = self.opt.algo.gs.num_directions
         elif self.opt.algorithm == 'CF' :
             num_directions = self.opt.algo.cf.num_directions
-
         for i in range(num_directions):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
-        batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, 64, 64)
+        batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
 
-        save_image(batch_tensor.view(-1, self.opt.num_channels, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
+        save_image(batch_tensor.view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
     def generate_plot_save_results(self, results, plot_type):

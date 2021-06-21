@@ -23,35 +23,26 @@ class Trainer(object):
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
 
-    def train_latent_discovery(self, generator, deformator, shift_predictor, cr_discriminator, cr_optimizer,
-                               deformator_opt,
-                               shift_predictor_opt):
-
-
+    def train_discrete_ld(self, generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
 
         generator.zero_grad()
         deformator.zero_grad()
         shift_predictor.zero_grad()
 
-        z = torch.randn(self.opt.algo.linear_combo.batch_size, generator.dim_z).cuda()
-        epsilon  = self.make_shifts_linear_combo()
-        epsilon = epsilon.type(torch.float32)
+        z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
+        epsilon, targets = self.make_shifts_discrete_ld()
 
         shift = deformator(epsilon)
-        # w = generator.style(z)
-        # imgs, _ = generator([w], **generator_kwargs)
-        imgs_shifted= generator(z + shift)
+        imgs_shifted = generator(z + shift)
 
         logits = shift_predictor(imgs_shifted)
-        targets = torch.argmax(epsilon, dim=1)
-        shift_loss = self.cross_entropy(logits, targets.cuda())
-        shift_loss.backward()
-
-        deformator_opt.step()
+        logit_loss = self.cross_entropy(logits, targets.cuda())
+        logit_loss.backward()
+        #
         shift_predictor_opt.step()
+        deformator_opt.step()
 
-        return deformator, shift_predictor, cr_discriminator, cr_optimizer, deformator_opt, shift_predictor_opt, (
-            0, 0, shift_loss.item())
+        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
 
     def train_ganspace(self, generator):
 
@@ -104,7 +95,7 @@ class Trainer(object):
 
         return target_indices, shifts, z_shift
 
-    def make_shifts_linear_combo(self):
+    def make_shifts_discrete_ld(self):
 
         # directions_count = list(range(self.opt.algo.linear_combo.num_directions)) sampled_directions_batch = [
         # random.sample(directions_count,self.opt.algo.linear_combo.combo_dirs) for x in range(
@@ -112,10 +103,17 @@ class Trainer(object):
         # sampled_directions_batch)).cuda() selected_directions = torch.zeros((self.opt.algo.linear_combo.batch_size,
         # self.opt.algo.linear_combo.num_directions)).cuda() for idx,nonzero_idx in enumerate(
         # sampled_directions_batch): for i in nonzero_idx: selected_directions[idx][i] = 1
-        target = torch.randint(0, self.opt.algo.linear_combo.num_directions, (self.opt.algo.linear_combo.batch_size,))
-        epsilon = torch.nn.functional.one_hot(target,num_classes=10).cuda()     # z_shift = selected_directions * epsilon z_shift[(z_shift < self.opt.algo.linear_combo.min_shift) & (z_shift
+        target = torch.randint(0, self.opt.algo.discrete_ld.num_directions, (self.opt.algo.discrete_ld.batch_size,))
+        epsilon = torch.nn.functional.one_hot(target,
+                                              num_classes=10).cuda()
+        epsilon = epsilon.type(torch.float32)
+        # noise = torch.FloatTensor(self.opt.algo.discrete_ld.batch_size,
+        #                             1).uniform_(-6, 6).cuda()
+        # epsilon = epsilon * noise
+
+        # z_shift = selected_directions * epsilon z_shift[(z_shift < self.opt.algo.linear_combo.min_shift) & (z_shift
         # > 0)] = self.opt.algo.linear_combo.min_shift z_shift[(z_shift > -self.opt.algo.linear_combo.min_shift) & (
         # z_shift < 0)] = -self.opt.algo.linear_combo.min_shift ground_truths = z_shift.gather(dim=1,
         # index = ground_truth_idx.long())
 
-        return epsilon
+        return epsilon, target
