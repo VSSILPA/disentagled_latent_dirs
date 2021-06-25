@@ -6,6 +6,7 @@ from sklearn.metrics.cluster import normalized_mutual_info_score, adjusted_rand_
 from torch.autograd import Variable
 import torch.nn.functional as F
 import torchvision
+import logging
 import matplotlib.pyplot as plt
 
 
@@ -14,6 +15,38 @@ class Evaluator(object):
         self.config = config
         self.device = torch.device('cuda:' + str(opt.device_id))
         self.opt = opt
+
+    def compute_metrics_discrete_ld(self, data, shift_predictor):
+        train_loader, test_loader = data
+        latent_rep = []
+        labels_true = []
+        for images, labels in test_loader:
+            logits = shift_predictor(images.to(self.device))
+            predicted_labels = torch.argmax(logits, dim=1)
+            latent_rep.append(predicted_labels)
+            labels_true.append(labels)
+
+        latent_rep = torch.stack(latent_rep).view(-1).detach().cpu().numpy()
+        mapping = {'0': '5',
+                   '1': '7',
+                   '2': '3',
+                   '3': '1',
+                   '4': '5',
+                   '5': '0',
+                   '6': '9',
+                   '7': '4',
+                   '8': '6',
+                   '9': '8'}
+        for i in range(latent_rep.shape[0]):
+            latent_rep[i] = mapping[str(latent_rep[i])]
+        labels_true = torch.stack(labels_true).view(-1).detach().cpu().numpy()
+        purity = self._compute_purity(latent_rep, labels_true)
+        ari = adjusted_rand_score(labels_true, latent_rep)
+        nmi = normalized_mutual_info_score(labels_true, latent_rep)
+        metrics = {'NMI': nmi, 'ARI': ari, 'ACC': purity}
+        logging.info(
+            "ACC: %.2f NMI: %.2f ARI: %.2f" % (metrics['ACC'], metrics['NMI'], metrics['ARI']))
+        return metrics
 
     def compute_metrics(self, data, gan):
 
@@ -32,6 +65,7 @@ class Evaluator(object):
         purity = self._compute_purity(latent_rep, labels_true)
         ari = adjusted_rand_score(labels_true, latent_rep)
         nmi = normalized_mutual_info_score(labels_true, latent_rep)
+
         return {'NMI': nmi, 'ARI': ari, 'ACC': purity}
 
     def _compute_purity(self, labels_pred, labels_true):

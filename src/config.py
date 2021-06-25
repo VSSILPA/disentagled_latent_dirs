@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'InfoGAN baseline'
-    experiment_description = 'Code base for discrete ld verification'
+    experiment_name = 'discrete-ld--pretrained'
+    experiment_description = 'checking if its possible to learn discrete classes with diversity'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -41,12 +41,12 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # ---------------------------------------------------------------------------- #
 # Options for General settings
 # ---------------------------------------------------------------------------- #
-parser.add_argument('--evaluation', type=bool, default=True, help='whether to run in evaluation mode or not')
+parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
 parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
-opt.gan_type = 'InfoGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'infogan'  # choices=['infogan', 'discrete_ld', 'GS']
+opt.gan_type = 'SNGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
+opt.algorithm = 'discrete_ld'  # choices=['infogan', 'discrete_ld', 'GS']
 opt.dataset = 'mnist'  # choices=[''mnist]
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 # opt.pretrained_gen_root = 'models/pretrained/new_generators/'

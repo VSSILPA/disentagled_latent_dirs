@@ -9,7 +9,7 @@
 """
 from model_loader import get_model
 from train import Trainer
-# from evaluation import Evaluator
+from evaluation import Evaluator
 from saver import Saver
 from visualiser import Visualiser, plot_generated_images
 import logging
@@ -37,6 +37,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
         models = get_model(opt)
         model_trainer = Trainer(configuration, opt)
+        evaluator = Evaluator(configuration, opt)
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
@@ -73,6 +74,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                         deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
                     visualise_results.make_interpolation_chart(k, z, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
+                    metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     logit_loss = 0
                 if k % opt.algo.discrete_ld.saving_freq == 0 and k != 0:
