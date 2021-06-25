@@ -49,7 +49,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
             # plot_generated_images(opt, generator)
             loss, logit_loss, shift_loss = 0, 0, 0
-            z = torch.randn(100, generator.dim_z)
+
             for k in range(resume_step + 1, opt.algo.discrete_ld.num_steps):
                 generator.to(device).eval()
                 deformator.to(device).train()
@@ -72,9 +72,10 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     else:
                         deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
+                    z = torch.randn(100, generator.dim_z)
                     visualise_results.make_interpolation_chart(k, z, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
-                    metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
+                    # metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     logit_loss = 0
                 if k % opt.algo.discrete_ld.saving_freq == 0 and k != 0:

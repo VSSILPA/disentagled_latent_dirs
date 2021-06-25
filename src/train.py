@@ -32,13 +32,14 @@ class Trainer(object):
         epsilon, targets = self.make_shifts_discrete_ld()
 
         shift = deformator(epsilon)
+        # imgs_ref = generator(z)
         imgs_shifted = generator(z + shift)
 
         logits = shift_predictor(imgs_shifted)
         logit_loss = self.cross_entropy(logits, targets.cuda())
         logit_loss.backward()
         #
-        # shift_predictor_opt.step()
+        shift_predictor_opt.step()
         deformator_opt.step()
 
         return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)

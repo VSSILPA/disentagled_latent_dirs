@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'discrete-ld--pretrained'
+    experiment_name = 'discrete-ld--z_inside_loop--linear_without_ref'
     experiment_description = 'checking if its possible to learn discrete classes with diversity'
 else:
     experiment_name = input("Enter experiment name ")
