@@ -5,7 +5,9 @@ from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
 import io
 from PIL import Image
-# from config import generator_kwargs
+import torchvision
+from torch.autograd import Variable
+from config import generator_kwargs
 
 matplotlib.use("Agg")
 
@@ -104,3 +106,14 @@ class Visualiser(object):
         plt.legend(loc="upper right")
         path = file_location + str(plot_type) + '.jpeg'
         plt.savefig(path)
+
+    def plot_infogan_grid(self, model):
+        z_dict = model.get_z(10 * 100, sequential=True)
+        gan_input = torch.cat([z_dict[k] for k in z_dict.keys()], dim=1)
+        gan_input = Variable(gan_input, requires_grad=True).cuda()
+        imgs = model.gen(gan_input)
+        grid_img = torchvision.utils.make_grid(imgs[:100], nrow=10, normalize=True)
+        plt.imshow(grid_img.permute(1, 2, 0).cpu().data)
+        plt.savefig(self.opt.result_dir+'/visualisations/gan_generate_grid.png')
+
+

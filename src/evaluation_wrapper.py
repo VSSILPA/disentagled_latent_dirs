@@ -3,9 +3,9 @@ from evaluation import Evaluator
 from train import Trainer
 from saver import Saver
 from visualiser import Visualiser
-import torch
 from config import save_config
 import logging
+import torch
 
 
 def run_evaluation_wrapper(configuration, opt ,data, perf_logger):
@@ -20,7 +20,13 @@ def run_evaluation_wrapper(configuration, opt ,data, perf_logger):
 	visualise_results = Visualiser(configuration,opt)
 	perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
-	# model, optimizer, loss = saver.load_model(model=model, optimizer=optimizer)
 	metrics = evaluator.compute_metrics(data, model)
-	# visualise_results.visualise_latent_traversal(z, model.decoder, 0)
-	saver.save_results(metrics, 'metrics')
+	logging.info(
+		"ACC: %.2f NMI: %.2f ARI: %.2f" % (metrics['ACC'], metrics['NMI'], metrics['ARI']))
+	if opt.algorithm == 'infogan':
+		visualise_results.plot_infogan_grid(model)
+	else:
+		z = torch.randn(100, generator.dim_z)
+		visualise_results.make_interpolation_chart(k, z, generator, deformator_layer, shift_r=10, shifts_count=5)
+
+

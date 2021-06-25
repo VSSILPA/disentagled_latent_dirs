@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'dicrete_ld--baseline'
-    experiment_description = 'checking if its possible to learn discrete classes with diversity'
+    experiment_name = 'InfoGAN baseline'
+    experiment_description = 'Code base for discrete ld verification'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -46,7 +46,7 @@ parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'InfoGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'eval'  # choices=['LD', 'CF', 'discrete_ld', 'GS']
+opt.algorithm = 'infogan'  # choices=['infogan', 'discrete_ld', 'GS']
 opt.dataset = 'mnist'  # choices=[''mnist]
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 # opt.pretrained_gen_root = 'models/pretrained/new_generators/'
@@ -57,6 +57,16 @@ opt.num_classes = 10
 opt.device_id = '0'
 opt.random_seed = 2
 opt.num_generator_seeds = 8
+opt.num_seeds = 2
+
+# ---------------------------------------------------------------------------- #
+# Options for StyleGAN2
+# ---------------------------------------------------------------------------- #
+generator_kwargs = {
+    "input_is_latent": True,
+    "randomize_noise": False,
+    "truncation": 0.8}
+
 # ---------------------------------------------------------------------------- #
 # Options for Discrete latent discovery
 # ---------------------------------------------------------------------------- #
