@@ -8,7 +8,7 @@ def get_data_loader(config, opt):
         data = DSprites(config, opt)
         return data
     elif opt.dataset == 'mnist':
-        transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize(
+        transform = torchvision.transforms.Compose([torchvision.transforms.Resize(32), torchvision.transforms.ToTensor(), torchvision.transforms.Normalize(
                                                   (0.5,), (0.5,))])
         train_data = torchvision.datasets.MNIST('../data/mnist/', train=True, download=True, transform=transform)
         test_data = torchvision.datasets.MNIST('../data/mnist/', train=False, download=True, transform=transform)

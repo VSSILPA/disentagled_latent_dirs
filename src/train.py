@@ -38,7 +38,7 @@ class Trainer(object):
         logit_loss = self.cross_entropy(logits, targets.cuda())
         logit_loss.backward()
         #
-        shift_predictor_opt.step()
+        # shift_predictor_opt.step()
         deformator_opt.step()
 
         return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
