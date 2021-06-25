@@ -10,7 +10,7 @@
 """
 
 from utils import *
-from models.stylegan2.models import Generator
+# from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from loading import load_generator
@@ -18,6 +18,8 @@ import sys
 from model import Lenet28
 
 sys.path.insert(0, './models/')
+from infogan_components import Generator, Discriminator
+from InfoGAN import InfoGAN
 
 
 def load(model, cpk_file):
@@ -46,34 +48,21 @@ def get_model(opt):
         for p in G.parameters():
             p.requires_grad_(False)
     elif gan_type == 'SNGAN':
-        G = load_generator({'gan_type' : 'SNGAN'}, 'models/pretrained/generators/SN_MNIST/')
-
+        G = load_generator({'gan_type': 'SNGAN'}, 'models/pretrained/generators/SN_MNIST/')
+    elif  gan_type == 'InfoGAN':
+        c1_len = 10  # Multinomial
+        c2_len = 0  # Gaussian
+        c3_len = 0  # Bernoulli
+        z_len = 64  # Noise vector length
+        embedding_len = 128
+        infogan_gen = Generator().to(device)
+        infogan_dis = Discriminator().to(device)
+        G = InfoGAN(infogan_gen, infogan_dis, embedding_len, z_len, c1_len, c2_len, c3_len, device)
+        G.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/InfoGAN/')
     else:
         raise NotImplementedError
 
-    if opt.algorithm == 'LD':
-        deformator = LatentDeformator(shift_dim=G.style_dim,
-                                      input_dim=opt.algo.ld.num_directions,  # dimension of one-hot encoded vector
-                                      out_dim=G.style_dim,
-                                      type=opt.algo.ld.deformator_type,
-                                      random_init=opt.algo.ld.deformator_randint).to(device)
-        if opt.algo.ld.shift_predictor == 'ResNet':
-            shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.ld.shift_predictor_size,
-                                                   channels=1 if opt.dataset == 'dsprites' else 3).to(device)
-        elif opt.algo.ld.shift_predictor == 'LeNet':
-            shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
-        else:
-            raise NotImplementedError
-
-        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ld.deformator_lr)
-
-        shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
-        models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
-    elif opt.algorithm == 'CF':
-        return G
-    elif opt.algorithm == 'GS':
-        return G
-    elif opt.algorithm == 'discrete_ld':
+    if opt.algorithm == 'discrete_ld':
         deformator = LatentDeformator(shift_dim=G.dim_z,
                                       input_dim=opt.algo.discrete_ld.num_directions,
                                       # dimension of one-hot encoded vector
@@ -94,7 +83,9 @@ def get_model(opt):
 
         shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(),
                                                lr=opt.algo.discrete_ld.shift_predictor_lr)
-        models = (G, deformator, shift_predictor,deformator_opt, shift_predictor_opt)
+        models = (G, D, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
+    elif opt.algorithm == 'eval':
+        models = G
     else:
         raise NotImplementedError
     return models

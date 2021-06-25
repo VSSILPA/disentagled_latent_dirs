@@ -5,7 +5,7 @@ from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
 import io
 from PIL import Image
-from config import generator_kwargs
+# from config import generator_kwargs
 
 matplotlib.use("Agg")
 

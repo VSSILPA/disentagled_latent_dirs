@@ -1,18 +1,12 @@
 import torch
-import logging
-from utils import make_noise
-import models.latent_regressor as latent_regressor
 import numpy as np
-import torch.nn as nn
-import time
-from metrics.betavae_metric import BetaVAEMetric
-from metrics.factor_vae_metric import FactorVAEMetric
-from metrics.mig import MIG
-from metrics.dci_metric import DCIMetric
-from latent_dataset import LatentDataset
 import os
-from config import BB_KWARGS
-import random
+from sklearn.cluster import KMeans
+from sklearn.metrics.cluster import normalized_mutual_info_score, adjusted_rand_score
+from torch.autograd import Variable
+import torch.nn.functional as F
+import torchvision
+import matplotlib.pyplot as plt
 
 
 class Evaluator(object):
@@ -20,109 +14,53 @@ class Evaluator(object):
         self.config = config
         self.device = torch.device('cuda:' + str(opt.device_id))
         self.opt = opt
-        self.encoder = latent_regressor.Encoder(latent_dimension=self.opt.encoder.latent_dimension,
-                                                backbone="cnn_encoder",
-                                                **BB_KWARGS[self.opt.dataset])
 
-    def compute_metrics(self, generator, directions, data, epoch):
-        start_time = time.time()
-        self.set_seed(self.opt.random_seed)
-        encoder = self._train_encoder(generator, directions)
+    def compute_metrics(self, data, gan):
 
-        beta_vae = BetaVAEMetric(data, self.device, self.opt)
-        factor_vae = FactorVAEMetric(data, self.device, self.opt)
-        mig = MIG(data, self.device, self.opt)
-        dci = DCIMetric(data, self.device)
+        train_loader , test_loader = data
+        latent_rep = []
+        labels_true = []
+        self.generate_images(gan)
+        for images, labels in test_loader:
+            out_dis, hid = gan.dis(images.to(self.device))
+            c1 = F.log_softmax(gan.Q_cat(hid))
+            predicted_labels = torch.argmax(c1, dim=1)
+            latent_rep.append(predicted_labels)
+            labels_true.append(labels)
+        latent_rep = torch.stack(latent_rep).view(-1).detach().cpu().numpy()
+        labels_true = torch.stack(labels_true).view(-1).detach().cpu().numpy()
 
-        beta_vae_metric = beta_vae.compute_beta_vae(encoder, np.random.RandomState(self.opt.random_seed),
-                                                    batch_size=64,
-                                                    num_train=5000, num_eval=5000)
-        logging.info("Computed beta vae metric")
-        factor_vae_metric = factor_vae.compute_factor_vae(encoder, np.random.RandomState(self.opt.random_seed),
-                                                          batch_size=64, num_train=5000, num_eval=5000,
-                                                          num_variance_estimate=5000)
-        logging.info("Computed factor vae metric")
-        mutual_info_gap = mig.compute_mig(encoder, num_train=10000, batch_size=128)
+        # km = KMeans(n_clusters=max(self.opt.num_classes, len(np.unique(labels_true))), random_state=0).fit(latent_rep.detach().cpu().numpy())
+        # labels_pred = km.labels_
+        # purity = self._compute_purity(labels_pred, labels_true)
+        ari = adjusted_rand_score(labels_true, latent_rep)
+        nmi = normalized_mutual_info_score(labels_true, latent_rep)
+        return {'NMI': nmi, 'ARI': ari, 'ACC': purity}
 
-        logging.info("Computed mig metric")
-        dci_metric = dci.compute_dci(encoder)
-        logging.info("Computed dci metric")
+    def _compute_purity(self, labels_pred, labels_true):
+        clusters = set(labels_pred)
 
-        dci_average = (dci_metric['disentanglement'] + dci_metric['completeness'] + (1-dci_metric['informativeness'])) / 3
-        metrics = {'beta_vae': beta_vae_metric, 'factor_vae': factor_vae_metric, 'mig': mutual_info_gap,
-                   'dci': dci_average}
-        logging.info('Disentanglement Vector')
-        logging.info(dci_metric['disentanglement_vector'])
-        logging.info('completeness_vector')
-        logging.info(dci_metric['completeness_vector'])
-        logging.info('informativeness_vector')
-        logging.info(dci_metric['informativeness_vector'])
-        logging.info(
-            "Time taken %d sec B-VAE: %.3f, F-VAE %.3F, MIG : %.3f Disentanglement: %.3f "
-            "Completeness: "
-            "%.3f Informativeness: %.3f DCI: %.3f" % (
-                time.time() - start_time,
-                metrics['beta_vae'][
-                    "eval_accuracy"],
-                metrics['factor_vae'][
-                    "eval_accuracy"],
-                metrics['mig'], dci_metric['disentanglement'],
-                dci_metric['completeness'], dci_metric['informativeness'], dci_average
-            ))
-        return metrics
+        # find out what class is most frequent in each cluster
+        cluster_classes = {}
+        correct = 0
+        for cluster in clusters:
+            # get the indices of rows in this cluster
+            indices = np.where(labels_pred == cluster)[0]
 
-    def _train_encoder(self, generator, directions):
-        model = self.encoder.to(self.device)
-        model = nn.DataParallel(model)
-        loader = self._get_encoder_train_data(generator, directions)
-        trained_model = latent_regressor._train(model, loader, self.opt)
-        return trained_model
+            cluster_labels = labels_true[indices]
+            majority_label = np.argmax(np.bincount(cluster_labels))
+            correct += np.sum(cluster_labels == majority_label)
 
-    def _get_encoder_train_data(self, generator, directions):
-        save_dir = os.path.join(self.opt.result_dir, self.opt.encoder.root)
-        os.makedirs(save_dir, exist_ok=True)
-        train_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=self.opt.encoder.create_new_data)
+        return float(correct) / len(labels_pred)
 
-        LABEL_MEAN = np.mean(train_dataset.labels, 0)
-        LABEL_STD = np.std(train_dataset.labels, 0) + 1e-5
-
-        train_dataset.labels = (train_dataset.labels - LABEL_MEAN) / LABEL_STD
-
-        test_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=self.opt.encoder.create_new_data)
-
-        test_dataset.labels = (test_dataset.labels - LABEL_MEAN) / LABEL_STD
-
-        val_dataset = LatentDataset(generator, directions, self.opt, save_dir, create_new_data=self.opt.encoder.create_new_data)
-
-        val_dataset.labels = (val_dataset.labels - LABEL_MEAN) / LABEL_STD
-
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.opt.encoder.batch_size,
-                                                   pin_memory=True, shuffle=True)
-
-        valid_loader = torch.utils.data.DataLoader(val_dataset, batch_size=self.opt.encoder.batch_size,
-                                                   pin_memory=True, shuffle=False)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=self.opt.encoder.batch_size, shuffle=False)
-
-        return {"train": train_loader, "valid": valid_loader, "test": test_loader}
-
-    @torch.no_grad()
-    def evaluate_model(self, generator, deformator, shift_predictor, trainer):
-        n_steps = 100
-
-        percents = torch.empty([n_steps])
-        for step in range(n_steps):
-            z = make_noise(128, generator.latent_size, truncation=self.opt.algo.ld.truncation).cuda()
-
-            target_indices, shifts, basis_shift = trainer.make_shifts(deformator.input_dim)
-            shift = deformator(basis_shift)
-
-            imgs, _ = generator(z, self.opt.depth, self.opt.alpha)
-            imgs_shifted, _ = generator(z + shift, self.opt.depth, self.opt.alpha)
-
-            logits, _ = shift_predictor(imgs, imgs_shifted)
-            percents[step] = (torch.argmax(logits, dim=1) == target_indices.cuda()).to(torch.float32).mean()
-
-        return percents.mean()
+    def generate_images(self, model):
+        z_dict = model.get_z(10 * 100, sequential=True)
+        gan_input = torch.cat([z_dict[k] for k in z_dict.keys()], dim=1)
+        gan_input = Variable(gan_input, requires_grad=True).to(self.device)
+        imgs = model.gen(gan_input)
+        grid_img = torchvision.utils.make_grid(imgs[:100], nrow=10, normalize=True)
+        plt.imshow(grid_img.permute(1, 2, 0).cpu().data)
+        plt.savefig('/home/adarsh/PycharmProjects/disentagled_latent_dirs/imgs.png')
 
     @staticmethod
     def set_seed(seed):

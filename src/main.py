@@ -24,7 +24,7 @@ def main(configurations, opt):
     save_config(configurations, opt)
     data = get_data_loader(configurations, opt)
     if configurations['evaluation']:
-        run_evaluation_wrapper(configurations, data, perf_logger)
+        run_evaluation_wrapper(configurations, opt, data, perf_logger)
     else:
         run_training_wrapper(configurations, opt, data, perf_logger)
 
