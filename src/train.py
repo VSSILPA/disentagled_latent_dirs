@@ -73,23 +73,23 @@ class Trainer(object):
 
     def make_shifts(self, latent_dim):
 
-        target_indices = torch.randint(0, self.opt.algo.linear_combo.num_directions,
-                                       [self.opt.algo.linear_combo.batch_size]).cuda()
-        if self.opt.algo.linear_combo.shift_distribution == "normal":
+        target_indices = torch.randint(0, self.opt.algo.discrete_ld.num_directions,
+                                       [self.opt.algo.discrete_ld.batch_size]).cuda()
+        if self.opt.algo.discrete_ld.shift_distribution == "normal":
             shifts = torch.randn(target_indices.shape)
-        elif self.opt.algo.linear_combo.shift_distribution == "uniform":
+        elif self.opt.algo.discrete_ld.shift_distribution == "uniform":
             shifts = 2.0 * torch.rand(target_indices.shape).cuda() - 1.0
 
-        shifts = self.opt.algo.linear_combo.shift_scale * shifts
-        shifts[(shifts < self.opt.algo.linear_combo.min_shift) & (shifts > 0)] = self.opt.algo.linear_combo.min_shift
-        shifts[(shifts > -self.opt.algo.linear_combo.min_shift) & (shifts < 0)] = -self.opt.algo.linear_combo.min_shift
+        shifts = self.opt.algo.discrete_ld.shift_scale * shifts
+        shifts[(shifts < self.opt.algo.discrete_ld.min_shift) & (shifts > 0)] = self.opt.algo.discrete_ld.min_shift
+        shifts[(shifts > -self.opt.algo.discrete_ld.min_shift) & (shifts < 0)] = -self.opt.algo.discrete_ld.min_shift
 
         try:
             latent_dim[0]
             latent_dim = list(latent_dim)
         except Exception:
             latent_dim = [latent_dim]
-        z_shift = torch.zeros([self.opt.algo.linear_combo.batch_size] + latent_dim).cuda()
+        z_shift = torch.zeros([self.opt.algo.discrete_ld.batch_size] + latent_dim).cuda()
         for i, (index, val) in enumerate(zip(target_indices, shifts)):
             z_shift[i][index] += val
 

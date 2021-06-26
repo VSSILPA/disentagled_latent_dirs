@@ -24,7 +24,7 @@ class ResNetShiftPredictor(nn.Module):
 
         # half dimension as we expect the model to be symmetric
         self.type_estimator = nn.Linear(512, np.product(dim))
-        # self.shift_estimator = nn.Linear(512, 10)
+        self.shift_estimator = nn.Linear(512, 1)
         ## regressing on 10 directions
 
     def forward(self, x1):
@@ -35,9 +35,9 @@ class ResNetShiftPredictor(nn.Module):
         features = self.features.output.view([batch_size, -1])
 
         logits = self.type_estimator(features)
-        # shift = self.shift_estimator(features)
+        shift = self.shift_estimator(features)
 
-        return logits
+        return logits, shift.squeeze()
 
 
 class LeNetShiftPredictor(nn.Module):
