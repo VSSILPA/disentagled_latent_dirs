@@ -43,7 +43,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
         if opt.algorithm == 'discrete_ld':
-            generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
+            generator,discriminator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
@@ -55,9 +55,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 deformator.to(device).train()
                 shift_predictor.to(device).train()
                 start_time = time.time()
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                deformator,discriminator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_discrete_ld(
-                        generator, deformator, shift_predictor, deformator_opt,
+                        generator,discriminator, deformator, shift_predictor, deformator_opt,
                         shift_predictor_opt)
                 logit_loss = logit_loss + losses[1]
                 if k % opt.algo.discrete_ld.logging_freq == 0 and k != 0:

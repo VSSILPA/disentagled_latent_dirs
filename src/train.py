@@ -22,7 +22,7 @@ class Trainer(object):
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
 
-    def train_discrete_ld(self, generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
+    def train_discrete_ld(self, generator,discriminator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
 
         generator.zero_grad()
         deformator.zero_grad()
@@ -42,7 +42,7 @@ class Trainer(object):
         shift_predictor_opt.step()
         deformator_opt.step()
 
-        return deformator, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
+        return deformator,discriminator, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
 
     def train_ganspace(self, generator):
 

@@ -15,6 +15,7 @@ from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from loading import load_generator
 import sys
+from models.SNGAN.discriminator import Discriminator
 from model import Lenet28
 
 sys.path.insert(0, './models/')
@@ -49,6 +50,7 @@ def get_model(opt):
             p.requires_grad_(False)
     elif gan_type == 'SNGAN':
         G = load_generator({'gan_type': 'SNGAN'}, 'models/pretrained/generators/SN_MNIST/')
+        D = Discriminator()
     elif gan_type == 'InfoGAN':
         c1_len = 10  # Multinomial
         c2_len = 0  # Gaussian
@@ -83,7 +85,7 @@ def get_model(opt):
 
         shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(),
                                                lr=opt.algo.discrete_ld.shift_predictor_lr)
-        models = (G, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
+        models = (G, D , deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     elif opt.algorithm == 'infogan':
         models = G
     else:

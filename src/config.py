@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'latent_discovert_reference removed--LeNet'
+    experiment_name = 'latent_discovert_discriminator-added'
     experiment_description = 'checking if its possible to learn discrete classes with diversity'
 else:
     experiment_name = input("Enter experiment name ")
