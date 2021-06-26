@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'latent_discovert_reference removed--LeNet'
+    experiment_name = 'discrete-ld--z_reconstruct_weight_0.1_classification'
     experiment_description = 'checking if its possible to learn discrete classes with diversity'
 else:
     experiment_name = input("Enter experiment name ")
@@ -82,7 +82,7 @@ opt.algo.ld.beta1 = 0.9
 opt.algo.ld.beta2 = 0.999
 opt.algo.ld.deformator_randint = True
 opt.algo.ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']
+opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']
 opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.ld.shift_predictor_size = None     #reconstructor resolution
 opt.algo.ld.label_weight = 1.0
@@ -112,7 +112,7 @@ opt.algo.discrete_ld.beta1 = 0.9
 opt.algo.discrete_ld.beta2 = 0.999
 opt.algo.discrete_ld.deformator_randint = True
 opt.algo.discrete_ld.deformator_type = 'linear'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.discrete_ld.shift_predictor = 'LeNet'  # choices=['ResNet', 'LeNet']1
+opt.algo.discrete_ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.discrete_ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.discrete_ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.discrete_ld.truncation = None

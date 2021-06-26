@@ -10,11 +10,11 @@ def save_hook(module, input, output):
 
 
 class ResNetShiftPredictor(nn.Module):
-    def __init__(self, dim, downsample=None,channels = 3):
+    def __init__(self, dim, downsample=None, channels=3, out_dim=128):
         super(ResNetShiftPredictor, self).__init__()
         self.features_extractor = resnet18(pretrained=False)
         self.features_extractor.conv1 = nn.Conv2d(
-            channels, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            channels, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         nn.init.kaiming_normal_(self.features_extractor.conv1.weight,
                                 mode='fan_out', nonlinearity='relu')
 
@@ -24,7 +24,7 @@ class ResNetShiftPredictor(nn.Module):
 
         # half dimension as we expect the model to be symmetric
         self.type_estimator = nn.Linear(512, np.product(dim))
-        self.shift_estimator = nn.Linear(512, 1)
+        self.shift_estimator = nn.Linear(512, out_dim)
         ## regressing on 10 directions
 
     def forward(self, x1):

@@ -11,6 +11,7 @@ class Trainer(object):
         self.config = config
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
+        self.mse_loss = nn.MSELoss()
 
     @staticmethod
     def set_seed(seed):
@@ -32,13 +33,12 @@ class Trainer(object):
         epsilon, targets = self.make_shifts_discrete_ld()
 
         shift = deformator(epsilon)
-        # imgs_ref = generator(z)
         imgs_shifted = generator(z + shift)
 
-        logits = shift_predictor(imgs_shifted)
-        logit_loss = self.cross_entropy(logits, targets.cuda())
-        logit_loss.backward()
-        #
+        logits, z_rec = shift_predictor(imgs_shifted)
+        loss = 0.1*self.cross_entropy(logits, targets.cuda()) + self.mse_loss(z_rec, z)
+        loss.backward()
+
         shift_predictor_opt.step()
         deformator_opt.step()
 

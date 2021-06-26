@@ -71,7 +71,8 @@ def get_model(opt):
                                       random_init=opt.algo.discrete_ld.deformator_randint).to(device)
         if opt.algo.discrete_ld.shift_predictor == 'ResNet':
             shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.discrete_ld.shift_predictor_size,
-                                                   channels=1 if opt.dataset == 'dsprites' or 'mnist' else 3).to(device)
+                                                   channels=1 if opt.dataset == 'dsprites' or 'mnist' else 3,
+                                                   out_dim=G.dim_z).to(device)
             # shift_predictor = Lenet28()
             # shift_predictor.load_state_dict(torch.load('4.pth'))
         elif opt.algo.discrete_ld.shift_predictor == 'LeNet':
