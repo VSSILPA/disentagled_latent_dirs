@@ -5,6 +5,7 @@ from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
 import io
 from PIL import Image
+import torch.nn as nn
 import torchvision
 from torch.autograd import Variable
 from config import generator_kwargs
@@ -58,12 +59,13 @@ class Visualiser(object):
     @torch.no_grad()
     def interpolate(self, generator,z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         n_cols = 10
+        relu = nn.ReLU()
         z = z[dim*10:(dim+1)*10]
-        directions.cuda()
-        dir_required = directions.weight[:,dim]
-        dir_required = dir_required.repeat(n_cols, 1)
-        z_deformed = z.cuda() + dir_required.cuda()
-        images = generator(z_deformed)
+        epsilon = torch.nn.functional.one_hot(torch.LongTensor([dim]*10), num_classes=10)
+        epsilon = epsilon.type(torch.float32)
+        z_input = torch.cat((z, epsilon),dim=1)
+        z_deformed = directions(z_input)
+        images = generator(relu(z_deformed.cuda()))
 
         return images
 

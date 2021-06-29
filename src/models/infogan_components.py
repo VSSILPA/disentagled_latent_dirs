@@ -63,17 +63,15 @@ class Discriminator(nn.Module):
         self.conv1 = Conv2d(1, 64, kernel_size=4, stride=2, padding=1)  # 28 x 28 -> 14 x 14
         self.conv2 = Conv2d(64, 128, kernel_size=4, stride=2, padding=1)  # 14 x 14 -> 7 x 7
 
-        self.fc1 = Linear(128 * 7 ** 2, 1024)
+        self.fc1 = Linear(128 * 8 ** 2, 1024)
         self.fc2 = Linear(1024, 1)
-        self.fc1_q = Linear(1024, embedding_len)
-
+        self.fc1_q = Linear(1024, c1_len)
         self.bn1 = nn.BatchNorm2d(128)
         self.bn2 = nn.BatchNorm1d(1024)
-        self.bn_q1 = nn.BatchNorm1d(embedding_len)
 
     def forward(self, x):
         x = F.leaky_relu(self.conv1(x))
-        x = F.leaky_relu(self.bn1(self.conv2(x))).view(-1, 7 ** 2 * 128)
+        x = F.leaky_relu(self.bn1(self.conv2(x))).view(-1, 8 ** 2 * 128)
 
         x = F.leaky_relu(self.bn2(self.fc1(x)))
-        return self.fc2(x), F.leaky_relu(self.bn_q1(self.fc1_q(x)))
+        return F.sigmoid(self.fc2(x)), self.fc1_q(x)

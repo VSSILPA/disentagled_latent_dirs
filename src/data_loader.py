@@ -12,8 +12,8 @@ def get_data_loader(config, opt):
                                                   (0.5,), (0.5,))])
         train_data = torchvision.datasets.MNIST('../data/mnist/', train=True, download=True, transform=transform)
         test_data = torchvision.datasets.MNIST('../data/mnist/', train=False, download=True, transform=transform)
-        train_loader = DataLoader(train_data, batch_size=128, shuffle=True, drop_last=True)
-        test_loader = DataLoader(test_data, batch_size=128, shuffle=True, drop_last=True)
+        train_loader = DataLoader(train_data, batch_size=32, shuffle=True, drop_last=True)
+        test_loader = DataLoader(test_data, batch_size=32, shuffle=True, drop_last=True)
 
         return train_loader, test_loader
     elif opt.dataset == 'celebA':

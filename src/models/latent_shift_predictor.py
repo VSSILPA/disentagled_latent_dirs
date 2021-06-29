@@ -35,7 +35,7 @@ class ResNetShiftPredictor(nn.Module):
         features = self.features.output.view([batch_size, -1])
 
         logits = self.type_estimator(features)
-        shift = self.shift_estimator(features)
+        shift = F.sigmoid(self.shift_estimator(features))
 
         return logits, shift.squeeze()
 

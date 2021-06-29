@@ -2,6 +2,7 @@ import random
 from utils import *
 from models.latent_deformator import normal_projection_stat
 import torch.nn as nn
+import torch.functional as F
 
 
 class Trainer(object):
@@ -11,6 +12,9 @@ class Trainer(object):
         self.config = config
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
+        self.mse_loss = nn.MSELoss()
+        self.relu = nn.ReLU()
+        self.adversarial_loss = torch.nn.BCELoss()
 
     @staticmethod
     def set_seed(seed):
@@ -22,27 +26,52 @@ class Trainer(object):
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
 
-    def train_discrete_ld(self, generator,discriminator, deformator, shift_predictor, deformator_opt, shift_predictor_opt):
+    def train_discrete_ld(self, generator, discriminator, disc_opt, deformator, shift_predictor, deformator_opt,
+                          shift_predictor_opt, train_loader):
+
 
         generator.zero_grad()
         deformator.zero_grad()
-        shift_predictor.zero_grad()
+        # shift_predictor.zero_grad()
+
+        label_fake = torch.full((self.opt.algo.discrete_ld.batch_size,), 0, dtype=torch.float32).cuda()
+        label_real = torch.full((self.opt.algo.discrete_ld.batch_size,), 1, dtype=torch.float32).cuda()
 
         z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
+
+        images =generator(z)
         epsilon, targets = self.make_shifts_discrete_ld()
+        gen_input = torch.cat((z, epsilon), dim=1)
+        shift = deformator(gen_input)
 
-        shift = deformator(epsilon)
-        # imgs_ref = generator(z)
-        imgs_shifted = generator(z + shift)
+        disc_opt.zero_grad()
+        prob_real, _ = discriminator(images.detach().cuda())
+        loss_D_real = self.adversarial_loss(prob_real.view(-1), label_real)
+        loss_D_real.backward()
 
-        logits = shift_predictor(imgs_shifted)
-        logit_loss = self.cross_entropy(logits, targets.cuda())
-        logit_loss.backward()
-        #
-        shift_predictor_opt.step()
+        imgs_shifted = generator(self.relu(shift))
+
+        prob_fake_D, _ = discriminator(imgs_shifted.detach())
+
+        loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
+        loss_D_fake.backward()
+
+        disc_opt.step()
+
+        generator.zero_grad()
+        deformator.zero_grad()
+
+        prob_fake, logits = discriminator(imgs_shifted)
+        # logits, z_rec = shift_predictor(imgs_shifted)
+
+        loss_G = self.adversarial_loss(prob_fake.view(-1), label_real)
+        loss = 0.5*loss_G + self.cross_entropy(logits, targets.cuda())
+        loss.backward()
+
+        # shift_predictor_opt.step()
         deformator_opt.step()
 
-        return deformator,discriminator, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
+        return deformator, discriminator, disc_opt, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
 
     def train_ganspace(self, generator):
 

@@ -41,9 +41,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
-
+        train_loader , _ = data
         if opt.algorithm == 'discrete_ld':
-            generator,discriminator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
+            generator,discriminator,disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
@@ -53,12 +53,12 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             for k in range(resume_step + 1, opt.algo.discrete_ld.num_steps):
                 generator.to(device).eval()
                 deformator.to(device).train()
-                shift_predictor.to(device).train()
+                # shift_predictor.to(device).train()
                 start_time = time.time()
-                deformator,discriminator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                deformator,discriminator,disc_opt, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_discrete_ld(
-                        generator,discriminator, deformator, shift_predictor, deformator_opt,
-                        shift_predictor_opt)
+                        generator,discriminator,disc_opt, deformator, shift_predictor, deformator_opt,
+                        shift_predictor_opt, train_loader)
                 logit_loss = logit_loss + losses[1]
                 if k % opt.algo.discrete_ld.logging_freq == 0 and k != 0:
                     total_loss, logit_loss, shift_loss = losses
@@ -78,8 +78,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     # metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     logit_loss = 0
-                if k % opt.algo.discrete_ld.saving_freq == 0 and k != 0:
-                    params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
-                    perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i, algo='LD')
-                    perf_logger.stop_monitoring("Saving Model")
+                # if k % opt.algo.discrete_ld.saving_freq == 0 and k != 0:
+                #     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
+                #     perf_logger.start_monitoring("Saving Model")
+                #     saver.save_model(params, k, i, algo='LD')
+                #     perf_logger.stop_monitoring("Saving Model")

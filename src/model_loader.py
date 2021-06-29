@@ -50,7 +50,10 @@ def get_model(opt):
             p.requires_grad_(False)
     elif gan_type == 'SNGAN':
         G = load_generator({'gan_type': 'SNGAN'}, 'models/pretrained/generators/SN_MNIST/')
-        D = Discriminator()
+        D = Discriminator().cuda()
+        disc_params = list(D.conv1.parameters()) + list(D.conv2.parameters()) + list(D.fc1.parameters()) + list(
+            D.fc2.parameters())
+        disc_opt = torch.optim.Adam(disc_params, lr=opt.algo.discrete_ld.deformator_lr)
     elif gan_type == 'InfoGAN':
         c1_len = 10  # Multinomial
         c2_len = 0  # Gaussian
@@ -66,7 +69,7 @@ def get_model(opt):
 
     if opt.algorithm == 'discrete_ld':
         deformator = LatentDeformator(shift_dim=G.dim_z,
-                                      input_dim=opt.algo.discrete_ld.num_directions,
+                                      input_dim=opt.algo.discrete_ld.num_directions+G.dim_z,
                                       # dimension of one-hot encoded vector
                                       out_dim=G.dim_z,
                                       type=opt.algo.discrete_ld.deformator_type,
@@ -81,11 +84,11 @@ def get_model(opt):
         else:
             raise NotImplementedError
 
-        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
-
-        shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(),
-                                               lr=opt.algo.discrete_ld.shift_predictor_lr)
-        models = (G, D , deformator, shift_predictor, deformator_opt, shift_predictor_opt)
+        gen_params = list(deformator.parameters()) + list(D.fc1_q.parameters())
+        deformator_opt = torch.optim.Adam(gen_params, lr=opt.algo.discrete_ld.deformator_lr)
+        shift_predictor = None
+        shift_predictor_opt = None
+        models = (G, D, disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     elif opt.algorithm == 'infogan':
         models = G
     else:
