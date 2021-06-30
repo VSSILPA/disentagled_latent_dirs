@@ -15,6 +15,7 @@ from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from loading import load_generator
 import sys
+# from models.SNGAN.discriminator import Discriminator
 from model import Lenet28
 
 sys.path.insert(0, './models/')

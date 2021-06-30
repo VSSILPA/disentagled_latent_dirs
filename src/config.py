@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'discrete-ld--pretrained'
+    experiment_name = 'discrete-ld_pretrained_linear'
     experiment_description = 'checking if its possible to learn discrete classes with diversity'
 else:
     experiment_name = input("Enter experiment name ")
@@ -59,7 +59,37 @@ opt.random_seed = 2
 opt.num_generator_seeds = 8
 opt.num_seeds = 2
 
-# ---------------------------------------------------------------------------- #
+##Encoder backbone params
+BB_KWARGS = {
+    "3dshapes": {"in_channel": 3, "size": 64},
+    "mpi3d": {"in_channel": 3, "size": 64},
+    # grayscale -> rgb
+    "dsprites": {"in_channel": 1, "size": 64},
+    "cars": {"in_channel": 3, "size": 64, "f_size": 512},
+    "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
+}
+# # ---------------------------------------------------------------------------- #
+# # Options for Latent Discovery
+# # ---------------------------------------------------------------------------- #
+# opt.algo = CN()
+# opt.algo.ld = CN()
+# opt.algo.ld.latent_dim = 512
+# opt.algo.ld.directions_count = 5
+#
+# opt.algo.ld.deformator_lr = 0.0001
+# opt.algo.ld.shift_predictor_lr = 0.0001
+# opt.algo.ld.beta1 = 0.9
+# opt.algo.ld.beta2 = 0.999
+# opt.algo.ld.deformator_randint = True
+# opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+# opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']
+# opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
+# opt.algo.ld.shift_predictor_size = None     #reconstructor resolution
+# opt.algo.ld.label_weight = 1.0
+# opt.algo.ld.shift_weight = 0.25
+# opt.algo.ld.truncation = None
+
+
 # Options for StyleGAN2
 # ---------------------------------------------------------------------------- #
 generator_kwargs = {
@@ -88,6 +118,10 @@ opt.algo.discrete_ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.discrete_ld.truncation = None
 opt.algo.discrete_ld.logging_freq = 1000
 opt.algo.discrete_ld.saving_freq = 1000
+opt.algo.discrete_ld.shift_scale = 6
+opt.algo.discrete_ld.min_shift = 0.5
+opt.algo.discrete_ld.label_weight = 1.0
+opt.algo.discrete_ld.shift_weight = 0.25
 
 
 def get_config(inputs):

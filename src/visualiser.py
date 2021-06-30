@@ -62,7 +62,16 @@ class Visualiser(object):
         directions.cuda()
         dir_required = directions.weight[:,dim]
         dir_required = dir_required.repeat(n_cols, 1)
-        z_deformed = z.cuda() + dir_required.cuda()
+        z_deformed = z.cuda() + 6*dir_required.cuda()
+        images = generator(z_deformed)
+
+        return images
+
+    @torch.no_grad()
+    def interpolate_ref(self, generator,z, shifts_r, shifts_count, dim, directions, with_central_border=False):
+        n_cols = 10
+        z = z[dim*10:(dim+1)*10]
+        z_deformed = z.cuda()
         images = generator(z_deformed)
 
         return images
@@ -73,11 +82,13 @@ class Visualiser(object):
         if not os.path.exists(file_location):
             os.makedirs(file_location)
         path = file_location + str(step) + '.png'
+        path_ref = file_location + str(step) + '_ref.png'
 
         directions.eval()
         generator.eval()
 
         imgs = []
+        imgs_ref = []
         if self.opt.algorithm == 'LD':
             num_directions = self.opt.algo.ld.num_directions
         elif self.opt.algorithm == 'discrete_ld':
@@ -88,11 +99,18 @@ class Visualiser(object):
             num_directions = self.opt.algo.cf.num_directions
         for i in range(num_directions):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
+            imgs_ref.append(self.interpolate_ref(generator, z, shift_r, shifts_count, i, directions))
 
         batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
 
+        batch_tensor_ref = torch.stack(imgs_ref).view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size)
+        batch_tensor_ref = torch.clamp(batch_tensor_ref, -1, 1)
+
         save_image(batch_tensor.view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
+                   padding=1)
+
+        save_image(batch_tensor_ref.view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size), path_ref, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
     def generate_plot_save_results(self, results, plot_type):

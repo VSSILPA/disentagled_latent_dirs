@@ -2,6 +2,7 @@ import random
 from utils import *
 from models.latent_deformator import normal_projection_stat
 import torch.nn as nn
+import torch.functional as F
 
 
 class Trainer(object):
@@ -32,7 +33,7 @@ class Trainer(object):
         epsilon, targets = self.make_shifts_discrete_ld()
 
         shift = deformator(epsilon)
-        imgs_shifted = generator(z + shift)
+        imgs_shifted = generator(z + 6*shift)
 
         logits = shift_predictor(imgs_shifted)
         logit_loss = self.cross_entropy(logits, targets.cuda())
