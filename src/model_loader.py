@@ -69,7 +69,7 @@ def get_model(opt):
 
     if opt.algorithm == 'discrete_ld':
         deformator = LatentDeformator(shift_dim=G.dim_z,
-                                      input_dim=opt.algo.discrete_ld.num_directions+G.dim_z,
+                                      input_dim=opt.algo.discrete_ld.num_directions,
                                       # dimension of one-hot encoded vector
                                       out_dim=G.dim_z,
                                       type=opt.algo.discrete_ld.deformator_type,

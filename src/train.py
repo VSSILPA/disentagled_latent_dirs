@@ -12,9 +12,8 @@ class Trainer(object):
         self.config = config
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
-        self.mse_loss = nn.MSELoss()
-        self.relu = nn.ReLU()
         self.adversarial_loss = torch.nn.BCELoss()
+        self.similarity_loss = nn.TripletMarginLoss()
 
     @staticmethod
     def set_seed(seed):
@@ -29,29 +28,30 @@ class Trainer(object):
     def train_discrete_ld(self, generator, discriminator, disc_opt, deformator, shift_predictor, deformator_opt,
                           shift_predictor_opt, train_loader):
 
-
         generator.zero_grad()
         deformator.zero_grad()
-        # shift_predictor.zero_grad()
 
         label_fake = torch.full((self.opt.algo.discrete_ld.batch_size,), 0, dtype=torch.float32).cuda()
         label_real = torch.full((self.opt.algo.discrete_ld.batch_size,), 1, dtype=torch.float32).cuda()
 
         z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
+        z_pos = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
+        images = generator(z)
+        epsilon_ref, epsilon_neg, targets = self.make_shifts_discrete_ld()
 
-        images =generator(z)
-        epsilon, targets = self.make_shifts_discrete_ld()
-        gen_input = torch.cat((z, epsilon), dim=1)
-        shift = deformator(gen_input)
+        z_final = torch.cat((z, z_pos, z), dim=0)
+        epsilon = torch.cat((epsilon_ref, epsilon_ref, epsilon_neg), dim=0)
+
+        shift = deformator(epsilon)
 
         disc_opt.zero_grad()
-        prob_real, _ = discriminator(images.detach().cuda())
+        prob_real, _, _ = discriminator(images.detach().cuda())
         loss_D_real = self.adversarial_loss(prob_real.view(-1), label_real)
         loss_D_real.backward()
 
-        imgs_shifted = generator(self.relu(shift))
+        imgs_shifted = generator(z_final + shift)
 
-        prob_fake_D, _ = discriminator(imgs_shifted.detach())
+        prob_fake_D, _, _ = discriminator(imgs_shifted[:self.opt.algo.discrete_ld.batch_size].detach())
 
         loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
         loss_D_fake.backward()
@@ -61,11 +61,15 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
 
-        prob_fake, logits = discriminator(imgs_shifted)
+        prob_fake, logits, similarity = discriminator(imgs_shifted)
         # logits, z_rec = shift_predictor(imgs_shifted)
 
-        loss_G = self.adversarial_loss(prob_fake.view(-1), label_real)
-        loss = 0.5*loss_G + self.cross_entropy(logits, targets.cuda())
+        loss_G = self.adversarial_loss(prob_fake.view(-1)[:self.opt.algo.discrete_ld.batch_size], label_real)
+        loss = loss_G + self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], targets[
+                                                                                          :self.opt.algo.discrete_ld.batch_size].cuda()) + self.similarity_loss(
+            similarity[:self.opt.algo.discrete_ld.batch_size],
+            similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
+            similarity[2 * self.opt.algo.discrete_ld.batch_size:])
         loss.backward()
 
         # shift_predictor_opt.step()
@@ -124,25 +128,33 @@ class Trainer(object):
 
         return target_indices, shifts, z_shift
 
+    def get_latent_triplets(self, z, epsilon):
+
+        z_pos = torch.randn(self.opt.algo.discrete_ld.batch_size, self.opt.algo.discrete_ld.latent_dim).cuda()
+        epsilon_pos = epsilon
+        z_neg = z
+        # eps_neg =
+        # for i in range
+        # epsilon_neg =
+
     def make_shifts_discrete_ld(self):
 
+        target = torch.randint(0, self.opt.algo.discrete_ld.num_directions, (self.opt.algo.discrete_ld.batch_size,))
+        epsilon_neg = []
+        for i in range(target.shape[0]):
+            target_set = list(range(10))
+            target_set.remove(target[i].item())
+            epsilon_neg.append(random.choice(target_set))
+
+        epsilon_ref = torch.nn.functional.one_hot(target, num_classes=10).cuda()
+        epsilon_ref = epsilon_ref.type(torch.float32)
+        epsilon_neg = torch.nn.functional.one_hot(torch.LongTensor(epsilon_neg), num_classes=10).cuda()
+        epsilon_neg = epsilon_neg.type(torch.float32)
+
+        return epsilon_ref, epsilon_neg, target
         # directions_count = list(range(self.opt.algo.linear_combo.num_directions)) sampled_directions_batch = [
         # random.sample(directions_count,self.opt.algo.linear_combo.combo_dirs) for x in range(
         # self.opt.algo.linear_combo.batch_size)] ground_truth_idx = torch.Tensor(np.array(
         # sampled_directions_batch)).cuda() selected_directions = torch.zeros((self.opt.algo.linear_combo.batch_size,
         # self.opt.algo.linear_combo.num_directions)).cuda() for idx,nonzero_idx in enumerate(
         # sampled_directions_batch): for i in nonzero_idx: selected_directions[idx][i] = 1
-        target = torch.randint(0, self.opt.algo.discrete_ld.num_directions, (self.opt.algo.discrete_ld.batch_size,))
-        epsilon = torch.nn.functional.one_hot(target,
-                                              num_classes=10).cuda()
-        epsilon = epsilon.type(torch.float32)
-        # noise = torch.FloatTensor(self.opt.algo.discrete_ld.batch_size,
-        #                             1).uniform_(-6, 6).cuda()
-        # epsilon = epsilon * noise
-
-        # z_shift = selected_directions * epsilon z_shift[(z_shift < self.opt.algo.linear_combo.min_shift) & (z_shift
-        # > 0)] = self.opt.algo.linear_combo.min_shift z_shift[(z_shift > -self.opt.algo.linear_combo.min_shift) & (
-        # z_shift < 0)] = -self.opt.algo.linear_combo.min_shift ground_truths = z_shift.gather(dim=1,
-        # index = ground_truth_idx.long())
-
-        return epsilon, target

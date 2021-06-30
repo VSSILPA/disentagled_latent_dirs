@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'discrete-ld--matrix for z'
-    experiment_description = 'checking if its possible to learn discrete classes with diversity'
+    experiment_name = 'similarity_based_disentanglement'
+    experiment_description = 'checking if similarity is sufficient for getting class identities'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'

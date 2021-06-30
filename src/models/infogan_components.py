@@ -1,6 +1,7 @@
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
+from torch.nn.utils import spectral_norm
 
 c1_len = 10  # Multinomial
 c2_len = 0  # Gaussian
@@ -66,12 +67,18 @@ class Discriminator(nn.Module):
         self.fc1 = Linear(128 * 8 ** 2, 1024)
         self.fc2 = Linear(1024, 1)
         self.fc1_q = Linear(1024, c1_len)
+        self.module_S = nn.Sequential(nn.Linear(in_features=1024, out_features=128),
+            nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        )
+
+        self.latent_similar = nn.Linear(in_features=128, out_features=10)
         self.bn1 = nn.BatchNorm2d(128)
         self.bn2 = nn.BatchNorm1d(1024)
 
     def forward(self, x):
         x = F.leaky_relu(self.conv1(x))
         x = F.leaky_relu(self.bn1(self.conv2(x))).view(-1, 8 ** 2 * 128)
-
         x = F.leaky_relu(self.bn2(self.fc1(x)))
-        return F.sigmoid(self.fc2(x)), self.fc1_q(x)
+        similarity_vec = self.module_S(x)
+        latent_vec = self.latent_similar(similarity_vec)
+        return F.sigmoid(self.fc2(x)), self.fc1_q(x) ,latent_vec

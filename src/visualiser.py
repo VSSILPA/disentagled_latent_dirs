@@ -59,14 +59,14 @@ class Visualiser(object):
     @torch.no_grad()
     def interpolate(self, generator,z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         n_cols = 10
-        relu = nn.ReLU()
         z = z[dim*10:(dim+1)*10]
-        epsilon = torch.nn.functional.one_hot(torch.LongTensor([dim]*10), num_classes=10)
+        directions.cuda()
+        epsilon = torch.nn.functional.one_hot(torch.LongTensor([dim]*10),
+                                              num_classes=10).cuda()
         epsilon = epsilon.type(torch.float32)
-        z_input = torch.cat((z, epsilon),dim=1)
-        z_deformed = directions(z_input)
-        images = generator(relu(z_deformed.cuda()))
-
+        dirs = directions(epsilon)
+        z_deformed = z.cuda()+ dirs
+        images = generator(z_deformed)
         return images
 
     @torch.no_grad()

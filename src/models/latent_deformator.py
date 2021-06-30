@@ -56,7 +56,7 @@ class LatentDeformator(nn.Module):
         if self.type == 'id':
             return input
 
-        # input = input.view([-1, self.input_dim])
+        input = input.view([-1, self.input_dim])
         if self.type == 'fc':
             x1 = self.fc1(input)
             x = self.act1(self.bn1(x1))
@@ -67,7 +67,7 @@ class LatentDeformator(nn.Module):
             x3 = self.fc3(x)
             x = self.act3(self.bn3(x3 + x2 + x1))
 
-            out = self.fc4(x) + input
+            out = self.fc4(x)
         elif self.type == 'linear':
             out = self.linear(input)
         elif self.type == 'proj':
@@ -75,15 +75,19 @@ class LatentDeformator(nn.Module):
             out = self.linear(input)
             out = (input_norm / torch.norm(out, dim=1, keepdim=True)) * out
         elif self.type == 'ortho':
-            mat = torch_expm((self.log_mat_half - self.log_mat_half.transpose(0, 1)).unsqueeze(0))
-            out = F.linear(input, mat)
+            with torch.no_grad():
+                q, r = torch.qr(self.ortho_mat.data)
+                unflip = torch.diag(r).sign().add(0.5).sign()
+                q *= unflip[..., None, :]
+                self.ortho_mat.data = q
+            out = input @ self.ortho_mat.T
         elif self.type == 'random':
             self.linear = self.linear.to(input.device)
             out = F.linear(input, self.linear)
 
         flat_shift_dim = np.product(self.shift_dim)
         if out.shape[1] < flat_shift_dim:
-            padding = torch.zeros([out.shape[0], flat_shift_dim - out.shape[1]], device=out.device)
+            padding = torch.zeros([out.shape[0], flat_shift_dim - out.shape[1]]).cuda()
             out = torch.cat([out, padding], dim=1)
         elif out.shape[1] > flat_shift_dim:
             out = out[:, :flat_shift_dim]

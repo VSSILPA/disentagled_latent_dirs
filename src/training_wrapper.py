@@ -70,10 +70,10 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     deformator_layer = torch.nn.Linear(opt.algo.discrete_ld.num_directions, generator.dim_z, bias=False)
                     if opt.algo.discrete_ld.deformator_type == 'ortho':
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
-                    else:
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
+                    # else:
+                    #     deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
                     z = torch.randn(100, generator.dim_z)
-                    visualise_results.make_interpolation_chart(k, z, generator, deformator_layer, shift_r=10,
+                    visualise_results.make_interpolation_chart(k, z, generator, deformator, shift_r=10,
                                                                shifts_count=5)
                     # metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
