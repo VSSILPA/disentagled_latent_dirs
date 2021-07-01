@@ -73,10 +73,10 @@ class Trainer(object):
 
         loss_G = self.adversarial_loss(prob_fake.view(-1)[:self.opt.algo.discrete_ld.batch_size], label_real)
         loss = loss_G + 0.5*self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], torch.LongTensor(targets).cuda())\
-            #    + self.similarity_loss(
-            # similarity[:self.opt.algo.discrete_ld.batch_size],
-            # similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
-            # similarity[2 * self.opt.algo.discrete_ld.batch_size:])
+               + self.similarity_loss(
+            similarity[:self.opt.algo.discrete_ld.batch_size],
+            similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
+            similarity[2 * self.opt.algo.discrete_ld.batch_size:])
         loss.backward()
 
         # shift_predictor_opt.step()
