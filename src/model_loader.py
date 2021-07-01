@@ -84,10 +84,10 @@ def get_model(opt):
         else:
             raise NotImplementedError
 
-        gen_params = list(deformator.parameters()) + list(D.fc1_q.parameters()) + list(D.module_S.parameters()) + list(D.latent_similar.parameters())
-        deformator_opt = torch.optim.Adam(gen_params, lr=opt.algo.discrete_ld.deformator_lr)
-        shift_predictor = None
-        shift_predictor_opt = None
+        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
+
+        shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(),
+                                               lr=opt.algo.discrete_ld.shift_predictor_lr)
         models = (G, D, disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     elif opt.algorithm == 'infogan':
         models = G

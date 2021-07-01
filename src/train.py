@@ -52,13 +52,10 @@ class Trainer(object):
         loss_D_real.backward()
 
         epsilon_ref, pos, neg, targets = self._get_samples()
-        postive_images = self.real_images[pos]
-        negative_images = self.real_images[neg]
         shift = deformator(epsilon_ref)
         imgs_shifted = generator(z + shift)
 
         prob_fake_D, _, _ = discriminator(imgs_shifted.detach())
-
         loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
         loss_D_fake.backward()
 
@@ -66,20 +63,23 @@ class Trainer(object):
 
         generator.zero_grad()
         deformator.zero_grad()
-        imgs_final = torch.cat((imgs_shifted,postive_images.cuda(),negative_images.cuda()),dim=0)
+        postive_images = self.real_images[pos]
+        # negative_images = self.real_images[neg]
+        imgs_shifted = generator(z + 2.5*shift)
+        # imgs_final = torch.cat((imgs_shifted,postive_images.cuda(),negative_images.cuda()),dim=0)
 
-        prob_fake, logits, similarity = discriminator(imgs_final)
-        # logits, z_rec = shift_predictor(imgs_shifted)
+        prob_fake, _, _ = discriminator(imgs_shifted)
+        logits, _ = shift_predictor(imgs_shifted,postive_images.cuda())
 
         loss_G = self.adversarial_loss(prob_fake.view(-1)[:self.opt.algo.discrete_ld.batch_size], label_real)
-        loss = loss_G + 0.5*self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], torch.LongTensor(targets).cuda())\
+        loss = loss_G + self.cross_entropy(logits, torch.LongTensor(targets).cuda())\
             #    + self.similarity_loss(
             # similarity[:self.opt.algo.discrete_ld.batch_size],
             # similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
             # similarity[2 * self.opt.algo.discrete_ld.batch_size:])
         loss.backward()
 
-        # shift_predictor_opt.step()
+        shift_predictor_opt.step()
         deformator_opt.step()
 
         return deformator, discriminator, disc_opt, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)

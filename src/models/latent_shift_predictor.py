@@ -14,7 +14,7 @@ class ResNetShiftPredictor(nn.Module):
         super(ResNetShiftPredictor, self).__init__()
         self.features_extractor = resnet18(pretrained=False)
         self.features_extractor.conv1 = nn.Conv2d(
-            channels, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            2, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         nn.init.kaiming_normal_(self.features_extractor.conv1.weight,
                                 mode='fan_out', nonlinearity='relu')
 
@@ -27,15 +27,15 @@ class ResNetShiftPredictor(nn.Module):
         self.shift_estimator = nn.Linear(512, 1)
         ## regressing on 10 directions
 
-    def forward(self, x1):
+    def forward(self, x1, x2):
         batch_size = x1.shape[0]
-        # if self.downsample is not None:
-        #     x1, x2 = F.interpolate(x1, self.downsample), F.interpolate(x2, self.downsample)
-        self.features_extractor(x1)
+        if self.downsample is not None:
+            x1, x2 = F.interpolate(x1, self.downsample), F.interpolate(x2, self.downsample)
+        self.features_extractor(torch.cat([x1, x2], dim=1))
         features = self.features.output.view([batch_size, -1])
 
         logits = self.type_estimator(features)
-        shift = F.sigmoid(self.shift_estimator(features))
+        shift = self.shift_estimator(features)
 
         return logits, shift.squeeze()
 
@@ -45,7 +45,7 @@ class LeNetShiftPredictor(nn.Module):
         super(LeNetShiftPredictor, self).__init__()
 
         self.convnet = nn.Sequential(
-            nn.Conv2d(channels, 3 * width, kernel_size=(5, 5)),
+            nn.Conv2d(channels * 2, 3 * width, kernel_size=(5, 5)),
             nn.BatchNorm2d(3 * width),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2), stride=2),
@@ -71,13 +71,13 @@ class LeNetShiftPredictor(nn.Module):
             nn.Linear(42 * width, 1)
         )
 
-    def forward(self, x1):
+    def forward(self, x1, x2):
         batch_size = x1.shape[0]
-        features = self.convnet(x1)
+        features = self.convnet(torch.cat([x1, x2], dim=1))
         features = features.mean(dim=[-1, -2])
         features = features.view(batch_size, -1)
 
         logits = self.fc_logits(features)
-        # shift = self.fc_shift(features)
+        shift = self.fc_shift(features)
 
-        return logits
+        return logits, shift.squeeze()
