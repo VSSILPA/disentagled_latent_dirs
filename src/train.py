@@ -1,8 +1,17 @@
+import os
 import random
 from utils import *
 from models.latent_deformator import normal_projection_stat
 import torch.nn as nn
+import random
 import torch.functional as F
+from torch.utils.data.dataset import random_split
+from copy import deepcopy
+from CustomDataset import NewDataset
+from torch.utils.data.dataset import random_split
+import torchvision
+import torchvision.transforms as transforms
+from math import floor
 
 
 class Trainer(object):
@@ -14,6 +23,7 @@ class Trainer(object):
         self.cross_entropy = nn.CrossEntropyLoss()
         self.adversarial_loss = torch.nn.BCELoss()
         self.similarity_loss = nn.TripletMarginLoss()
+        self.real_images = self._get_real_data()
 
     @staticmethod
     def set_seed(seed):
@@ -30,28 +40,24 @@ class Trainer(object):
 
         generator.zero_grad()
         deformator.zero_grad()
+        disc_opt.zero_grad()
 
         label_fake = torch.full((self.opt.algo.discrete_ld.batch_size,), 0, dtype=torch.float32).cuda()
         label_real = torch.full((self.opt.algo.discrete_ld.batch_size,), 1, dtype=torch.float32).cuda()
 
         z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
-        z_pos = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
         images = generator(z)
-        epsilon_ref, epsilon_neg, targets = self.make_shifts_discrete_ld()
-
-        z_final = torch.cat((z, z_pos, z), dim=0)
-        epsilon = torch.cat((epsilon_ref, epsilon_ref, epsilon_neg), dim=0)
-
-        shift = deformator(epsilon)
-
-        disc_opt.zero_grad()
         prob_real, _, _ = discriminator(images.detach().cuda())
         loss_D_real = self.adversarial_loss(prob_real.view(-1), label_real)
         loss_D_real.backward()
 
-        imgs_shifted = generator(z_final + shift)
+        epsilon_ref, pos, neg, targets = self._get_samples()
+        postive_images = self.real_images[pos]
+        negative_images = self.real_images[neg]
+        shift = deformator(epsilon_ref)
+        imgs_shifted = generator(z + shift)
 
-        prob_fake_D, _, _ = discriminator(imgs_shifted[:self.opt.algo.discrete_ld.batch_size].detach())
+        prob_fake_D, _, _ = discriminator(imgs_shifted.detach())
 
         loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
         loss_D_fake.backward()
@@ -60,16 +66,17 @@ class Trainer(object):
 
         generator.zero_grad()
         deformator.zero_grad()
+        imgs_final = torch.cat((imgs_shifted,postive_images.cuda(),negative_images.cuda()),dim=0)
 
-        prob_fake, logits, similarity = discriminator(imgs_shifted)
+        prob_fake, logits, similarity = discriminator(imgs_final)
         # logits, z_rec = shift_predictor(imgs_shifted)
 
         loss_G = self.adversarial_loss(prob_fake.view(-1)[:self.opt.algo.discrete_ld.batch_size], label_real)
-        loss = loss_G + self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], targets[
-                                                                                          :self.opt.algo.discrete_ld.batch_size].cuda()) + self.similarity_loss(
-            similarity[:self.opt.algo.discrete_ld.batch_size],
-            similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
-            similarity[2 * self.opt.algo.discrete_ld.batch_size:])
+        loss = loss_G + 0.5*self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], torch.LongTensor(targets).cuda())\
+            #    + self.similarity_loss(
+            # similarity[:self.opt.algo.discrete_ld.batch_size],
+            # similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
+            # similarity[2 * self.opt.algo.discrete_ld.batch_size:])
         loss.backward()
 
         # shift_predictor_opt.step()
@@ -128,15 +135,6 @@ class Trainer(object):
 
         return target_indices, shifts, z_shift
 
-    def get_latent_triplets(self, z, epsilon):
-
-        z_pos = torch.randn(self.opt.algo.discrete_ld.batch_size, self.opt.algo.discrete_ld.latent_dim).cuda()
-        epsilon_pos = epsilon
-        z_neg = z
-        # eps_neg =
-        # for i in range
-        # epsilon_neg =
-
     def make_shifts_discrete_ld(self):
 
         target = torch.randint(0, self.opt.algo.discrete_ld.num_directions, (self.opt.algo.discrete_ld.batch_size,))
@@ -152,6 +150,61 @@ class Trainer(object):
         epsilon_neg = epsilon_neg.type(torch.float32)
 
         return epsilon_ref, epsilon_neg, target
+
+    def _get_samples(self):
+
+        anchor = list(range(100))
+        neg = []
+        negative_idx = []
+        positive_idx = []
+        for i in range(10):
+            anchor_list = list(range(i * 10, (i + 1) * 10))
+            random.shuffle(anchor_list)
+            positive_idx = positive_idx + anchor_list
+            neg = random.choices(list(set(anchor) - set(anchor_list)), k=10)
+            negative_idx = negative_idx + neg
+        idx = random.choices(list(range(100)), k=self.opt.algo.discrete_ld.batch_size)
+        target = [floor(anchor[i] / 10) for i in idx]
+        epsilon_ref = torch.nn.functional.one_hot(torch.LongTensor(target), num_classes=10).cuda()
+        epsilon_ref = epsilon_ref.type(torch.float32)
+        pos = [positive_idx[i] for i in idx]
+        neg = [negative_idx[i] for i in idx]
+        return epsilon_ref, pos, neg, target
+
+    def _get_real_data(self):
+        data_dir = os.path.join(os.getcwd(), 'data')
+        os.makedirs(data_dir, exist_ok=True)
+        transform = transforms.Compose([transforms.Resize(32),transforms.ToTensor(), transforms.Normalize(mean=(0.5,), std=(0.5,))])
+        train_dataset = torchvision.datasets.MNIST(root=f'{data_dir}/', download=True, train=True, transform=transform)
+
+        temp_list_data = [train_dataset[i][0] for i in range(len(train_dataset))]
+        temp_list_data = torch.stack(temp_list_data)
+
+        temp_list_labels = [train_dataset.targets[i] for i in range(len(train_dataset))]
+        temp_list_labels = torch.stack(temp_list_labels)
+
+        train_dataset = NewDataset(temp_list_data, temp_list_labels)
+        split_data = random_split(train_dataset, [50000, 10000])
+
+        temp_train_dataset = deepcopy(split_data[0])
+        validation_dataset = deepcopy(split_data[1])
+
+        train_idx = temp_train_dataset.indices
+        train_dataset.data = train_dataset.data[train_idx]
+        train_dataset.targets = train_dataset.targets[train_idx]
+
+        numpy_labels = np.asarray(train_dataset.targets)
+        sort_labels = np.sort(numpy_labels)
+        sort_index = np.argsort(numpy_labels)
+        unique, start_index = np.unique(sort_labels, return_index=True)
+        training_index = []
+        for s in start_index:
+            for i in range(10):
+                training_index.append(sort_index[s + i])
+
+        real_images = torch.stack([temp_train_dataset[i][0] for i in training_index])
+        return real_images
+
         # directions_count = list(range(self.opt.algo.linear_combo.num_directions)) sampled_directions_batch = [
         # random.sample(directions_count,self.opt.algo.linear_combo.combo_dirs) for x in range(
         # self.opt.algo.linear_combo.batch_size)] ground_truth_idx = torch.Tensor(np.array(

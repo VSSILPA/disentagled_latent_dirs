@@ -84,7 +84,7 @@ def get_model(opt):
         else:
             raise NotImplementedError
 
-        gen_params = list(deformator.parameters()) + list(D.fc1_q.parameters())
+        gen_params = list(deformator.parameters()) + list(D.fc1_q.parameters()) + list(D.module_S.parameters()) + list(D.latent_similar.parameters())
         deformator_opt = torch.optim.Adam(gen_params, lr=opt.algo.discrete_ld.deformator_lr)
         shift_predictor = None
         shift_predictor_opt = None
