@@ -10,7 +10,7 @@
 """
 
 from utils import *
-# from models.stylegan2.models import Generator
+from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from loading import load_generator
@@ -48,6 +48,14 @@ def get_model(opt):
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
+    if gan_type == 'StyleGAN2-ada':
+        from models.networks import Generator,Discriminator
+        G = torch.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models/cifar_10_converted_g_ema.pth')
+        D = Discriminator(c_dim=0,img_channels=3,img_resolution=32)
+        G.eval().to(device)
+        D.cuda()
+        for p in G.parameters():
+            p.requires_grad_(False)
     elif gan_type == 'SNGAN':
         G = load_generator({'gan_type': 'SNGAN'}, 'models/pretrained/generators/SN_MNIST/')
         D = Discriminator().cuda()
@@ -68,10 +76,10 @@ def get_model(opt):
         raise NotImplementedError
 
     if opt.algorithm == 'discrete_ld':
-        deformator = LatentDeformator(shift_dim=G.dim_z,
+        deformator = LatentDeformator(shift_dim=G.w_dim,
                                       input_dim=opt.algo.discrete_ld.num_directions,
                                       # dimension of one-hot encoded vector
-                                      out_dim=G.dim_z,
+                                      out_dim=G.w_dim,
                                       type=opt.algo.discrete_ld.deformator_type,
                                       random_init=opt.algo.discrete_ld.deformator_randint).to(device)
         if opt.algo.discrete_ld.shift_predictor == 'ResNet':
@@ -84,10 +92,10 @@ def get_model(opt):
         else:
             raise NotImplementedError
 
-        gen_params = list(deformator.parameters()) + list(D.fc1_q.parameters()) + list(D.module_S.parameters()) + list(D.latent_similar.parameters())
-        deformator_opt = torch.optim.Adam(gen_params, lr=opt.algo.discrete_ld.deformator_lr)
-        shift_predictor = None
+        disc_opt = torch.optim.Adam(D.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
+        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
         shift_predictor_opt = None
+        # shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
         models = (G, D, disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     elif opt.algorithm == 'infogan':
         models = G

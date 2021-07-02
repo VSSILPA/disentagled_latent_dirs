@@ -45,9 +45,11 @@ class Trainer(object):
         label_fake = torch.full((self.opt.algo.discrete_ld.batch_size,), 0, dtype=torch.float32).cuda()
         label_real = torch.full((self.opt.algo.discrete_ld.batch_size,), 1, dtype=torch.float32).cuda()
 
-        z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.dim_z).cuda()
-        images = generator(z)
-        prob_real, _, _ = discriminator(images.detach().cuda())
+        z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.z_dim).cuda()
+        label = torch.zeros([1, generator.c_dim])
+        images = generator(z,label)
+        images = torch.clamp(images, -1, 1)
+        prob_real, _, _ = discriminator(images.detach().cuda(),label)
         loss_D_real = self.adversarial_loss(prob_real.view(-1), label_real)
         loss_D_real.backward()
 
@@ -55,9 +57,9 @@ class Trainer(object):
         postive_images = self.real_images[pos]
         negative_images = self.real_images[neg]
         shift = deformator(epsilon_ref)
-        imgs_shifted = generator(z + shift)
-
-        prob_fake_D, _, _ = discriminator(imgs_shifted.detach())
+        imgs_shifted = generator(z + shift,label)
+        imgs_shifted = torch.clamp(imgs_shifted, -1, 1)
+        prob_fake_D, _, _ = discriminator(imgs_shifted.detach(),label)
 
         loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
         loss_D_fake.backward()
@@ -68,12 +70,12 @@ class Trainer(object):
         deformator.zero_grad()
         imgs_final = torch.cat((imgs_shifted,postive_images.cuda(),negative_images.cuda()),dim=0)
 
-        prob_fake, logits, similarity = discriminator(imgs_final)
+        prob_fake, logits, similarity = discriminator(imgs_final,label)
         # logits, z_rec = shift_predictor(imgs_shifted)
 
         loss_G = self.adversarial_loss(prob_fake.view(-1)[:self.opt.algo.discrete_ld.batch_size], label_real)
-        loss = loss_G + 0.5*self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], torch.LongTensor(targets).cuda())\
-               + self.similarity_loss(
+        loss = loss_G + 0.1*self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size], torch.LongTensor(targets).cuda())\
+               + 0.1*self.similarity_loss(
             similarity[:self.opt.algo.discrete_ld.batch_size],
             similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
             similarity[2 * self.opt.algo.discrete_ld.batch_size:])
@@ -174,17 +176,17 @@ class Trainer(object):
     def _get_real_data(self):
         data_dir = os.path.join(os.getcwd(), 'data')
         os.makedirs(data_dir, exist_ok=True)
-        transform = transforms.Compose([transforms.Resize(32),transforms.ToTensor(), transforms.Normalize(mean=(0.5,), std=(0.5,))])
-        train_dataset = torchvision.datasets.MNIST(root=f'{data_dir}/', download=True, train=True, transform=transform)
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=(0.5,0.5,0.5), std=(0.5,0.5,0.5))])
+        train_dataset = torchvision.datasets.CIFAR10(root=f'{data_dir}/', download=True, train=True, transform=transform)
 
         temp_list_data = [train_dataset[i][0] for i in range(len(train_dataset))]
         temp_list_data = torch.stack(temp_list_data)
 
         temp_list_labels = [train_dataset.targets[i] for i in range(len(train_dataset))]
-        temp_list_labels = torch.stack(temp_list_labels)
+        temp_list_labels = torch.LongTensor(temp_list_labels)
 
         train_dataset = NewDataset(temp_list_data, temp_list_labels)
-        split_data = random_split(train_dataset, [50000, 10000])
+        split_data = random_split(train_dataset, [40000, 10000])
 
         temp_train_dataset = deepcopy(split_data[0])
         validation_dataset = deepcopy(split_data[1])

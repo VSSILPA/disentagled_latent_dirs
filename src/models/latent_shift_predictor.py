@@ -10,11 +10,11 @@ def save_hook(module, input, output):
 
 
 class ResNetShiftPredictor(nn.Module):
-    def __init__(self, dim, downsample=None,channels = 3):
+    def __init__(self, dim, downsample=None,channels = 2):
         super(ResNetShiftPredictor, self).__init__()
         self.features_extractor = resnet18(pretrained=False)
         self.features_extractor.conv1 = nn.Conv2d(
-            channels, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            2, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         nn.init.kaiming_normal_(self.features_extractor.conv1.weight,
                                 mode='fan_out', nonlinearity='relu')
 
@@ -27,11 +27,11 @@ class ResNetShiftPredictor(nn.Module):
         self.shift_estimator = nn.Linear(512, 1)
         ## regressing on 10 directions
 
-    def forward(self, x1):
+    def forward(self, x1, x2):
         batch_size = x1.shape[0]
-        # if self.downsample is not None:
-        #     x1, x2 = F.interpolate(x1, self.downsample), F.interpolate(x2, self.downsample)
-        self.features_extractor(x1)
+        if self.downsample is not None:
+            x1, x2 = F.interpolate(x1, self.downsample), F.interpolate(x2, self.downsample)
+        self.features_extractor(torch.cat([x1, x2], dim=1))
         features = self.features.output.view([batch_size, -1])
 
         logits = self.type_estimator(features)

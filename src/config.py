@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'triplet loss supervised-ce-0'
+    experiment_name = 'cifar10-ours'
     experiment_description = 'checking if similarity is sufficient for getting class identities'
 else:
     experiment_name = input("Enter experiment name ")
@@ -45,9 +45,9 @@ parser.add_argument('--evaluation', type=bool, default=False, help='whether to r
 parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
-opt.gan_type = 'SNGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
+opt.gan_type = 'StyleGAN2-ada'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'discrete_ld'  # choices=['infogan', 'discrete_ld', 'GS']
-opt.dataset = 'mnist'  # choices=[''mnist]
+opt.dataset = 'cifar10'  # choices=[''mnist]
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 # opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 1 if opt.dataset == 'mnist' or 'fashion_mnist' else 3
@@ -102,7 +102,7 @@ generator_kwargs = {
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.discrete_ld = CN()
-opt.algo.discrete_ld.batch_size = 32
+opt.algo.discrete_ld.batch_size = 16
 opt.algo.discrete_ld.latent_dim = 128
 opt.algo.discrete_ld.num_steps = 100001
 opt.algo.discrete_ld.num_directions = 10
