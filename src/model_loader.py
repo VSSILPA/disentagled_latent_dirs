@@ -91,9 +91,9 @@ def get_model(opt):
             shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
         else:
             raise NotImplementedError
-
+        deformator_params = list(deformator.parameters()) + list(D.b4.module_S.parameters()) +list(D.b4.latent_similar.parameters()) + list(D.b4.fc1_q.parameters())
         disc_opt = torch.optim.Adam(D.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
-        deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
+        deformator_opt = torch.optim.Adam(deformator_params, lr=opt.algo.discrete_ld.deformator_lr)
         shift_predictor_opt = None
         # shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
         models = (G, D, disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt)

@@ -65,17 +65,18 @@ class Visualiser(object):
                                               num_classes=10).cuda()
         epsilon = epsilon.type(torch.float32)
         dirs = directions(epsilon)
-        z_deformed = z.cuda()+ dirs
-        images = generator(z_deformed)
-        return images
+        w = generator.mapping(z, 0)
+        shift = dirs.unsqueeze(1).repeat([1, 8, 1])
+        imgs_shifted = generator.synthesis(w+shift)
+        return imgs_shifted
 
     @torch.no_grad()
     def interpolate_ref(self, generator,z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         n_cols = 10
         z = z[dim*10:(dim+1)*10]
-        z_deformed = z.cuda()
-        images = generator(z_deformed)
-
+        w = generator.mapping(z, 0)
+        images = generator.synthesis(w)
+        images = torch.clamp(images, -1, 1)
         return images
 
     def make_interpolation_chart(self, step, z,generator, directions, shift_r=10, shifts_count=5):
@@ -103,16 +104,16 @@ class Visualiser(object):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
             imgs_ref.append(self.interpolate_ref(generator, z, shift_r, shifts_count, i, directions))
 
-        batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size)
+        batch_tensor = torch.stack(imgs).view(-1, 3, self.opt.image_size, self.opt.image_size)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
 
-        batch_tensor_ref = torch.stack(imgs_ref).view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size)
+        batch_tensor_ref = torch.stack(imgs_ref).view(-1, 3, self.opt.image_size, self.opt.image_size)
         batch_tensor_ref = torch.clamp(batch_tensor_ref, -1, 1)
 
-        save_image(batch_tensor.view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
+        save_image(batch_tensor.view(-1, 3, self.opt.image_size, self.opt.image_size), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
-        save_image(batch_tensor_ref.view(-1, self.opt.num_channels, self.opt.image_size, self.opt.image_size), path_ref, nrow=10, normalize=True, scale_each=True, pad_value=128,
+        save_image(batch_tensor_ref.view(-1, 3, self.opt.image_size, self.opt.image_size), path_ref, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
 
     def generate_plot_save_results(self, results, plot_type):

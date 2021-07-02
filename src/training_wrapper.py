@@ -41,9 +41,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
-        train_loader , _ = data
         if opt.algorithm == 'discrete_ld':
-            generator,discriminator,disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
+            generator, discriminator, disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
@@ -53,12 +52,11 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             for k in range(resume_step + 1, opt.algo.discrete_ld.num_steps):
                 generator.to(device).eval()
                 deformator.to(device).train()
-                # shift_predictor.to(device).train()
                 start_time = time.time()
                 deformator,discriminator,disc_opt, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_discrete_ld(
                         generator,discriminator,disc_opt, deformator, shift_predictor, deformator_opt,
-                        shift_predictor_opt, train_loader)
+                        shift_predictor_opt)
                 logit_loss = logit_loss + losses[1]
                 if k % opt.algo.discrete_ld.logging_freq == 0 and k != 0:
                     total_loss, logit_loss, shift_loss = losses
@@ -67,12 +65,12 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                             k, opt.algo.discrete_ld.num_steps, time.time() - start_time,
                             logit_loss / opt.algo.discrete_ld.logging_freq))
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.discrete_ld.num_directions, generator.dim_z, bias=False)
+                    deformator_layer = torch.nn.Linear(opt.algo.discrete_ld.num_directions, generator.w_dim, bias=False)
                     if opt.algo.discrete_ld.deformator_type == 'ortho':
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     # else:
                     #     deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
-                    z = torch.randn(100, generator.dim_z)
+                    z = torch.randn(100, generator.w_dim)
                     visualise_results.make_interpolation_chart(k, z, generator, deformator, shift_r=10,
                                                                shifts_count=5)
                     # metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
