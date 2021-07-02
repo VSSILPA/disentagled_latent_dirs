@@ -116,7 +116,7 @@ opt.algo.discrete_ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
 opt.algo.discrete_ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
 opt.algo.discrete_ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.discrete_ld.truncation = None
-opt.algo.discrete_ld.logging_freq = 500
+opt.algo.discrete_ld.logging_freq = 1000
 opt.algo.discrete_ld.saving_freq = 10000
 opt.algo.discrete_ld.shift_scale = 6
 opt.algo.discrete_ld.min_shift = 0.5

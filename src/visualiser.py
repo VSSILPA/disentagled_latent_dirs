@@ -65,7 +65,7 @@ class Visualiser(object):
                                               num_classes=10).cuda()
         epsilon = epsilon.type(torch.float32)
         dirs = directions(epsilon)
-        w = generator.mapping(z, 0)
+        w = generator.mapping(z.cuda(), 0)
         shift = dirs.unsqueeze(1).repeat([1, 8, 1])
         imgs_shifted = generator.synthesis(w+shift)
         return imgs_shifted
@@ -74,7 +74,7 @@ class Visualiser(object):
     def interpolate_ref(self, generator,z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         n_cols = 10
         z = z[dim*10:(dim+1)*10]
-        w = generator.mapping(z, 0)
+        w = generator.mapping(z.cuda(), 0)
         images = generator.synthesis(w)
         images = torch.clamp(images, -1, 1)
         return images
