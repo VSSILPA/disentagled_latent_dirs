@@ -73,7 +73,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     z = torch.randn(100, generator.w_dim)
                     visualise_results.make_interpolation_chart(k, z, generator, deformator, shift_r=10,
                                                                shifts_count=5)
-                    # metrics = evaluator.compute_metrics_discrete_ld(data, shift_predictor)
+                    metrics = evaluator.compute_metrics_discrete_ld(data, discriminator)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
                     logit_loss = 0
                 # if k % opt.algo.discrete_ld.saving_freq == 0 and k != 0:

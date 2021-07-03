@@ -66,7 +66,7 @@ class Visualiser(object):
         epsilon = epsilon.type(torch.float32)
         dirs = directions(epsilon)
         w = generator.mapping(z.cuda(), 0)
-        shift = dirs.unsqueeze(1).repeat([1, 8, 1])
+        shift = dirs.unsqueeze(1).repeat([1, 16, 1])
         imgs_shifted = generator.synthesis(w+shift)
         return imgs_shifted
 

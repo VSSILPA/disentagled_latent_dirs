@@ -16,29 +16,17 @@ class Evaluator(object):
         self.device = torch.device('cuda:' + str(opt.device_id))
         self.opt = opt
 
-    def compute_metrics_discrete_ld(self, data, shift_predictor):
+    def compute_metrics_discrete_ld(self, data, discriminator):
         train_loader, test_loader = data
         latent_rep = []
         labels_true = []
         for images, labels in test_loader:
-            logits = shift_predictor(images.to(self.device))
+            logits = discriminator(images.to(self.device))
             predicted_labels = torch.argmax(logits, dim=1)
             latent_rep.append(predicted_labels)
             labels_true.append(labels)
 
         latent_rep = torch.stack(latent_rep).view(-1).detach().cpu().numpy()
-        mapping = {'0': '5',
-                   '1': '7',
-                   '2': '3',
-                   '3': '1',
-                   '4': '5',
-                   '5': '0',
-                   '6': '9',
-                   '7': '4',
-                   '8': '6',
-                   '9': '8'}
-        for i in range(latent_rep.shape[0]):
-            latent_rep[i] = mapping[str(latent_rep[i])]
         labels_true = torch.stack(labels_true).view(-1).detach().cpu().numpy()
         purity = self._compute_purity(latent_rep, labels_true)
         ari = adjusted_rand_score(labels_true, latent_rep)

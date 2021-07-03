@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'cifar10-ours'
+    experiment_name = 'cifar10-ours-similarity-0.1 0.1'
     experiment_description = 'checking if similarity is sufficient for getting class identities'
 else:
     experiment_name = input("Enter experiment name ")
@@ -47,7 +47,7 @@ parser.add_argument('--resume_train', type=bool, default=False, help='name of th
 opt = CN()
 opt.gan_type = 'StyleGAN2-ada'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'discrete_ld'  # choices=['infogan', 'discrete_ld', 'GS']
-opt.dataset = 'cifar10'  # choices=[''mnist]
+opt.dataset = 'cifar10'  # choices=[mnist,cifar10]
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 # opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 1 if opt.dataset == 'mnist' or 'fashion_mnist' else 3
@@ -105,7 +105,7 @@ opt.algo.discrete_ld = CN()
 opt.algo.discrete_ld.batch_size = 16
 opt.algo.discrete_ld.latent_dim = 128
 opt.algo.discrete_ld.num_steps = 100001
-opt.algo.discrete_ld.num_directions = 10
+opt.algo.discrete_ld.num_directions = 20
 opt.algo.discrete_ld.deformator_lr = 0.001
 opt.algo.discrete_ld.shift_predictor_lr = 0.001
 opt.algo.discrete_ld.beta1 = 0.9

@@ -58,7 +58,7 @@ class Trainer(object):
         negative_images = self.real_images[neg]
         shift = deformator(epsilon_ref)
         w = generator.mapping(z, 0)
-        shift = shift.unsqueeze(1).repeat([1, 8, 1])
+        shift = shift.unsqueeze(1).repeat([1, 16, 1])
         imgs_shifted = generator.synthesis(w+shift)
         imgs_shifted = torch.clamp(imgs_shifted, -1, 1)
         prob_fake_D, _, _ = discriminator(imgs_shifted.detach(), 0)
@@ -189,10 +189,9 @@ class Trainer(object):
         temp_list_labels = torch.LongTensor(temp_list_labels)
 
         train_dataset = NewDataset(temp_list_data, temp_list_labels)
-        split_data = random_split(train_dataset, [40000, 10000])
+        split_data = random_split(train_dataset, [10000,40000])
 
         temp_train_dataset = deepcopy(split_data[0])
-        validation_dataset = deepcopy(split_data[1])
 
         train_idx = temp_train_dataset.indices
         train_dataset.data = train_dataset.data[train_idx]
