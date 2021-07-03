@@ -16,11 +16,11 @@ from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredic
 from loading import load_generator
 import sys
 from models.SNGAN.discriminator import Discriminator
-from model import Lenet28
+#from model import Lenet28
 
 sys.path.insert(0, './models/')
-from infogan_components import Generator, Discriminator
-from InfoGAN import InfoGAN
+#from infogan_components import Generator, Discriminator
+#from InfoGAN import InfoGAN
 
 
 def load(model, cpk_file):
@@ -50,7 +50,7 @@ def get_model(opt):
             p.requires_grad_(False)
     if gan_type == 'StyleGAN2-ada':
         from models.networks import Generator,Discriminator
-        G = torch.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models/cifar_10_converted_g_ema.pth')
+        G = torch.load('/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/cifar_10_converted_g_ema.pth')
         D = Discriminator(c_dim=0,img_channels=3,img_resolution=32)
         G.eval().to(device)
         D.cuda()
