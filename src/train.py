@@ -12,6 +12,9 @@ from torch.utils.data.dataset import random_split
 import torchvision
 import torchvision.transforms as transforms
 from math import floor
+from reassigned_dataset import ReassignedDataset
+import faiss
+import time
 
 
 class Trainer(object):
@@ -22,8 +25,10 @@ class Trainer(object):
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
         self.adversarial_loss = torch.nn.BCELoss()
-        self.similarity_loss = nn.TripletMarginLoss()
-        self.real_images = self._get_real_data()
+        # self.similarity_loss = nn.TripletMarginLoss()
+        # self.real_images = self._get_real_data()
+        self.n = 50000
+        self.k = 10
 
     @staticmethod
     def set_seed(seed):
@@ -38,81 +43,155 @@ class Trainer(object):
     def train_discrete_ld(self, generator, discriminator, disc_opt, deformator, shift_predictor, deformator_opt,
                           shift_predictor_opt):
 
-        generator.zero_grad()
-        deformator.zero_grad()
-        disc_opt.zero_grad()
+        image_z = []
+        features_list = []
 
-        label_fake = torch.full((self.opt.algo.discrete_ld.batch_size,), 0, dtype=torch.float32).cuda()
-        label_real = torch.full((self.opt.algo.discrete_ld.batch_size,), 1, dtype=torch.float32).cuda()
+        generator.eval()
+        shift_predictor.eval()
+        for i in range(500):
+            z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.z_dim).cuda()
+            w = generator.mapping(z, 0)
+            images = generator.synthesis(w)
+            images = torch.clamp(images, -1, 1)
+            _, _, features = shift_predictor(images)
+            image_z.append(z)
+            features_list.append(features.data.cpu())
+        images_z = torch.stack(image_z).view(-1, 512)
+        features = torch.stack(features_list).view(-1, 512).numpy()
 
-        z = torch.randn(self.opt.algo.discrete_ld.batch_size, generator.z_dim).cuda()
-        w = generator.mapping(z, 0)
-        images = generator.synthesis(w)
-        images = torch.clamp(images, -1, 1)
-        prob_real, _, _ = discriminator(images.detach().cuda(), 0)
-        loss_D_real = self.adversarial_loss(prob_real.view(-1), label_real)
-        loss_D_real.backward()
+        clustering_loss = self.cluster(features, False)
+        del features
+        del images
+        del features_list
+        data = []
+        labels_list = []
+        for i, labels in enumerate(self.images_lists):
+            data.append(images_z[labels])
+            labels_list.append([i]*len(labels))
 
-        epsilon_ref, pos, neg, targets = self._get_samples()
-        postive_images = self.real_images[pos]
-        negative_images = self.real_images[neg]
-        shift = deformator(epsilon_ref)
-        w = generator.mapping(z, 0)
-        shift = shift.unsqueeze(1).repeat([1, 16, 1])
-        imgs_shifted = generator.synthesis(w+shift)
-        imgs_shifted = torch.clamp(imgs_shifted, -1, 1)
-        prob_fake_D, _, _ = discriminator(imgs_shifted.detach(), 0)
+        labels = [item for sublist in labels_list for item in sublist]
+        train_data = [item for sublist in data for item in sublist]
+        dataset = NewDataset(torch.stack(train_data),torch.stack(labels),generator,transform=)
 
-        loss_D_fake = self.adversarial_loss(prob_fake_D.view(-1), label_fake)
-        loss_D_fake.backward()
+        shift_predictor.type_estimator.weight.data.normal_(0, 0.01)
+        shift_predictor.type_estimator.bias.data.zero_()
 
-        disc_opt.step()
+        shift_predictor.train()
+        optimizer_tl = torch.optim.SGD(shift_predictor.type_estimator.parameters(), lr=0.05, weight_decay=10 ** -5,)
 
-        generator.zero_grad()
-        deformator.zero_grad()
-        imgs_final = torch.cat((imgs_shifted, postive_images.cuda(), negative_images.cuda()), dim=0)
 
-        prob_fake, logits, similarity = discriminator(imgs_final, 0)
 
-        loss_G = self.adversarial_loss(prob_fake.view(-1)[:self.opt.algo.discrete_ld.batch_size], label_real)
-        loss = loss_G + 0.1 * self.cross_entropy(logits[:self.opt.algo.discrete_ld.batch_size],
-                                                 torch.LongTensor(targets).cuda()) \
-               + 0.1 * self.similarity_loss(
-            similarity[:self.opt.algo.discrete_ld.batch_size],
-            similarity[self.opt.algo.discrete_ld.batch_size:2 * self.opt.algo.discrete_ld.batch_size],
-            similarity[2 * self.opt.algo.discrete_ld.batch_size:])
-        loss.backward()
-
-        deformator_opt.step()
 
         return deformator, discriminator, disc_opt, shift_predictor, deformator_opt, shift_predictor_opt, (0, 0, 0)
 
-    def train_ganspace(self, generator):
+    def run_kmeans(self,x, nmb_clusters, verbose=False):
+        """Runs kmeans on 1 GPU.
+        Args:
+            x: data
+            nmb_clusters (int): number of clusters
+        Returns:
+            list: ids of data in each cluster
+        """
+        n_data, d = x.shape
 
-        z = torch.randn(self.opt.algo.gs.num_samples, generator.style_dim).cuda()
-        feats = generator.get_latent(z)
-        V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
-        deformator = V[:, :self.opt.algo.gs.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1])
-        deformator_layer.weight.data = torch.FloatTensor(deformator)
-        return deformator_layer
+        # faiss implementation of k-means
+        clus = faiss.Clustering(d, nmb_clusters)
 
-    def train_closed_form(self, generator):
+        # Change faiss seed at each k-means so that the randomly picked
+        # initialization centroids do not correspond to the same feature ids
+        # from an epoch to another.
+        clus.seed = np.random.randint(1234)
 
-        modulate = {
-            k: v
-            for k, v in generator.state_dict().items()
-            if "modulation" in k and "to_rgbs" not in k and "weight" in k
-        }
-        weight_mat = []
-        for k, v in modulate.items():
-            weight_mat.append(v)
-        W = torch.cat(weight_mat[:-1], 0)
-        V = torch.svd(W).V.detach().cpu().numpy()
-        deformator = V[:, :self.opt.algo.cf.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1])
-        deformator_layer.weight.data = torch.FloatTensor(deformator)
-        return deformator_layer
+        clus.niter = 20
+        clus.max_points_per_centroid = 10000000
+        res = faiss.StandardGpuResources()
+        flat_config = faiss.GpuIndexFlatConfig()
+        flat_config.useFloat16 = False
+        flat_config.device = 0
+        index = faiss.GpuIndexFlatL2(res, d, flat_config)
+
+        # perform the training
+        clus.train(x, index)
+        _, I = index.search(x, 1)
+        stats = clus.iteration_stats
+        losses = np.array([
+            stats.at(i).obj for i in range(stats.size())
+        ])
+        if verbose:
+            print('k-means loss evolution: {0}'.format(losses))
+
+        return [int(n[0]) for n in I], losses[-1]
+
+
+    def cluster(self, data, verbose=False):
+        """Performs k-means clustering.
+            Args:
+                x_data (np.array N * dim): data to cluster
+        """
+        end = time.time()
+
+        # PCA-reducing, whitening and L2-normalization
+        xb = self.preprocess_features(data)
+
+        # cluster the data
+        I, loss = self.run_kmeans(xb,10 , False)
+        self.images_lists = [[] for i in range(self.k)]
+        for i in range(len(data)):
+            self.images_lists[I[i]].append(i)
+
+        if verbose:
+            print('k-means time: {0:.0f} s'.format(time.time() - end))
+
+        return loss
+
+    def preprocess_features(self,npdata, pca=256):
+        """Preprocess an array of features.
+        Args:
+            npdata (np.array N * ndim): features to preprocess
+            pca (int): dim of output
+        Returns:
+            np.array of dim N * pca: data PCA-reduced, whitened and L2-normalized
+        """
+        _, ndim = npdata.shape
+        npdata = npdata.astype('float32')
+
+        # Apply PCA-whitening with Faiss
+        mat = faiss.PCAMatrix(ndim, pca, eigen_power=-0.5)
+        mat.train(npdata)
+        assert mat.is_trained
+        npdata = mat.apply_py(npdata)
+
+        # L2 normalization
+        row_sums = np.linalg.norm(npdata, axis=1)
+        npdata = npdata / row_sums[:, np.newaxis]
+
+        return npdata
+
+    def cluster_assign(self,images_lists, dataset):
+        """Creates a dataset from clustering, with clusters as labels.
+        Args:
+            images_lists (list of list): for each cluster, the list of image indexes
+                                        belonging to this cluster
+            dataset (list): initial dataset
+        Returns:
+            ReassignedDataset(torch.utils.data.Dataset): a dataset with clusters as
+                                                         labels
+        """
+        assert images_lists is not None
+        pseudolabels = []
+        image_indexes = []
+        for cluster, images in enumerate(images_lists):
+            image_indexes.extend(images)
+            pseudolabels.extend([cluster] * len(images))
+
+        normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                         std=[0.5, 0.5, 0.5])
+        t = transforms.Compose([transforms.RandomResizedCrop(224),
+                                transforms.RandomHorizontalFlip(),
+                                transforms.ToTensor(),
+                                normalize])
+
+        return ReassignedDataset(image_indexes, pseudolabels, dataset, t)
 
     def make_shifts(self, latent_dim):
 
@@ -189,7 +268,7 @@ class Trainer(object):
         temp_list_labels = torch.LongTensor(temp_list_labels)
 
         train_dataset = NewDataset(temp_list_data, temp_list_labels)
-        split_data = random_split(train_dataset, [10000,40000])
+        split_data = random_split(train_dataset, [10000, 40000])
 
         temp_train_dataset = deepcopy(split_data[0])
 

@@ -10,12 +10,11 @@
 """
 
 from utils import *
-from models.stylegan2.models import Generator
+# from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from loading import load_generator
 import sys
-from models.SNGAN.discriminator import Discriminator
 from model import Lenet28
 
 sys.path.insert(0, './models/')
@@ -82,21 +81,19 @@ def get_model(opt):
                                       out_dim=G.w_dim,
                                       type=opt.algo.discrete_ld.deformator_type,
                                       random_init=opt.algo.discrete_ld.deformator_randint).to(device)
-        # if opt.algo.discrete_ld.shift_predictor == 'ResNet':
-        #     shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.discrete_ld.shift_predictor_size,
-        #                                            channels=1 if opt.dataset == 'dsprites' or 'mnist' else 3).to(device)
-            # shift_predictor = Lenet28()
-            # shift_predictor.load_state_dict(torch.load('4.pth'))
-        # elif opt.algo.discrete_ld.shift_predictor == 'LeNet':
-        #     shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
-        # else:
-        #     raise NotImplementedError
+        if opt.algo.discrete_ld.shift_predictor == 'ResNet':
+            shift_predictor = ResNetShiftPredictor(deformator.input_dim, opt.algo.discrete_ld.shift_predictor_size,
+                                                   channels=1 if opt.dataset == 'dsprites' or 'mnist' else 3).to(device)
+        elif opt.algo.discrete_ld.shift_predictor == 'LeNet':
+            shift_predictor = LeNetShiftPredictor(deformator.input_dim, 1).to(device)
+        else:
+            raise NotImplementedError
         deformator_params = list(deformator.parameters()) + list(D.b4.module_S.parameters()) +list(D.b4.latent_similar.parameters()) + list(D.b4.fc1_q.parameters())
         disc_opt = torch.optim.Adam(D.parameters(), lr=opt.algo.discrete_ld.deformator_lr)
         deformator_opt = torch.optim.Adam(deformator_params, lr=opt.algo.discrete_ld.deformator_lr)
-        shift_predictor_opt = None
-        # shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.ld.shift_predictor_lr)
-        shift_predictor = None
+        # shift_predictor_opt = None
+        shift_predictor_opt = torch.optim.Adam(shift_predictor.parameters(), lr=opt.algo.discrete_ld.shift_predictor_lr)
+        # shift_predictor = None
         models = (G, D, disc_opt, deformator, shift_predictor, deformator_opt, shift_predictor_opt)
     elif opt.algorithm == 'infogan':
         models = G

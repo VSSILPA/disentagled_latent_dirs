@@ -2,10 +2,11 @@ from torch.utils.data import Dataset
 
 
 class NewDataset(Dataset):
-    def __init__(self, data, targets, transform=None):
+    def __init__(self, data, targets,generator, transform=None):
         self.data = data
         self.targets = targets
         self.transform = transform
+        self.gen = generator
 
     def __getitem__(self, index):
         img, target = self.data[index].clone(), self.targets[index].clone()
