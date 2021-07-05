@@ -59,13 +59,14 @@ class Visualiser(object):
     def interpolate(self, generator, z, shifts_r, shifts_count, dim, directions, with_central_border=True):
         shifted_images = []
         directions.cuda()
-        for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count): # TODO change traversal in z space to wspace
+        for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count):
             if directions is not None:
                 latent_shift = directions(one_hot(directions.input_dim, shift, dim).cuda())
             else:
                 latent_shift = one_hot(z.shape[1:], shift, dim).cuda()
-            w = generator.style(z.cuda())
-            shifted_image = generator([w+latent_shift], **generator_kwargs)[0]
+            latent_shift = latent_shift.unsqueeze(2)
+            latent_shift = latent_shift.unsqueeze(3)
+            shifted_image = generator(z.cuda()+latent_shift)
             if shift == 0.0 and with_central_border:
                 shifted_image = add_border(shifted_image)
             shifted_images.append(shifted_image)
@@ -81,8 +82,7 @@ class Visualiser(object):
         directions.eval()
         generator.eval()
 
-        w = generator.style(z.cuda())
-        original_img = generator([w], **generator_kwargs)[0]
+        original_img = generator(z.cuda())
         imgs = []
         if self.opt.algorithm == 'LD':
             num_directions = self.opt.algo.ld.num_directions
@@ -94,7 +94,7 @@ class Visualiser(object):
             num_directions = self.opt.algo.cf.num_directions
         elif self.opt.algorithm == 'ours' or 'ours-natural':
             num_directions = self.opt.algo.ours.num_directions
-        num_directions = [6,15,24,49,50,53,57,58,69,70,71,78]
+        num_directions = [19,20,12,16,43,94]
 
         for i in num_directions:
             imgs = []

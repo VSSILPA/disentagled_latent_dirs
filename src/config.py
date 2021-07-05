@@ -46,14 +46,16 @@ parser.add_argument('--evaluation', type=bool, default=False, help='whether to r
 parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
-opt.gan_type = 'StyleGAN2-Natural'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN']
+opt.gan_type = 'prog-gan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours-natural'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
 opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 opt.gan_resolution = 1024
 opt.w_shift = True
 # opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
-opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
+# opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
+opt.pretrained_gen_root = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
+opt.deformator_pretrained = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/deformators/ProgGAN/models/deformator_0.pt'
+# opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -121,7 +123,7 @@ opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 5001
 opt.algo.ours.batch_size = 10
-opt.algo.ours.deformator_type = 'ortho-natural'
+opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
