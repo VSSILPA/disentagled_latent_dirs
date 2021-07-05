@@ -2,8 +2,8 @@ import json
 import numpy as np
 import torch
 from torch import nn
-from models.BigGAN import BigGAN, utils
-from models.ProgGAN.model import Generator as ProgGenerator
+#from models.BigGAN import BigGAN, utils
+#from models.ProgGAN.model import Generator as ProgGenerator
 # from models.SNGAN.load import load_model_from_state_dict
 from models.gan_with_shift import gan_with_shift
 

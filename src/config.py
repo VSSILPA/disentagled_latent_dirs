@@ -52,8 +52,8 @@ opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','a
 opt.gan_resolution = 1024
 opt.w_shift = True
 # opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-opt.pretrained_gen_root = 'src/models/pretrained/new_generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
-opt.deformator_pretrained = 'src/models/pretrained/new_generators/StyleGAN2/models/deformator_0.pt'
+opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
+opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -120,7 +120,7 @@ opt.algo.linear_combo.saving_freq = 1000
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 5001
-opt.algo.ours.batch_size = 32
+opt.algo.ours.batch_size = 10
 opt.algo.ours.deformator_type = 'ortho-natural'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
