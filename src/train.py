@@ -36,7 +36,7 @@ class Trainer(object):
         shift_epsilon = deformator(epsilon)
         shift_epsilon = shift_epsilon.unsqueeze(2)
         shift_epsilon = shift_epsilon.unsqueeze(3)
-        imgs, _ = generator(z + shift_epsilon)
+        imgs= generator(z + shift_epsilon)
         logits = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -56,7 +56,7 @@ class Trainer(object):
         shift_epsilon = shift_epsilon.unsqueeze(2)
         shift_epsilon = shift_epsilon.unsqueeze(3)
 
-        imgs, _ = generator(z + shift_epsilon)
+        imgs = generator(z + shift_epsilon)
         logits = cr_discriminator(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
