@@ -97,6 +97,11 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours-natural':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
+            generator.eval()
+            deformator.eval()
+            visualise_results.make_interpolation_chart('000', generator, deformator, shift_r=10,
+                                                       shifts_count=5, dpi=500)
+            deformator.train()
             # deformator = model_trainer.train_closed_form(generator)
             # deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
             deformator.train()
@@ -110,8 +115,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     generator.eval()
                     deformator.eval()
-                    fig = visualise_results.make_interpolation_chart(k, generator, deformator, shift_r=10,
+                    visualise_results.make_interpolation_chart(k, generator, deformator, shift_r=10,
                                                                shifts_count=5, dpi=500)
+                    deformator.train()
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
         elif opt.algorithm == 'ours-synthetic':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
@@ -138,16 +144,16 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
         else:
             raise NotImplementedError
-        metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
-        metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
-        metrics_seed['mig'].append(metrics['mig'])
-        metrics_seed['dci'].append(metrics['dci'])
-
-    if opt.dataset != 'shapes3d':  # since running only for one seed ..not enough points for std dev calculation
-        logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
-            stdev(metrics_seed['betavae_metric'])) + '\n' +
-                     'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(
-            stdev(metrics_seed['factorvae_metric'])) + '\n'
-                                                       'MIG : ' + str(mean(metrics_seed['mig'])) + u"\u00B1" + str(
-            stdev(metrics_seed['mig'])) + '\n' +
-                     'DCI:' + str(mean(metrics_seed['dci'])) + u"\u00B1" + str(stdev(metrics_seed['dci'])))
+    #     metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
+    #     metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
+    #     metrics_seed['mig'].append(metrics['mig'])
+    #     metrics_seed['dci'].append(metrics['dci'])
+    #
+    # if opt.dataset != 'shapes3d':  # since running only for one seed ..not enough points for std dev calculation
+    #     logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
+    #         stdev(metrics_seed['betavae_metric'])) + '\n' +
+    #                  'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(
+    #         stdev(metrics_seed['factorvae_metric'])) + '\n'
+    #                                                    'MIG : ' + str(mean(metrics_seed['mig'])) + u"\u00B1" + str(
+    #         stdev(metrics_seed['mig'])) + '\n' +
+    #                  'DCI:' + str(mean(metrics_seed['dci'])) + u"\u00B1" + str(stdev(metrics_seed['dci'])))
