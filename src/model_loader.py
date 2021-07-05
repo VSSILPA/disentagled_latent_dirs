@@ -14,6 +14,7 @@ from models.stylegan2.models import Generator
 from models.latent_deformator import LatentDeformator
 from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredictor
 from models.cr_discriminator import ResNetRankPredictor
+from models.gan_load import make_style_gan2
 
 import sys
 
@@ -45,6 +46,8 @@ def get_model(opt):
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)
+    elif gan_type == 'StyleGAN2-Natural':
+        G = make_style_gan2(opt.gan_resolution, opt.pretrained_gen_root, opt.w_shift)
     else:
         raise NotImplementedError
 
@@ -70,17 +73,19 @@ def get_model(opt):
         return G
     elif opt.algorithm == 'GS':
         return G
-    elif opt.algorithm == 'ours':
+    elif opt.algorithm == 'ours-natural' or 'ours-synthetic':
         deformator = LatentDeformator(shift_dim=G.style_dim,
                                       input_dim=opt.algo.ours.num_directions,  # dimension of one-hot encoded vector
                                       out_dim=G.style_dim,
                                       type=opt.algo.ours.deformator_type,
                                       random_init=opt.algo.ours.deformator_randint).to(device)
+        if opt.deformator_pretrained is not None:
+            deformator.load_state_dict(torch.load(opt.deformator_pretrained))
         deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
         cr_discriminator = ResNetRankPredictor(deformator.input_dim, opt.algo.ours.shift_predictor_size,
-                                               channels=1 if opt.dataset == 'dsprites' else 3).to(device)
+                                               channels=1 if opt.dataset == 'dsprites' else 3, num_dirs=opt.algo.ours.num_directions).to(device)
         cr_optimizer = torch.optim.Adam(cr_discriminator.parameters(), lr=opt.algo.ours.shift_predictor_lr)
-        return G, deformator, deformator_opt ,cr_discriminator,cr_optimizer
+        return G, deformator, deformator_opt, cr_discriminator, cr_optimizer
 
     elif opt.algorithm == 'linear_combo':
         deformator = LatentDeformator(shift_dim=G.style_dim,

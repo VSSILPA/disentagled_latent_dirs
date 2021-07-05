@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed orm initialisation--ortho'
-    experiment_description ='best setting expected'
+    experiment_name = 'stylegan2-ffhq test'
+    experiment_description = 'best setting expected'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -44,13 +44,18 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
 parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
-parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
+parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
-opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
-opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-opt.pretrained_gen_root = 'models/pretrained/new_generators/'
+opt.gan_type = 'StyleGAN2-Natural'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN']
+opt.algorithm = 'ours-natural'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
+opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
+opt.gan_resolution = 1024
+opt.w_shift = True
+# opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+opt.pretrained_gen_root = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators' \
+                          '/StyleGAN2/stylegan2-ffhq-config-f.pt'
+opt.deformator_pretrained = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/deformators' \
+                             '/StyleGAN2/models/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -117,11 +122,11 @@ opt.algo.linear_combo.saving_freq = 1000
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 5001
-opt.algo.ours.batch_size = 32
-opt.algo.ours.deformator_type = 'linear'
+opt.algo.ours.batch_size = 2
+opt.algo.ours.deformator_type = 'ortho-natural'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
-opt.algo.ours.num_directions = 10
+opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
 opt.algo.ours.logging_freq = 1000
@@ -147,57 +152,7 @@ opt.algo.gs.num_samples = 20000
 generator_kwargs = {
     "input_is_latent": True,
     "randomize_noise": False,
-    "truncation": 0.8}
-
-# # ---------------------------------------------------------------------------- #
-# # Options for StyleGAN
-# # ---------------------------------------------------------------------------- #
-#
-# opt.structure = 'linear'
-# opt.loss = "logistic"
-# opt.drift = 0.001
-# opt.d_repeats = 1
-# opt.use_ema = False
-# opt.ema_decay = 0.999
-# opt.alpha = 1
-# opt.depth = 4
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Generator
-# # ---------------------------------------------------------------------------- #
-# opt.model = CN()
-# opt.model.gen = CN()
-# opt.model.gen.latent_size = 10
-# # 8 in original paper
-# opt.model.gen.mapping_layers = 4
-# opt.model.gen.blur_filter = [1, 2, 1]
-# opt.model.gen.truncation_psi = 0.7
-# opt.model.gen.truncation_cutoff = 8
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Discriminator
-# # ---------------------------------------------------------------------------- #
-# opt.model.dis = CN()
-# opt.model.dis.use_wscale = True
-# opt.model.dis.blur_filter = [1, 2, 1]
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Generator Optimizer
-# # ---------------------------------------------------------------------------- #
-# opt.model.g_optim = CN()
-# opt.model.g_optim.learning_rate = 0.003
-# opt.model.g_optim.beta_1 = 0
-# opt.model.g_optim.beta_2 = 0.99
-# opt.model.g_optim.eps = 1e-8
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Discriminator Optimizer
-# # ---------------------------------------------------------------------------- #
-# opt.model.d_optim = CN()
-# opt.model.d_optim.learning_rate = 0.003
-# opt.model.d_optim.beta_1 = 0
-# opt.model.d_optim.beta_2 = 0.99
-# opt.model.d_optim.eps = 1e-8
+    "truncation": 1} ##todo changed from 0.8 to 1
 
 # ---------------------------------------------------------------------------- #
 # Options for Encoder
@@ -223,6 +178,7 @@ BB_KWARGS = {
     "shapes3d": {"in_channel": 3, "size": 64},
     "mpi3d": {"in_channel": 3, "size": 64},
     # grayscale -> rgb
+    "CelebAHQ": {"in_channel": 3, "size": 64},##TODO
     "dsprites": {"in_channel": 1, "size": 64},
     "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
     "isaac": {"in_channel": 3, "size": 128, "f_size": 512},

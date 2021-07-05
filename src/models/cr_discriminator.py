@@ -10,7 +10,7 @@ def save_hook(module, input, output):
 
 
 class ResNetRankPredictor(nn.Module):
-    def __init__(self, dim, downsample=None,channels = 3):
+    def __init__(self, dim, downsample=None,channels = 3, num_dirs=10):
         super(ResNetRankPredictor, self).__init__()
         self.features_extractor = resnet18(pretrained=False)
         self.features_extractor.conv1 = nn.Conv2d(
@@ -23,7 +23,7 @@ class ResNetRankPredictor(nn.Module):
         self.downsample = downsample
 
 
-        self.shift_estimator = nn.Linear(512, 10)
+        self.shift_estimator = nn.Linear(512,num_dirs )
         ## regressing on 10 directions
 
     def forward(self, x):

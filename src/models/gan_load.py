@@ -2,15 +2,15 @@ import json
 import numpy as np
 import torch
 from torch import nn
-# from models.BigGAN import BigGAN, utils
-# from models.ProgGAN.model import Generator as ProgGenerator
-from models.SNGAN.load import load_model_from_state_dict
+from models.BigGAN import BigGAN, utils
+from models.ProgGAN.model import Generator as ProgGenerator
+# from models.SNGAN.load import load_model_from_state_dict
 from models.gan_with_shift import gan_with_shift
 
-# try:
-#     from models.StyleGAN2.model import Generator as StyleGAN2Generator
-# except Exception as e:
-#     print('StyleGAN2 load fail: {}'.format(e))
+try:
+    from models.StyleGAN2.model import Generator as StyleGAN2Generator
+except Exception as e:
+    print('StyleGAN2 load fail: {}'.format(e))
 
 
 class ConditionedBigGAN(nn.Module):
@@ -110,4 +110,4 @@ def make_style_gan2(size, weights, shift_in_w=True):
     G.load_state_dict(torch.load(weights, map_location='cpu')['g_ema'])
     G.cuda().eval()
 
-    return StyleGAN2Wrapper(G, shift_in_w=shift_in_w)
+    return G

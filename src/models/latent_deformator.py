@@ -37,7 +37,7 @@ class LatentDeformator(nn.Module):
             if random_init:
                 self.linear.weight.data = 0.1 * torch.randn_like(self.linear.weight.data)
 
-        elif self.type == 'ortho':
+        elif self.type == 'ortho-synthethic':
             init = 0.001 * torch.randn(
                 (self.out_dim, self.input_dim), device="cuda"
             ) + torch.eye(self.out_dim, self.input_dim, device="cuda")
@@ -46,6 +46,9 @@ class LatentDeformator(nn.Module):
             unflip = torch.diag(r).sign().add(0.5).sign()
             q *= unflip[..., None, :]
             self.ortho_mat = nn.Parameter(q)
+        elif self.type == 'ortho-natural':
+            self.log_mat_half = nn.Parameter((1.0 if random_init else 0.001) * torch.randn(
+                [self.input_dim, self.input_dim], device='cuda'), True)
 
         elif self.type == 'random':
             self.linear = torch.empty([self.out_dim, self.input_dim])

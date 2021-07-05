@@ -17,5 +17,7 @@ def get_data_loader(config, opt):
         return data
     elif opt.dataset == 'celebA':
         raise NotImplementedError
+    elif opt.dataset == 'CelebAHQ':
+        return None
     else:
         raise NotImplementedError
