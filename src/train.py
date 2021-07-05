@@ -45,6 +45,7 @@ class Trainer(object):
         ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
         ranking_loss.backward()
         cr_optimizer.step()
+        del imgs
 
         generator.zero_grad()
         deformator.zero_grad()

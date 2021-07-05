@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'stylegan2-ffhq test'
+    experiment_name = 'stylegan2-ffhq test-ld'
     experiment_description = 'best setting expected'
 else:
     experiment_name = input("Enter experiment name ")
@@ -129,8 +129,8 @@ opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 1000
-opt.algo.ours.saving_freq = 1000
+opt.algo.ours.logging_freq = 5
+opt.algo.ours.saving_freq = 5
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #

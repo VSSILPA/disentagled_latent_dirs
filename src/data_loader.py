@@ -18,6 +18,8 @@ def get_data_loader(config, opt):
     elif opt.dataset == 'celebA':
         raise NotImplementedError
     elif opt.dataset == 'CelebAHQ':
+        opt.image_size = 1024
+        opt.num_channels = 3
         return None
     else:
         raise NotImplementedError
