@@ -96,7 +96,7 @@ class Visualiser(object):
         elif self.opt.algorithm == 'ours' or 'ours-natural':
             num_directions = self.opt.algo.ours.num_directions
 
-        for i in range(3):
+        for i in range(num_directions):
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
         rows_count = len(imgs) + 1

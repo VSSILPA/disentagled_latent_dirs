@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'stylegan2-ffhq test-ld'
+    experiment_name = 'stylegan2-server'
     experiment_description = 'best setting expected'
 else:
     experiment_name = input("Enter experiment name ")
@@ -52,10 +52,8 @@ opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','a
 opt.gan_resolution = 1024
 opt.w_shift = True
 # opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-opt.pretrained_gen_root = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators' \
-                          '/StyleGAN2/stylegan2-ffhq-config-f.pt'
-opt.deformator_pretrained = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/deformators' \
-                             '/StyleGAN2/models/deformator_0.pt'
+opt.pretrained_gen_root = 'src/models/pretrained/new_generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
+opt.deformator_pretrained = 'src/models/pretrained/new_generators/StyleGAN2/models/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -122,7 +120,7 @@ opt.algo.linear_combo.saving_freq = 1000
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 5001
-opt.algo.ours.batch_size = 2
+opt.algo.ours.batch_size = 32
 opt.algo.ours.deformator_type = 'ortho-natural'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001

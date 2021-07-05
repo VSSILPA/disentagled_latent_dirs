@@ -107,9 +107,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             deformator.train()
             deformator.cuda()
             for k in range(opt.algo.ours.num_steps):
-                # deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
-                #     model_trainer.train_ours(
-                #         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
+                     model_trainer.train_ours(
+                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
                 if k % opt.algo.ours.logging_freq == 0 and k == 0:
                     # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
@@ -119,6 +119,11 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                                                                shifts_count=5, dpi=500)
                     deformator.train()
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
+                if k % opt.algo.ours.saving_freq == 0 and k != 0:
+                    params = (deformator, cr_discriminator, deformator_opt, cr_optimizer)
+                    perf_logger.start_monitoring("Saving Model")
+                    saver.save_model(params, k, i , algo='ours-natural')
+                    perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'ours-synthetic':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             deformator = model_trainer.train_closed_form(generator)
