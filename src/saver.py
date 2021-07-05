@@ -29,12 +29,26 @@ class Saver(object):
                 'random_state': random.getstate()
 
             }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
+        elif algo == 'ours-natural':
+                deformator, cr_discriminator, deformator_opt, cr_optimizer = params
+                torch.save({
+                    'step': step,
+                    'deformator': deformator.state_dict(),
+                    'cr_discriminator': cr_discriminator.state_dict(),
+                    'deformator_opt': deformator_opt.state_dict(),
+                    'cr_optimizer': cr_optimizer.state_dict(),
+                    'torch_rng_state': torch.get_rng_state(),
+                    'np_rng_state': np.random.get_state(),
+                    'random_state': random.getstate()
+
+                }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
         else:
             raise NotImplementedError
 
     def load_model(self, params, algo='LD'):
         models_dir = os.path.dirname(os.getcwd()) + f'/pretrained_models/' + self.config['file_name']  # project root
         checkpoint = torch.load(models_dir)
+        print(algo)
         if algo == 'LD':
             deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
             deformator.load_state_dict(checkpoint['deformator'])

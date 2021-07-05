@@ -99,7 +99,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             generator.eval()
             deformator.eval()
-            visualise_results.make_interpolation_chart('000', generator, deformator, shift_r=10,
+            z = torch.randn(1, generator.style_dim)
+            visualise_results.make_interpolation_chart('000',z, generator, deformator, shift_r=10,
                                                        shifts_count=5, dpi=500)
             deformator.train()
             # deformator = model_trainer.train_closed_form(generator)
@@ -110,12 +111,12 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                      model_trainer.train_ours(
                          generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                if k % opt.algo.ours.logging_freq == 0 and k == 0:
+                if k % opt.algo.ours.logging_freq == 0 and k != 0:
                     # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     generator.eval()
                     deformator.eval()
-                    visualise_results.make_interpolation_chart(k, generator, deformator, shift_r=10,
+                    visualise_results.make_interpolation_chart(k,z, generator, deformator, shift_r=10,
                                                                shifts_count=5, dpi=500)
                     deformator.train()
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
@@ -144,7 +145,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     else:
                         deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
-                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
+                    visualise_results.make_interpolation_chart(i,z, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
         else:

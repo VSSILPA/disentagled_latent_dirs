@@ -72,7 +72,7 @@ class Visualiser(object):
         return torch.stack(shifted_images)
 
     @torch.no_grad()
-    def make_interpolation_chart(self, step, generator, directions, shift_r=10, shifts_count=5,texts=None,**kwargs):
+    def make_interpolation_chart(self, step,z, generator, directions, shift_r=10, shifts_count=5,texts=None,**kwargs):
 
         file_location = self.opt.result_dir + '/visualisations/latent_traversal/'
         if not os.path.exists(file_location):
@@ -81,7 +81,6 @@ class Visualiser(object):
         directions.eval()
         generator.eval()
 
-        z = torch.randn(1, generator.style_dim)
         w = generator.style(z.cuda())
         original_img = generator([w], **generator_kwargs)[0]
         imgs = []
@@ -98,23 +97,22 @@ class Visualiser(object):
         num_directions = [6,15,24,49,50,53,57,58,69,70,71,78]
 
         for i in num_directions:
+            imgs = []
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
+            rows_count = len(imgs) + 1
+            fig, axs = plt.subplots(rows_count, **kwargs)
 
-        rows_count = len(imgs) + 1
-        fig, axs = plt.subplots(rows_count, **kwargs)
+            axs[0].axis('off')
+            axs[0].imshow(to_image(original_img, True))
 
-        axs[0].axis('off')
-        axs[0].imshow(to_image(original_img, True))
-
-        if texts is None:
-            texts =num_directions
-        for ax, shifts_imgs, text in zip(axs[1:], imgs, texts):
-            ax.axis('off')
-            plt.subplots_adjust(left=0.5)
-            ax.imshow(to_image(make_grid(shifts_imgs.squeeze(1), nrow=(2 * shifts_count + 1), padding=1), True))
-            ax.text(-20, 21, str(text), fontsize=10)
-        fig_to_image(fig).convert("RGB").save(
-            os.path.join(file_location, '{}_{}.jpg'.format('fixed', step)))
+            if texts is None:
+               texts =num_directions
+            for ax, shifts_imgs, text in zip(axs[1:], imgs, texts):
+                ax.axis('off')
+                plt.subplots_adjust(left=0.5)
+                ax.imshow(to_image(make_grid(shifts_imgs.squeeze(1), nrow=(2 * shifts_count + 1), padding=1), True))
+                ax.text(-20, 21, str(text), fontsize=10)
+            fig_to_image(fig).convert("RGB").save(os.path.join(file_location, '{}_{}.jpg'.format('fixed'+str(i), step)))
 
     def generate_plot_save_results(self, results, plot_type):
         file_location = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/visualisations/plots/'

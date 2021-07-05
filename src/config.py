@@ -127,8 +127,8 @@ opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 5
-opt.algo.ours.saving_freq = 5
+opt.algo.ours.logging_freq = 100
+opt.algo.ours.saving_freq = 100
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #
