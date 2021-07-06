@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'proggan-server-5,5'
-    experiment_description = 'best setting expected'
+    experiment_name = 'proggan-server-5,5-corrected'
+    experiment_description = 'studying effect of scaling'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
