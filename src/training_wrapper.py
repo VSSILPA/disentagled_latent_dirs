@@ -97,6 +97,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours-natural':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
+#            deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
+#                    (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
             generator.eval()
             deformator.eval()
             z = torch.randn(1, generator.dim_z[0],generator.dim_z[1],generator.dim_z[2])

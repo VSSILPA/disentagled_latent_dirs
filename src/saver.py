@@ -61,18 +61,16 @@ class Saver(object):
 
             return deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
         elif algo == 'ours-natural':
-                deformator, cr_discriminator, deformator_opt, cr_optimizer = params
-                torch.save({
-                    'step': step,
-                    'deformator': deformator.state_dict(),
-                    'cr_discriminator': cr_discriminator.state_dict(),
-                    'deformator_opt': deformator_opt.state_dict(),
-                    'cr_optimizer': cr_optimizer.state_dict(),
-                    'torch_rng_state': torch.get_rng_state(),
-                    'np_rng_state': np.random.get_state(),
-                    'random_state': random.getstate()
+            deformator, cr_discriminator, deformator_opt, cr_optimizer = params
+            deformator.load_state_dict(checkpoint['deformator'])
+            cr_discriminator.load_state_dict(checkpoint['cr_discriminator'])
+            deformator_opt.load_state_dict(checkpoint['deformator_opt'])
+            cr_optimizer.load_state_dict(checkpoint['cr_optimizer'])
+            torch.set_rng_state(checkpoint['torch_rng_state'])
+            np.random.set_state(checkpoint['np_rng_state'])
+            random.setstate(checkpoint['random_state'])
+            return deformator, cr_discriminator, deformator_opt, cr_optimizer
 
-                }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
         else:
             raise NotImplementedError
 
