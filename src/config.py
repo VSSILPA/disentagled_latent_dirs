@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'proggan-server-5,5-corrected'
+    experiment_name = 'proggan-server-10,10-resuming'
     experiment_description = 'studying effect of scaling'
 else:
     experiment_name = input("Enter experiment name ")
@@ -43,7 +43,7 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='80007_model.pkl', help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='300007_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'prog-gan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN']
@@ -121,7 +121,7 @@ opt.algo.linear_combo.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 10001
+opt.algo.ours.num_steps = 100001
 opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True

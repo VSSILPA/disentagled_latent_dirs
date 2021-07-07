@@ -187,7 +187,7 @@ class Trainer(object):
     def make_shifts_rank(self):
 
         epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size),
-                                    self.opt.algo.ours.num_directions).uniform_(-6, 6).cuda()
+                                    self.opt.algo.ours.num_directions).uniform_(-10, 10).cuda()
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
         ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
