@@ -23,7 +23,8 @@ class ResNetRankPredictor(nn.Module):
         self.downsample = downsample
 
 
-        self.shift_estimator = nn.Linear(512,num_dirs )
+        self.shift_estimator = nn.Linear(512, num_dirs )
+        self.identity_dir = nn.Linear(512, 1)
         ## regressing on 10 directions
 
     def forward(self, x):
@@ -34,8 +35,9 @@ class ResNetRankPredictor(nn.Module):
         features = self.features.output.view([batch_size, -1])
 
         shift = self.shift_estimator(features)
+        identity = self.identity_dir(features)
 
-        return shift.squeeze()
+        return shift.squeeze() , torch.sigmoid(identity)
 
 
 class LeNetShiftPredictor(nn.Module):

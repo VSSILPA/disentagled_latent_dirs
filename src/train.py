@@ -3,7 +3,10 @@ from utils import *
 from models.latent_deformator import normal_projection_stat
 import torch.nn as nn
 from config import generator_kwargs
-
+import PIL
+import Augmentor
+import torchvision
+from torchvision import transforms
 
 class Trainer(object):
 
@@ -13,7 +16,11 @@ class Trainer(object):
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
         self.ranking_loss = nn.BCEWithLogitsLoss()
-
+        p = Augmentor.Pipeline()
+        p.rotate(probability=1, max_left_rotation=20, max_right_rotation=20)
+        p.zoom(probability=1, min_factor=0.9, max_factor=1.1)  # TODO PAY ATTENTION to zoom factor
+        p.random_distortion(probability=1, grid_width=1, grid_height=1, magnitude=10)
+        self.torch_transform = torchvision.transforms.Compose([transforms.ToPILImage(),p.torch_transform(),transforms.ToTensor()])
     @staticmethod
     def set_seed(seed):
         torch.manual_seed(seed)
@@ -37,7 +44,7 @@ class Trainer(object):
         shift_epsilon = shift_epsilon.unsqueeze(2)
         shift_epsilon = shift_epsilon.unsqueeze(3)
         imgs, _ = generator(z + shift_epsilon)
-        logits = cr_discriminator(imgs.detach())
+        logits , _ = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
         epsilon_diff = epsilon1 - epsilon2
@@ -45,6 +52,22 @@ class Trainer(object):
         ranking_loss.backward()
         cr_optimizer.step()
         del imgs
+        # augmentation based training
+
+        augmented_image = self.torch_transform(imgs.detach())
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         generator.zero_grad()
         deformator.zero_grad()
@@ -57,7 +80,7 @@ class Trainer(object):
         shift_epsilon = shift_epsilon.unsqueeze(3)
 
         imgs, _ = generator(z + shift_epsilon)
-        logits = cr_discriminator(imgs)
+        logits ,_  = cr_discriminator(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
         epsilon_diff = epsilon1 - epsilon2
