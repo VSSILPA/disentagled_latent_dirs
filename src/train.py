@@ -8,6 +8,7 @@ import Augmentor
 import torchvision
 from torchvision import transforms
 
+
 class Trainer(object):
 
     def __init__(self, config, opt):
@@ -20,7 +21,12 @@ class Trainer(object):
         p.rotate(probability=1, max_left_rotation=20, max_right_rotation=20)
         p.zoom(probability=1, min_factor=0.9, max_factor=1.1)  # TODO PAY ATTENTION to zoom factor
         p.random_distortion(probability=1, grid_width=1, grid_height=1, magnitude=10)
-        self.torch_transform = torchvision.transforms.Compose([transforms.ToPILImage(),p.torch_transform(),transforms.ToTensor()])
+        self.torch_transform = torchvision.transforms.Compose(
+            [transforms.ToPILImage(), p.torch_transform(), transforms.ToTensor()])
+        self.y_real_, self.y_fake_ = torch.ones(self.opt.batch_size, 1, device="cuda"), torch.zeros(self.opt.batch_size,
+                                                                                                    1,
+                                                                                                    device="cuda")
+
     @staticmethod
     def set_seed(seed):
         torch.manual_seed(seed)
@@ -36,7 +42,8 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0],generator.dim_z[1],generator.dim_z[2]).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0], generator.dim_z[1],
+                         generator.dim_z[2]).cuda()
         z = torch.cat((z_, z_), dim=0)
 
         epsilon, ground_truths = self.make_shifts_rank()
@@ -44,53 +51,58 @@ class Trainer(object):
         shift_epsilon = shift_epsilon.unsqueeze(2)
         shift_epsilon = shift_epsilon.unsqueeze(3)
         imgs, _ = generator(z + shift_epsilon)
-        logits , _ = cr_discriminator(imgs.detach())
+        logits, identity = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
+        identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
         epsilon_diff = epsilon1 - epsilon2
+        identity_diff = identity1 - identity2
         ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
+        identity_loss = self.ranking_loss(identity_diff, self.y_real_)
+        loss = ranking_loss + identity_loss
+        loss.backward()
+        cr_optimizer.step()
+
+        # augmentation based training
+        cr_optimizer.zero_grad()
+        augmented_image = self.torch_transform(imgs[:int(self.opt.algo.ours.batch_size / 2)].detach())
+        real_aug = torch.cat((imgs[:int(self.opt.algo.ours.batch_size / 2)].detach(), augmented_image), dim=0).cuda()
+        _, identity = cr_discriminator(real_aug.detach())
+        identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
+        identity_diff = identity1 - identity2 ##real -augmented
+        ranking_loss = self.ranking_loss(identity_diff, self.y_fake_)
         ranking_loss.backward()
         cr_optimizer.step()
-        del imgs
-        # augmentation based training
-
-        augmented_image = self.torch_transform(imgs.detach())
-
-
-
-
-
-
-
-
-
-
-
-
-
+        del real_aug
+        del augmented_image
 
         generator.zero_grad()
         deformator.zero_grad()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2),  generator.dim_z[0],generator.dim_z[1],generator.dim_z[2]).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0], generator.dim_z[1],
+                         generator.dim_z[2]).cuda()
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
         shift_epsilon = shift_epsilon.unsqueeze(2)
         shift_epsilon = shift_epsilon.unsqueeze(3)
+        z_total = torch.cat((z+shift_epsilon, z), dim=0)
 
-        imgs, _ = generator(z + shift_epsilon)
-        logits ,_  = cr_discriminator(imgs)
+        imgs, _ = generator(z_total)
+        logits, identity = cr_discriminator(imgs)
 
+        logits = logits[:self.opt.algo.ours.batch_size]
+        identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
         epsilon_diff = epsilon1 - epsilon2
-        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
+        identity_diff = identity2 - identity1 ## z - (z+shift_epsilon)
+        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths) + 0.5*self.ranking_loss(identity_diff, self.y_fake_)
 
         ranking_loss.backward()
 
         deformator_opt.step()
 
-        return deformator, deformator_opt, cr_discriminator, cr_optimizer , ranking_loss.item()
+        return deformator, deformator_opt, cr_discriminator, cr_optimizer, ranking_loss.item()
 
     def train_latent_discovery(self, generator, deformator, shift_predictor, cr_discriminator, cr_optimizer,
                                deformator_opt,
@@ -162,7 +174,7 @@ class Trainer(object):
         feats = generator.get_latent(z)
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.gs.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1],bias=False)
+        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1], bias=False)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 
@@ -179,7 +191,7 @@ class Trainer(object):
         W = torch.cat(weight_mat[:-1], 0)
         V = torch.svd(W).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.ours.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.ours.num_directions, V.shape[1],bias=False)
+        deformator_layer = torch.nn.Linear(self.opt.algo.ours.num_directions, V.shape[1], bias=False)
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator_layer
 

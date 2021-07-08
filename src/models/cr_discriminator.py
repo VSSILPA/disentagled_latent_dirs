@@ -28,6 +28,7 @@ class ResNetRankPredictor(nn.Module):
         ## regressing on 10 directions
 
     def forward(self, x):
+        x = x.view(-1,3,1024,1024)
         batch_size = x.shape[0]
         # if self.downsample is not None:
         #     x1, x2 = F.interpolate(x, self.downsample), F.interpolate(x, self.downsample)
