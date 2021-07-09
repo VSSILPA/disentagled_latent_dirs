@@ -38,7 +38,7 @@ class ResNetRankPredictor(nn.Module):
         shift = self.shift_estimator(features)
         identity = self.identity_dir(features)
 
-        return shift.squeeze() , torch.sigmoid(identity)
+        return shift.squeeze() , identity
 
 
 class LeNetShiftPredictor(nn.Module):

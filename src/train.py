@@ -23,7 +23,7 @@ class Trainer(object):
         p.random_distortion(probability=1, grid_width=1, grid_height=1, magnitude=10)
         self.torch_transform = torchvision.transforms.Compose(
             [transforms.ToPILImage(), p.torch_transform(), transforms.ToTensor()])
-        self.y_real_, self.y_fake_ = torch.ones(self.opt.batch_size, 1, device="cuda"), torch.zeros(self.opt.batch_size,
+        self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size/2), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size/2),
                                                                                                     1,
                                                                                                     device="cuda")
 
@@ -50,7 +50,7 @@ class Trainer(object):
         shift_epsilon = deformator(epsilon)
         shift_epsilon = shift_epsilon.unsqueeze(2)
         shift_epsilon = shift_epsilon.unsqueeze(3)
-        imgs, _ = generator(z + shift_epsilon)
+        imgs = generator(z + shift_epsilon)
         logits, identity = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -65,8 +65,11 @@ class Trainer(object):
 
         # augmentation based training
         cr_optimizer.zero_grad()
-        augmented_image = self.torch_transform(imgs[:int(self.opt.algo.ours.batch_size / 2)].detach())
-        real_aug = torch.cat((imgs[:int(self.opt.algo.ours.batch_size / 2)].detach(), augmented_image), dim=0).cuda()
+        augmented_img = []
+        for i in range(int(self.opt.algo.ours.batch_size / 2)):
+            augmented_img.append(self.torch_transform(imgs[i].detach()))
+        augmented_image = torch.stack(augmented_img)
+        real_aug = torch.cat((imgs[:int(self.opt.algo.ours.batch_size / 2)].detach(), augmented_image.cuda()), dim=0).cuda()
         _, identity = cr_discriminator(real_aug.detach())
         identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
         identity_diff = identity1 - identity2 ##real -augmented
@@ -75,6 +78,7 @@ class Trainer(object):
         cr_optimizer.step()
         del real_aug
         del augmented_image
+        del imgs
 
         generator.zero_grad()
         deformator.zero_grad()
@@ -88,15 +92,17 @@ class Trainer(object):
         shift_epsilon = shift_epsilon.unsqueeze(3)
         z_total = torch.cat((z+shift_epsilon, z), dim=0)
 
-        imgs, _ = generator(z_total)
+        imgs = generator(z_total)
         logits, identity = cr_discriminator(imgs)
 
         logits = logits[:self.opt.algo.ours.batch_size]
-        identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
-        epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
+        epsilon1, epsilon2 = torch.split(logits, 2,dim=0)
+        identity1, identity2 = torch.split(identity.view(-1),4,dim=0)
+
         epsilon_diff = epsilon1 - epsilon2
         identity_diff = identity2 - identity1 ## z - (z+shift_epsilon)
-        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths) + 0.5*self.ranking_loss(identity_diff, self.y_fake_)
+        y_fake_ = torch.zeros(self.opt.algo.ours.batch_size, device="cuda")
+        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths) + 0.5*self.ranking_loss(identity_diff, y_fake_)
 
         ranking_loss.backward()
 
@@ -222,7 +228,7 @@ class Trainer(object):
     def make_shifts_rank(self):
 
         epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size),
-                                    self.opt.algo.ours.num_directions).uniform_(-1, 1).cuda()
+                                    self.opt.algo.ours.num_directions).uniform_(-5, 5).cuda()
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
         ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
