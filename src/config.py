@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'stylegan2-server'
+    experiment_name = 'biggan-server'
     experiment_description = 'best setting expected'
 else:
     experiment_name = input("Enter experiment name ")
@@ -122,7 +122,7 @@ opt.algo.linear_combo.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 5001
+opt.algo.ours.num_steps = 50001
 opt.algo.ours.batch_size = 32
 opt.algo.ours.deformator_type = 'ortho-natural'
 opt.algo.ours.deformator_randint = True

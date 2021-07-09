@@ -94,7 +94,8 @@ class Visualiser(object):
         elif self.opt.algorithm == 'ours' or 'ours-natural':
             num_directions = self.opt.algo.ours.num_directions
 
-        for i in range(num_directions):
+        num_directions = [22,24,59,60,75,81]
+        for i in num_directions:
             imgs = []
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
             rows_count = len(imgs) + 1
@@ -104,7 +105,7 @@ class Visualiser(object):
             axs[0].imshow(to_image(original_img, True))
 
             if texts is None:
-               texts =range(num_directions)
+               texts = num_directions
             for ax, shifts_imgs, text in zip(axs[1:], imgs, texts):
                 ax.axis('off')
                 plt.subplots_adjust(left=0.5)
