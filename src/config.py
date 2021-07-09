@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'stylegan2-server'
+    experiment_name = 'stylegan2-with identity'
     experiment_description = 'best setting expected'
 else:
     experiment_name = input("Enter experiment name ")
@@ -53,8 +53,8 @@ opt.gan_resolution = 1024
 opt.w_shift = True
 # opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
-opt.pretrained_gen_root = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/generators/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
-opt.deformator_pretrained = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/deformators/ProgGAN/models/deformator_0.pt'
+opt.pretrained_gen_root = 'models/pretrained/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
+opt.deformator_pretrained = 'models/pretrained/deformator_0.pt'
 # opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
@@ -121,16 +121,16 @@ opt.algo.linear_combo.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 5001
-opt.algo.ours.batch_size = 2
+opt.algo.ours.num_steps = 400001
+opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 100
-opt.algo.ours.saving_freq = 100
+opt.algo.ours.logging_freq = 1000
+opt.algo.ours.saving_freq = 1000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #
