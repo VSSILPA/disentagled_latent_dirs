@@ -59,14 +59,13 @@ class Visualiser(object):
     def interpolate(self, generator, z, shifts_r, shifts_count, dim, directions, with_central_border=True):
         shifted_images = []
         directions.cuda()
+        classes = generator.mixed_classes(z.shape[0])
         for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count):
             if directions is not None:
                 latent_shift = directions(one_hot(directions.input_dim, shift, dim).cuda())
             else:
                 latent_shift = one_hot(z.shape[1:], shift, dim).cuda()
-            latent_shift = latent_shift.unsqueeze(2)
-            latent_shift = latent_shift.unsqueeze(3)
-            shifted_image = generator(z.cuda()+latent_shift)
+            shifted_image = generator(z.cuda()+latent_shift,classes)
             if shift == 0.0 and with_central_border:
                 shifted_image = add_border(shifted_image)
             shifted_images.append(shifted_image)
@@ -94,9 +93,8 @@ class Visualiser(object):
             num_directions = self.opt.algo.cf.num_directions
         elif self.opt.algorithm == 'ours' or 'ours-natural':
             num_directions = self.opt.algo.ours.num_directions
-        num_directions = [19,20,12,16,43,94]
 
-        for i in num_directions:
+        for i in range(num_directions):
             imgs = []
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
             rows_count = len(imgs) + 1
@@ -106,7 +104,7 @@ class Visualiser(object):
             axs[0].imshow(to_image(original_img, True))
 
             if texts is None:
-               texts =num_directions
+               texts =range(num_directions)
             for ax, shifts_imgs, text in zip(axs[1:], imgs, texts):
                 ax.axis('off')
                 plt.subplots_adjust(left=0.5)

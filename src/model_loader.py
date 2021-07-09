@@ -16,6 +16,7 @@ from models.latent_shift_predictor import LeNetShiftPredictor, ResNetShiftPredic
 from models.cr_discriminator import ResNetRankPredictor
 from models.gan_load import make_style_gan2
 from models.gan_load import make_proggan
+from models.gan_load import make_big_gan
 
 import sys
 
@@ -77,9 +78,9 @@ def get_model(opt):
     elif opt.algorithm == 'GS':
         return G
     elif opt.algorithm == 'ours-natural' or 'ours-synthetic':
-        deformator = LatentDeformator(shift_dim=G.dim_z[0],
+        deformator = LatentDeformator(shift_dim=G.dim_z,
                                       input_dim=opt.algo.ours.num_directions,  # dimension of one-hot encoded vector
-                                      out_dim=G.dim_z[0],
+                                      out_dim=G.dim_z,
                                       type=opt.algo.ours.deformator_type,
                                       random_init=opt.algo.ours.deformator_randint).to(device)
         if opt.deformator_pretrained is not None:

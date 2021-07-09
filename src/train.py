@@ -29,14 +29,13 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0],generator.dim_z[1],generator.dim_z[2]).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z).cuda()
         z = torch.cat((z_, z_), dim=0)
+        classes = generator.mixed_classes(z.shape[0])
 
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
-        imgs= generator(z + shift_epsilon)
+        imgs = generator(z + shift_epsilon, classes)
         logits = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -49,14 +48,13 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2),  generator.dim_z[0],generator.dim_z[1],generator.dim_z[2]).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2),  generator.dim_z).cuda()
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
+        classes = generator.mixed_classes(z.shape[0]) ##same classes as before???
 
-        imgs = generator(z + shift_epsilon)
+        imgs= generator(z + shift_epsilon,classes)
         logits = cr_discriminator(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -187,7 +185,7 @@ class Trainer(object):
     def make_shifts_rank(self):
 
         epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size),
-                                    self.opt.algo.ours.num_directions).uniform_(-10, 10).cuda()
+                                    self.opt.algo.ours.num_directions).uniform_(-5, 5).cuda()
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
         ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
