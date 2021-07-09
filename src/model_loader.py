@@ -52,6 +52,8 @@ def get_model(opt):
         G = make_style_gan2(opt.gan_resolution, opt.pretrained_gen_root, opt.w_shift)
     elif gan_type == 'prog-gan':
         G = make_proggan(opt.pretrained_gen_root)
+    elif gan_type == 'BigGAN':
+        G = make_big_gan(opt.pretrained_gen_root, [239]).eval()
     else:
         raise NotImplementedError
 
