@@ -23,7 +23,7 @@ class Trainer(object):
         p.random_distortion(probability=1, grid_width=1, grid_height=1, magnitude=10)
         self.torch_transform = torchvision.transforms.Compose(
             [transforms.ToPILImage(), p.torch_transform(), transforms.ToTensor()])
-        self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size/2), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size/2),
+        self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size),
                                                                                                     1,
                                                                                                     device="cuda")
 
@@ -39,74 +39,75 @@ class Trainer(object):
 
     def train_ours(self, generator, deformator, deformator_opt, cr_discriminator, cr_optimizer):
 
-        generator.zero_grad()
-        deformator.zero_grad()
+        for i in range(10000):
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0], generator.dim_z[1],
-                         generator.dim_z[2]).cuda()
-        z = torch.cat((z_, z_), dim=0)
+            generator.zero_grad()
+            deformator.zero_grad()
+            cr_optimizer.zero_grad()
 
-        epsilon, ground_truths = self.make_shifts_rank()
-        shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
-        imgs = generator(z + shift_epsilon)
-        logits, identity = cr_discriminator(imgs.detach())
+            z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0], generator.dim_z[1],
+                             generator.dim_z[2]).cuda()
+            z_diff = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0], generator.dim_z[1],
+                             generator.dim_z[2]).cuda()
+            z = torch.cat((z_, z_diff), dim=0)
+            imgs = generator(z)
+            logits, identity = cr_discriminator(imgs.detach())
 
-        epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
-        identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
-        epsilon_diff = epsilon1 - epsilon2
-        identity_diff = identity1 - identity2
-        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
-        identity_loss = self.ranking_loss(identity_diff, self.y_real_)
-        loss = ranking_loss + identity_loss
-        loss.backward()
-        cr_optimizer.step()
+            identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
+            identity_diff = identity1 - identity2
+            identity_loss = self.ranking_loss(identity_diff, self.y_real_) # since images are sampled at  different  random z ,identity will be always diff
+            loss = identity_loss
+            loss.backward()
+            cr_optimizer.step()
 
-        # augmentation based training
-        cr_optimizer.zero_grad()
-        augmented_img = []
-        for i in range(int(self.opt.algo.ours.batch_size / 2)):
-            augmented_img.append(self.torch_transform(imgs[i].detach()))
-        augmented_image = torch.stack(augmented_img)
-        real_aug = torch.cat((imgs[:int(self.opt.algo.ours.batch_size / 2)].detach(), augmented_image.cuda()), dim=0).cuda()
-        _, identity = cr_discriminator(real_aug.detach())
-        identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
-        identity_diff = identity1 - identity2 ##real -augmented
-        ranking_loss = self.ranking_loss(identity_diff, self.y_fake_)
-        ranking_loss.backward()
-        cr_optimizer.step()
-        del real_aug
-        del augmented_image
-        del imgs
+            # augmentation based training
+            cr_optimizer.zero_grad()
+            augmented_img = []
+            for k in range(int(self.opt.algo.ours.batch_size / 2)):
+                augmented_img.append(self.torch_transform(imgs[k].detach()))
+            augmented_image = torch.stack(augmented_img)
+            real_aug = torch.cat((imgs[:int(self.opt.algo.ours.batch_size / 2)].detach(), augmented_image.cuda()), dim=0).cuda()
+            _, identity = cr_discriminator(real_aug.detach())
+            identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
+            identity_diff = identity1 - identity2 ##real -augmented
+            ranking_loss = self.ranking_loss(identity_diff, self.y_fake_)
+            ranking_loss.backward()
+            cr_optimizer.step()
+            del real_aug
+            del augmented_image
+            del imgs
 
-        generator.zero_grad()
-        deformator.zero_grad()
+            if i%100 == 0 :
+                tc =0
+                ts =0
+                for i in range(500):
+                    z_ = torch.randn(int(self.opt.algo.ours.batch_size), generator.dim_z[0], generator.dim_z[1],
+                                     generator.dim_z[2]).cuda()
+                    imgs = generator(z_)
+                    logits, identity = cr_discriminator(imgs.detach())
+                    identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
+                    identity_diff = torch.sigmoid(identity1 - identity2)
+                    pred_1 = (identity_diff > torch.Tensor([0.5])).float()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0], generator.dim_z[1],
-                         generator.dim_z[2]).cuda()
-        z = torch.cat((z_, z_), dim=0)
-        epsilon, ground_truths = self.make_shifts_rank()
-        shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
-        z_total = torch.cat((z+shift_epsilon, z), dim=0)
 
-        imgs = generator(z_total)
-        logits, identity = cr_discriminator(imgs)
+                    augmented_img = []
+                    for k in range(int(self.opt.algo.ours.batch_size / 2)):
+                        augmented_img.append(self.torch_transform(imgs[k].detach()))
+                    augmented_image = torch.stack(augmented_img)
+                    real_aug = torch.cat((imgs[:int(self.opt.algo.ours.batch_size / 2)].detach(), augmented_image.cuda()),
+                                         dim=0).cuda()
+                    _, identity = cr_discriminator(real_aug.detach())
+                    identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
+                    identity_diff = torch.sigmoid(identity1 - identity2)
+                    pred_2 = (identity_diff > torch.Tensor([0.5])).float()
+                    predictions = torch.cat((pred_1,pred_2))
+                    labels = torch.cat((self.y_real_,self.y_fake_))
+                    correct = (predictions == labels).float().sum()
+                    tc = tc + correct
+                    ts = ts + labels.shape[0]
+                print("Epoch {}/{}, Loss: {:.3f}, Accuracy: {:.3f}".format(i + 1, 100000, loss.data[0],
+                                                                           tc / ts))
 
-        logits = logits[:self.opt.algo.ours.batch_size]
-        epsilon1, epsilon2 = torch.split(logits, 2,dim=0)
-        identity1, identity2 = torch.split(identity.view(-1),4,dim=0)
-
-        epsilon_diff = epsilon1 - epsilon2
-        identity_diff = identity2 - identity1 ## z - (z+shift_epsilon)
-        y_fake_ = torch.zeros(self.opt.algo.ours.batch_size, device="cuda")
-        ranking_loss = self.ranking_loss(epsilon_diff, ground_truths) + 0.5*self.ranking_loss(identity_diff, y_fake_)
-
-        ranking_loss.backward()
-
-        deformator_opt.step()
 
         return deformator, deformator_opt, cr_discriminator, cr_optimizer, ranking_loss.item()
 
