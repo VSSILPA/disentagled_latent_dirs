@@ -17,7 +17,7 @@ class Trainer(object):
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
         self.ranking_loss = nn.BCEWithLogitsLoss()
-        self.torch_transform = torchvision.transforms.Compose([transforms.RandomRotation((-20, 20)),transforms.RandomHorizontalFlip(p=0.5)])
+        self.torch_transform = torchvision.transforms.Compose([transforms.RandomRotation((-20, 20)),transforms.RandomHorizontalFlip(p=1)])
         self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size/2), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size/2),
                                                                                                     1,
                                                                                                     device="cuda")
@@ -33,6 +33,7 @@ class Trainer(object):
         os.environ['PYTHONHASHSEED'] = str(seed)
 
     def train_ours(self, generator, deformator, deformator_opt, cr_discriminator, cr_optimizer):
+        training_loss = []
 
         for i in range(10000):
 
@@ -46,8 +47,6 @@ class Trainer(object):
                              generator.dim_z[2]).cuda()
             z = torch.cat((z_, z_diff), dim=0)
             imgs = generator(z)
-            logging.info(torch.max(imgs))
-            logging.info(torch.min(imgs))
             logits, identity = cr_discriminator(imgs.detach())
 
             identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
