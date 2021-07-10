@@ -8,7 +8,7 @@ import Augmentor
 import torchvision
 from torchvision import transforms
 
-
+import  logging
 class Trainer(object):
 
     def __init__(self, config, opt):
@@ -17,13 +17,8 @@ class Trainer(object):
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
         self.ranking_loss = nn.BCEWithLogitsLoss()
-        p = Augmentor.Pipeline()
-        p.rotate(probability=1, max_left_rotation=20, max_right_rotation=20)
-        p.zoom(probability=1, min_factor=0.9, max_factor=1.1)  # TODO PAY ATTENTION to zoom factor
-        p.random_distortion(probability=1, grid_width=1, grid_height=1, magnitude=10)
-        self.torch_transform = torchvision.transforms.Compose(
-            [transforms.ToPILImage(), p.torch_transform(), transforms.ToTensor()])
-        self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size),
+        self.torch_transform = torchvision.transforms.Compose([transforms.RandomRotation((-20, 20)),transforms.RandomHorizontalFlip(p=0.5)])
+        self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size/2), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size/2),
                                                                                                     1,
                                                                                                     device="cuda")
 
@@ -51,6 +46,8 @@ class Trainer(object):
                              generator.dim_z[2]).cuda()
             z = torch.cat((z_, z_diff), dim=0)
             imgs = generator(z)
+            logging.info(torch.max(imgs))
+            logging.info(torch.min(imgs))
             logits, identity = cr_discriminator(imgs.detach())
 
             identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
@@ -77,17 +74,17 @@ class Trainer(object):
             del augmented_image
             del imgs
 
-            if i%100 == 0 :
+            if i%1000 == 0 :
                 tc =0
                 ts =0
-                for i in range(500):
+                for k in range(500):
                     z_ = torch.randn(int(self.opt.algo.ours.batch_size), generator.dim_z[0], generator.dim_z[1],
                                      generator.dim_z[2]).cuda()
                     imgs = generator(z_)
                     logits, identity = cr_discriminator(imgs.detach())
                     identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
                     identity_diff = torch.sigmoid(identity1 - identity2)
-                    pred_1 = (identity_diff > torch.Tensor([0.5])).float()
+                    pred_1 = (identity_diff > torch.Tensor([0.5]).cuda()).float()
 
 
                     augmented_img = []
@@ -99,13 +96,13 @@ class Trainer(object):
                     _, identity = cr_discriminator(real_aug.detach())
                     identity1, identity2 = torch.split(identity, int(self.opt.algo.ours.batch_size / 2))
                     identity_diff = torch.sigmoid(identity1 - identity2)
-                    pred_2 = (identity_diff > torch.Tensor([0.5])).float()
+                    pred_2 = (identity_diff > torch.Tensor([0.5]).cuda()).float()
                     predictions = torch.cat((pred_1,pred_2))
                     labels = torch.cat((self.y_real_,self.y_fake_))
                     correct = (predictions == labels).float().sum()
                     tc = tc + correct
                     ts = ts + labels.shape[0]
-                print("Epoch {}/{}, Loss: {:.3f}, Accuracy: {:.3f}".format(i + 1, 100000, loss.data[0],
+                logging.info("Epoch {}/{}, Loss: {:.3f}, Accuracy: {:.3f}".format(i + 1, 100000, loss.item(),
                                                                            tc / ts))
 
 
