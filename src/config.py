@@ -11,14 +11,13 @@
 import argparse
 import os
 import sys
-import logging
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
     experiment_name = 'ours with closed form initialisation'
-    experiment_description ='to study wether linear combo is essentail'
+    experiment_description = 'Running for 7*5 random seeds for shapes 3d'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -44,12 +43,12 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
 parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
-parser.add_argument('--resume_train', type=bool, default= False, help='name of the model to be loaded')
+parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+# opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
@@ -82,34 +81,8 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 1
+opt.algo.ld.logging_freq = 1000
 opt.algo.ld.saving_freq = 1000
-
-# ---------------------------------------------------------------------------- #
-# Options for Linear Combination latent discovery(pretrained)
-# ---------------------------------------------------------------------------- #
-opt.algo = CN()
-opt.algo.linear_combo = CN()
-opt.algo.linear_combo.batch_size = 32
-opt.algo.linear_combo.latent_dim = 512
-opt.algo.linear_combo.num_steps = 5001
-opt.algo.linear_combo.num_directions = 10
-opt.algo.linear_combo.combo_dirs = 2
-opt.algo.linear_combo.shift_scale = 6
-opt.algo.linear_combo.min_shift = 0.5
-opt.algo.linear_combo.deformator_lr = 0.0001
-opt.algo.linear_combo.shift_predictor_lr = 0.0001
-opt.algo.linear_combo.beta1 = 0.9
-opt.algo.linear_combo.beta2 = 0.999
-opt.algo.linear_combo.deformator_randint = True
-opt.algo.linear_combo.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.linear_combo.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
-opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
-opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
-opt.algo.linear_combo.truncation = None
-opt.algo.linear_combo.file_name = '5000_infogan.pkl'
-opt.algo.linear_combo.logging_freq = 1000
-opt.algo.linear_combo.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Ours
@@ -148,56 +121,6 @@ generator_kwargs = {
     "input_is_latent": True,
     "randomize_noise": False,
     "truncation": 0.8}
-
-# # ---------------------------------------------------------------------------- #
-# # Options for StyleGAN
-# # ---------------------------------------------------------------------------- #
-#
-# opt.structure = 'linear'
-# opt.loss = "logistic"
-# opt.drift = 0.001
-# opt.d_repeats = 1
-# opt.use_ema = False
-# opt.ema_decay = 0.999
-# opt.alpha = 1
-# opt.depth = 4
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Generator
-# # ---------------------------------------------------------------------------- #
-# opt.model = CN()
-# opt.model.gen = CN()
-# opt.model.gen.latent_size = 10
-# # 8 in original paper
-# opt.model.gen.mapping_layers = 4
-# opt.model.gen.blur_filter = [1, 2, 1]
-# opt.model.gen.truncation_psi = 0.7
-# opt.model.gen.truncation_cutoff = 8
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Discriminator
-# # ---------------------------------------------------------------------------- #
-# opt.model.dis = CN()
-# opt.model.dis.use_wscale = True
-# opt.model.dis.blur_filter = [1, 2, 1]
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Generator Optimizer
-# # ---------------------------------------------------------------------------- #
-# opt.model.g_optim = CN()
-# opt.model.g_optim.learning_rate = 0.003
-# opt.model.g_optim.beta_1 = 0
-# opt.model.g_optim.beta_2 = 0.99
-# opt.model.g_optim.eps = 1e-8
-#
-# # ---------------------------------------------------------------------------- #
-# # Options for Discriminator Optimizer
-# # ---------------------------------------------------------------------------- #
-# opt.model.d_optim = CN()
-# opt.model.d_optim.learning_rate = 0.003
-# opt.model.d_optim.beta_1 = 0
-# opt.model.d_optim.beta_2 = 0.99
-# opt.model.d_optim.eps = 1e-8
 
 # ---------------------------------------------------------------------------- #
 # Options for Encoder
