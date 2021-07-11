@@ -193,5 +193,3 @@ class Trainer(object):
         ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths
-
-z

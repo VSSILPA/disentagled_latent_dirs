@@ -15,11 +15,9 @@ from training_wrapper import run_training_wrapper
 from evaluation_wrapper import run_evaluation_wrapper
 from logger import PerfomanceLogger
 from data_loader import get_data_loader
-import logging
 
 
 def main(configurations, opt):
-    logging.info("Executing for random seed : "+str(opt.random_seed))
     Trainer.set_seed(opt.random_seed)
     PerfomanceLogger.configure_logger(configurations)
     perf_logger = PerfomanceLogger()
