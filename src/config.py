@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 test_mode = True
 if test_mode:
     experiment_name = 'ours with closed form initialisation'
-    experiment_description = 'Running for 7*5 random seeds for shapes 3d'
+    experiment_description = 'Running for random seed-2 for shapes 3d'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -48,8 +48,8 @@ opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-# opt.pretrained_gen_root = 'models/pretrained/new_generators/'
+#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
+opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
