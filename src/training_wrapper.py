@@ -124,6 +124,11 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
+                if k % opt.algo.ld.saving_freq == 0 and k != 0:
+                    params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                    perf_logger.start_monitoring("Saving Model")
+                    saver.save_model(params, k, i , algo='ours')
+                    perf_logger.stop_monitoring("Saving Model")
         else:
             raise NotImplementedError
         metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])

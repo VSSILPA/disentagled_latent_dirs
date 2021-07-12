@@ -29,6 +29,19 @@ class Saver(object):
                 'random_state': random.getstate()
 
             }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
+        elif algo == 'ours':
+                deformator, deformator_opt, cr_discriminator, cr_optimizer = params
+                torch.save({
+                    'step': step,
+                    'deformator': deformator.state_dict(),
+                    'deformator_opt': deformator_opt.state_dict(),
+                    'cr_discriminator': cr_discriminator.state_dict(),
+                    'cr_optimizer' : cr_optimizer.state_dict(),
+                    'torch_rng_state': torch.get_rng_state(),
+                    'np_rng_state': np.random.get_state(),
+                    'random_state': random.getstate()
+
+                }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
         else:
             raise NotImplementedError
 

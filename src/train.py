@@ -66,7 +66,7 @@ class Trainer(object):
         ranking_loss.backward()
 
         deformator_opt.step()
-
+        del imgs
         return deformator, deformator_opt, cr_discriminator, cr_optimizer , ranking_loss.item()
 
     def train_latent_discovery(self, generator, deformator, shift_predictor, cr_discriminator, cr_optimizer,
