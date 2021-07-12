@@ -106,6 +106,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
             logging.info("MIG : " + str(metrics['mig']))
             logging.info("DCI Metric : " + str(metrics['dci']))
+
             deformator.train()
             deformator.cuda()
             for k in range(opt.algo.ours.num_steps):
