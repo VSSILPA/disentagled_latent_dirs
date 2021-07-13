@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed form initialisation'
-    experiment_description = 'Running for random seed-2 for shapes 3d'
+    experiment_name = 'ours with closed form initialisation-ortho'
+    experiment_description = 'Running for random seed-2 for shapes 3 ortho init'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -91,7 +91,7 @@ opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 10001
 opt.algo.ours.batch_size = 32
-opt.algo.ours.deformator_type = 'linear'
+opt.algo.ours.deformator_type = 'ortho'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10

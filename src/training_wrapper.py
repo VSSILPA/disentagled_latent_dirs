@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(3,opt.num_generator_seeds):
+    for i in range(opt.num_generator_seeds):
         logging.info("Running for generator model : " + str(i))
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
@@ -98,23 +98,29 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours':
             generator,deformator, deformator_opt, cr_discriminator, cr_optimizer = models
-            deformator = model_trainer.train_closed_form(generator)
+            initialisation = model_trainer.train_closed_form(generator)
+            deformator.ortho_mat.data = initialisation.weight
             deformator.cuda()
-            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
+ #           deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
  #           metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
  #           logging.info("---------------------Closed form initialisation results------------------------")
  #           logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
  #           logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
  #           logging.info("MIG : " + str(metrics['mig']))
  #           logging.info("DCI Metric : " + str(metrics['dci']))
-            deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
+ #           deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
             deformator.train()
-            deformator.cuda()
-            for k in range(4001,opt.algo.ours.num_steps):
+            for k in range(opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                     model_trainer.train_ours(
                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                if k % opt.algo.ours.logging_freq == 0 and k != 0:
+                if k % opt.algo.ld.saving_freq == 0 and k != 0:
+                    params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                    perf_logger.start_monitoring("Saving Model")
+                    saver.save_model(params, k, i , algo='ours')
+                    perf_logger.stop_monitoring("Saving Model")
+
+                if k % opt.algo.ours.logging_freq == 0 and k > 5000:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
@@ -126,11 +132,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
-                if k % opt.algo.ld.saving_freq == 0 and k != 0:
-                    params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                    perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i , algo='ours')
-                    perf_logger.stop_monitoring("Saving Model")
         else:
             raise NotImplementedError
         metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
