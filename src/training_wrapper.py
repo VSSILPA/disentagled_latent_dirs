@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(opt.num_generator_seeds):
+    for i in range(3,opt.num_generator_seeds):
         logging.info("Running for generator model : " + str(i))
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
@@ -97,19 +97,20 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours':
-            generator, _, _, cr_discriminator, cr_optimizer = models
+            generator,deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             deformator = model_trainer.train_closed_form(generator)
+            deformator.cuda()
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-            logging.info("---------------------Closed form initialisation results------------------------")
-            logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
-            logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
-            logging.info("MIG : " + str(metrics['mig']))
-            logging.info("DCI Metric : " + str(metrics['dci']))
-
+ #           metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+ #           logging.info("---------------------Closed form initialisation results------------------------")
+ #           logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
+ #           logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
+ #           logging.info("MIG : " + str(metrics['mig']))
+ #           logging.info("DCI Metric : " + str(metrics['dci']))
+            deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
             deformator.train()
             deformator.cuda()
-            for k in range(opt.algo.ours.num_steps):
+            for k in range(4001,opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                     model_trainer.train_ours(
                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)

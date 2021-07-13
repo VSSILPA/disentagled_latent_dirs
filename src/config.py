@@ -42,7 +42,7 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='500_model.pkl', help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='40003_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
@@ -89,7 +89,7 @@ opt.algo.ld.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 5001
+opt.algo.ours.num_steps = 10001
 opt.algo.ours.batch_size = 32
 opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
@@ -97,7 +97,7 @@ opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 5000
+opt.algo.ours.logging_freq = 1000
 opt.algo.ours.saving_freq = 1000
 opt.algo.ours.shift_predictor_lr = 0.0001
 

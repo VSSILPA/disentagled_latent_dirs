@@ -59,6 +59,16 @@ class Saver(object):
             random.setstate(checkpoint['random_state'])
 
             return deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
+        elif algo == 'ours':
+            deformator, deformator_opt, cr_discriminator, cr_optimizer = params
+            deformator.load_state_dict(checkpoint['deformator'])
+            deformator_opt.load_state_dict(checkpoint['deformator_opt'])
+            cr_discriminator.load_state_dict(checkpoint['cr_discriminator'])
+            cr_optimizer.load_state_dict(checkpoint['cr_optimizer'])
+            torch.set_rng_state(checkpoint['torch_rng_state'])
+            np.random.set_state(checkpoint['np_rng_state'])
+            random.setstate(checkpoint['random_state'])
+            return deformator, deformator_opt, cr_discriminator, cr_optimizer
         else:
             raise NotImplementedError
 
