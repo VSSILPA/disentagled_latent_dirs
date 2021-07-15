@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(opt.num_generator_seeds):
+    for i in range(5,opt.num_generator_seeds):
         logging.info("Running for generator model : " + str(i))
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
@@ -120,7 +120,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     saver.save_model(params, k, i , algo='ours')
                     perf_logger.stop_monitoring("Saving Model")
 
-                if k % opt.algo.ours.logging_freq == 0 and k > 5000:
+                if k % opt.algo.ours.logging_freq == 0 and k!=0:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
