@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed form initialisation-ortho'
+    experiment_name = 'ours with closed form initialisation-ortho-seed91'
     experiment_description = 'Running for random seed-2 for shapes 3 ortho init'
 else:
     experiment_name = input("Enter experiment name ")
@@ -43,7 +43,7 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='40003_model.pkl', help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='40005_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
@@ -54,8 +54,8 @@ opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
-opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7
-opt.random_seed = 2
+opt.num_generator_seeds = 5 if opt.dataset != 'cars3d' else 7
+opt.random_seed = 91
 if opt.dataset == 'dsprites':
     opt.num_generator_seeds = 1
 

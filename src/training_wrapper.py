@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(5,opt.num_generator_seeds):
+    for i in range(opt.num_generator_seeds):
         logging.info("Running for generator model : " + str(i))
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
@@ -108,9 +108,12 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
  #           logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
  #           logging.info("MIG : " + str(metrics['mig']))
  #           logging.info("DCI Metric : " + str(metrics['dci']))
- #           deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
+            resume_step = 0
+            if configuration['resume_train']:
+                resume_step = 20000
+                deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
             deformator.train()
-            for k in range(opt.algo.ours.num_steps):
+            for k in range(resume_step,opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                     model_trainer.train_ours(
                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
