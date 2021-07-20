@@ -7,7 +7,7 @@ import io
 from PIL import Image
 from config import generator_kwargs
 
-from torch_tools.visualization import to_image
+# from torch_tools.visualization import to_image
 
 matplotlib.use("Agg")
 

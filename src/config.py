@@ -54,7 +54,8 @@ opt.gan_resolution = 1024
 opt.w_shift = True
 # opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 # opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
-opt.pretrained_gen_root = 'models/pretrained/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
+# opt.pretrained_gen_root = 'models/pretrained/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
+opt.pretrained_gen_root = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/models/pretrained/ProgGAN/pggan_celebahq1024.pth'
 opt.deformator_pretrained = 'models/pretrained/deformator_0.pt'
 # opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1

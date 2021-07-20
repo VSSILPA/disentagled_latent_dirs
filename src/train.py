@@ -29,7 +29,7 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.dim_z[0],generator.dim_z[1],generator.dim_z[2]).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.z_space_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
 
         epsilon, ground_truths = self.make_shifts_rank()
@@ -49,7 +49,7 @@ class Trainer(object):
         generator.zero_grad()
         deformator.zero_grad()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2),  generator.dim_z[0],generator.dim_z[1],generator.dim_z[2]).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2),  generator.z_space_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)

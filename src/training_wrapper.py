@@ -99,9 +99,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             generator.eval()
             deformator.eval()
-            z = torch.randn(1, generator.dim_z[0],generator.dim_z[1],generator.dim_z[2])
-            # visualise_results.make_interpolation_chart('000', z, generator, deformator, shift_r=10,
-            #                                             shifts_count=5, dpi=500)
+            z = torch.randn(1, generator.z_space_dim)
             layers = [0]
             weights = []
             for idx in layers:
@@ -112,8 +110,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             weight = np.concatenate(weights, axis=1).astype(np.float32)
             weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
             eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
-            deformator.ortho_mat.data = eigen_vectors.T
+            deformator.ortho_mat.data = torch.Tensor(eigen_vectors.T)
             deformator.cuda()
+            deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
+                                               opt.algo.ours.latent_dim)
+            deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
+            visualise_results.make_interpolation_chart('closed_form', z, generator, deformator_layer, shift_r=10,
+                                                        shifts_count=5, dpi=500)
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
             # deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
             #         (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
@@ -126,7 +129,10 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
                     generator.eval()
                     deformator.eval()
-                    visualise_results.make_interpolation_chart(k,z, generator, deformator, shift_r=10,
+                    deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
+                                                       opt.algo.ours.latent_dim)
+                    deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
+                    visualise_results.make_interpolation_chart(k,z, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5, dpi=500)
                     deformator.train()
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
