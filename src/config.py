@@ -1,3 +1,4 @@
+
 """
 -------------------------------------------------
    File Name:    config.py
@@ -87,50 +88,24 @@ opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
 opt.algo.ld.label_weight = 1.0
 opt.algo.ld.shift_weight = 0.25
 opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 1
+opt.algo.ld.logging_freq = 1000
 opt.algo.ld.saving_freq = 1000
-
-# ---------------------------------------------------------------------------- #
-# Options for Linear Combination latent discovery(pretrained)
-# ---------------------------------------------------------------------------- #
-opt.algo = CN()
-opt.algo.linear_combo = CN()
-opt.algo.linear_combo.batch_size = 32
-opt.algo.linear_combo.latent_dim = 512
-opt.algo.linear_combo.num_steps = 5001
-opt.algo.linear_combo.num_directions = 10
-opt.algo.linear_combo.combo_dirs = 2
-opt.algo.linear_combo.shift_scale = 6
-opt.algo.linear_combo.min_shift = 0.5
-opt.algo.linear_combo.deformator_lr = 0.0001
-opt.algo.linear_combo.shift_predictor_lr = 0.0001
-opt.algo.linear_combo.beta1 = 0.9
-opt.algo.linear_combo.beta2 = 0.999
-opt.algo.linear_combo.deformator_randint = True
-opt.algo.linear_combo.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.linear_combo.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
-opt.algo.linear_combo.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
-opt.algo.linear_combo.shift_predictor_size = None  # reconstructor resolution
-opt.algo.linear_combo.truncation = None
-opt.algo.linear_combo.file_name = '5000_infogan.pkl'
-opt.algo.linear_combo.logging_freq = 1000
-opt.algo.linear_combo.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Ours
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 100001
+opt.algo.ours.num_steps = 140001
 opt.algo.ours.batch_size = 8
-opt.algo.ours.deformator_type = 'linear'
+opt.algo.ours.deformator_type = 'ortho'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 1000
-opt.algo.ours.saving_freq = 1000
+opt.algo.ours.logging_freq = 2000
+opt.algo.ours.saving_freq = 2000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #

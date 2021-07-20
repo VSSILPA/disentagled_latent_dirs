@@ -100,15 +100,24 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             generator.eval()
             deformator.eval()
             z = torch.randn(1, generator.dim_z[0],generator.dim_z[1],generator.dim_z[2])
-            visualise_results.make_interpolation_chart('000_resume', z, generator, deformator, shift_r=10,
-                                                        shifts_count=5, dpi=500)
-            # deformator = model_trainer.train_closed_form(generator)
-            # deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-            deformator.train()
+            # visualise_results.make_interpolation_chart('000', z, generator, deformator, shift_r=10,
+            #                                             shifts_count=5, dpi=500)
+            layers = [0]
+            weights = []
+            for idx in layers:
+                layer_name = f'layer{idx}'
+                weight = generator.__getattr__(layer_name).weight
+                weight = weight.flip(2, 3).permute(1, 0, 2, 3).flatten(1)
+                weights.append(weight.cpu().detach().numpy())
+            weight = np.concatenate(weights, axis=1).astype(np.float32)
+            weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
+            eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
+            deformator.ortho_mat.data = eigen_vectors.T
             deformator.cuda()
-            deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
-                    (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
-            for k in range(30000,opt.algo.ours.num_steps):
+            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
+            # deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
+            #         (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
+            for k in range(0,opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                      model_trainer.train_ours(
                          generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)

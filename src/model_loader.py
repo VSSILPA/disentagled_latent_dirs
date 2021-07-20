@@ -82,8 +82,8 @@ def get_model(opt):
                                       out_dim=G.dim_z[0],
                                       type=opt.algo.ours.deformator_type,
                                       random_init=opt.algo.ours.deformator_randint).to(device)
-        if opt.deformator_pretrained is not None:
-            deformator.load_state_dict(torch.load(opt.deformator_pretrained))
+        # if opt.deformator_pretrained is not None:
+        #     deformator.load_state_dict(torch.load(opt.deformator_pretrained))
         deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
         cr_discriminator = ResNetRankPredictor(deformator.input_dim, opt.algo.ours.shift_predictor_size,
                                                channels=1 if opt.dataset == 'dsprites' else 3, num_dirs=opt.algo.ours.num_directions).to(device)
