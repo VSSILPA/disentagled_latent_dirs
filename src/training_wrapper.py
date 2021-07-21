@@ -113,13 +113,12 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             deformator.ortho_mat.data = torch.Tensor(eigen_vectors.T)
             deformator.cuda()
             deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
-                                               opt.algo.ours.latent_dim)
+                                               opt.algo.ours.latent_dim,bias=False)
             deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
             visualise_results.make_interpolation_chart('closed_form', z, generator, deformator_layer, shift_r=10,
                                                         shifts_count=5, dpi=500)
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-            # deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
-            #         (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
+            deformator.train()
             for k in range(0,opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                      model_trainer.train_ours(
@@ -130,7 +129,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                     generator.eval()
                     deformator.eval()
                     deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
-                                                       opt.algo.ours.latent_dim)
+                                                       opt.algo.ours.latent_dim,bias=False)
                     deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     visualise_results.make_interpolation_chart(k,z, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5, dpi=500)
