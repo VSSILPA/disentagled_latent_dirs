@@ -113,7 +113,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             deformator.cuda()
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
             deformator.train()
-            saver.save_model(params, k, 'cf' , algo='ours-natural')
+            params = (deformator, cr_discriminator, deformator_opt, cr_optimizer)
+            saver.save_model(params, 0, 'cf' , algo='ours-natural')
 #            deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
 #                    (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
             for k in range(opt.algo.ours.num_steps):
