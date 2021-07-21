@@ -188,7 +188,7 @@ class PGGANGenerator(nn.Module):
             'label': label,
             'image': image,
         }
-        return results
+        return image
 
 
 class PixelNormLayer(nn.Module):

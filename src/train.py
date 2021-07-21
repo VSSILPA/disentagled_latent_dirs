@@ -31,11 +31,8 @@ class Trainer(object):
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.z_space_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
-
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
         imgs= generator(z + shift_epsilon)
         logits = cr_discriminator(imgs.detach())
 
@@ -53,8 +50,6 @@ class Trainer(object):
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
 
         imgs = generator(z + shift_epsilon)
         logits = cr_discriminator(imgs)
