@@ -50,7 +50,16 @@ def get_model(opt):
     elif gan_type == 'StyleGAN2-Natural':
         G = make_style_gan2(opt.gan_resolution, opt.pretrained_gen_root, opt.w_shift)
     elif gan_type == 'prog-gan':
-        G = make_proggan(opt.pretrained_gen_root)
+        from models.proggan_sefa import PGGANGenerator
+        G = PGGANGenerator(resolution=1024)
+        checkpoint = torch.load(opt.pretrained_gen_root, map_location='cpu')
+        if 'generator_smooth' in checkpoint:
+            G.load_state_dict(checkpoint['generator_smooth'])
+        else:
+            G.load_state_dict(checkpoint['generator'])
+        G = G.cuda()
+        G.eval()
+        # G = make_proggan(opt.pretrained_gen_root)
     else:
         raise NotImplementedError
 
@@ -77,13 +86,13 @@ def get_model(opt):
     elif opt.algorithm == 'GS':
         return G
     elif opt.algorithm == 'ours-natural' or 'ours-synthetic':
-        deformator = LatentDeformator(shift_dim=G.dim_z[0],
+        deformator = LatentDeformator(shift_dim=G.z_space_dim,
                                       input_dim=opt.algo.ours.num_directions,  # dimension of one-hot encoded vector
-                                      out_dim=G.dim_z[0],
+                                      out_dim=G.z_space_dim,
                                       type=opt.algo.ours.deformator_type,
                                       random_init=opt.algo.ours.deformator_randint).to(device)
-        if opt.deformator_pretrained is not None:
-            deformator.load_state_dict(torch.load(opt.deformator_pretrained))
+    #    if opt.deformator_pretrained is not None:
+    #        deformator.load_state_dict(torch.load(opt.deformator_pretrained))
         deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
         cr_discriminator = ResNetRankPredictor(deformator.input_dim, opt.algo.ours.shift_predictor_size,
                                                channels=1 if opt.dataset == 'dsprites' else 3, num_dirs=opt.algo.ours.num_directions).to(device)

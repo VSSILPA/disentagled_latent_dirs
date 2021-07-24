@@ -3,10 +3,6 @@ from utils import *
 from models.latent_deformator import normal_projection_stat
 import torch.nn as nn
 from config import generator_kwargs
-import PIL
-import Augmentor
-import torchvision
-from torchvision import transforms
 
 import  logging
 class Trainer(object):

@@ -51,11 +51,8 @@ opt.algorithm = 'ours-natural'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ou
 opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 opt.gan_resolution = 1024
 opt.w_shift = True
-# opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-# opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
-opt.pretrained_gen_root = 'models/pretrained/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
-opt.deformator_pretrained = 'models/pretrained/deformator_0.pt'
-# opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
+
+opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/ProgGAN/pggan_celebahq1024.pth'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -122,15 +119,15 @@ opt.algo.linear_combo.saving_freq = 1000
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 400001
-opt.algo.ours.batch_size =4
+opt.algo.ours.batch_size =8
 opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 1000
-opt.algo.ours.saving_freq = 1000
+opt.algo.ours.logging_freq = 500
+opt.algo.ours.saving_freq = 10000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #
