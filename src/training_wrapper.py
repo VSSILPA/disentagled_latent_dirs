@@ -98,10 +98,10 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         elif opt.algorithm == 'ours-natural':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             generator.eval()
-            deformator.eval()
-            z = torch.randn(1, generator.dim_z[0],generator.dim_z[1],generator.dim_z[2])
-            visualise_results.make_interpolation_chart('000_resume', z, generator, deformator, shift_r=10,
-                                                         shifts_count=5, dpi=500)
+#            deformator.eval()
+#            z = torch.randn(1, generator.dim_z[0],generator.dim_z[1],generator.dim_z[2])
+#            visualise_results.make_interpolation_chart('000_resume', z, generator, deformator, shift_r=10,
+#                                                         shifts_count=5, dpi=500)
             # deformator = model_trainer.train_closed_form(generator)
             # deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
             deformator.train()
