@@ -13,15 +13,12 @@ from evaluation import Evaluator
 from saver import Saver
 from visualiser import Visualiser, plot_generated_images
 import logging
-import torch
 import time
-from statistics import mean, stdev
 from utils import *
 
 
 def run_training_wrapper(configuration, opt, data, perf_logger):
     device = torch.device(opt.device + opt.device_id)
-    metrics_seed = {'betavae_metric': [], 'factorvae_metric': [], 'mig': [], 'dci': []}
     directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt', '__pycache__'])
     filtered_dirs = []
     for file in directories:
@@ -30,7 +27,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(7, opt.num_generator_seeds):
+
+    for i in range(opt.num_generator_seeds):
+
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
         perf_logger.start_monitoring("Fetching data, models and class instantiations")
@@ -40,17 +39,17 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         saver = Saver(configuration)
         visualise_results = Visualiser(configuration, opt)
         perf_logger.stop_monitoring("Fetching data, models and class instantiations")
+
         if opt.algorithm == 'LD':
             generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
             if configuration['resume_train']:
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
                     (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
-            # plot_generated_images(opt, generator)
             generator.to(device).eval()
             deformator.to(device).train()
             shift_predictor.to(device).train()
             loss, logit_loss, shift_loss = 0, 0, 0
-            for k in range(resume_step+1, opt.algo.ld.num_steps):
+            for k in range(resume_step + 1, opt.algo.ld.num_steps):
                 start_time = time.time()
                 deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
                     model_trainer.train_latent_discovery(
@@ -81,7 +80,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 if k % opt.algo.ld.saving_freq == 0 and k != 0:
                     params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
                     perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i , algo='LD')
+                    saver.save_model(params, k, i, algo='LD')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'CF':
             generator = models
@@ -98,7 +97,6 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         elif opt.algorithm == 'ours-natural':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             generator.eval()
-            z = torch.randn(1, generator.z_space_dim)
             layers = [0]
             weights = []
             for idx in layers:
@@ -109,22 +107,20 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             weight = np.concatenate(weights, axis=1).astype(np.float32)
             weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
             eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
-            deformator.ortho_mat.data = torch.Tensor(eigen_vectors.T)
+            deformator.linear.weight.data = torch.Tensor(eigen_vectors.T)
+            params = deformator
+            saver.save_model(params, 'cf', i, algo='closedform')
             deformator.cuda()
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
             deformator.train()
-            params = (deformator, cr_discriminator, deformator_opt, cr_optimizer)
-            saver.save_model(params, 0, 'cf' , algo='ours-natural')
-#            deformator, cr_discriminator, deformator_opt, cr_optimizer =  saver.load_model(
-#                    (deformator, cr_discriminator, deformator_opt, cr_optimizer), algo='ours-natural')
             for k in range(opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
-                     model_trainer.train_ours(
-                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                    model_trainer.train_ours(
+                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
                 if k % opt.algo.ours.saving_freq == 0 and k != 0:
                     params = (deformator, cr_discriminator, deformator_opt, cr_optimizer)
                     perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i , algo='ours-natural')
+                    saver.save_model(params, k, i, algo='ours-natural')
                     perf_logger.stop_monitoring("Saving Model")
         elif opt.algorithm == 'ours-synthetic':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
@@ -146,21 +142,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                         deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
                     else:
                         deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
-                    visualise_results.make_interpolation_chart(i,z, generator, deformator_layer, shift_r=10,
+                    visualise_results.make_interpolation_chart(i, z, generator, deformator_layer, shift_r=10,
                                                                shifts_count=5)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
         else:
             raise NotImplementedError
-    #     metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
-    #     metrics_seed['factorvae_metric'].append(metrics['factor_vae']['eval_accuracy'])
-    #     metrics_seed['mig'].append(metrics['mig'])
-    #     metrics_seed['dci'].append(metrics['dci'])
-    #
-    # if opt.dataset != 'shapes3d':  # since running only for one seed ..not enough points for std dev calculation
-    #     logging.info('BetaVAE metric : ' + str(mean(metrics_seed['betavae_metric'])) + u"\u00B1" + str(
-    #         stdev(metrics_seed['betavae_metric'])) + '\n' +
-    #                  'FactorVAE metric : ' + str(mean(metrics_seed['factorvae_metric'])) + u"\u00B1" + str(
-    #         stdev(metrics_seed['factorvae_metric'])) + '\n'
-    #                                                    'MIG : ' + str(mean(metrics_seed['mig'])) + u"\u00B1" + str(
-    #         stdev(metrics_seed['mig'])) + '\n' +
-    #                  'DCI:' + str(mean(metrics_seed['dci'])) + u"\u00B1" + str(stdev(metrics_seed['dci'])))

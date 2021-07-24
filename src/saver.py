@@ -10,7 +10,7 @@ class Saver(object):
         self.experiment_name = self.config['experiment_name']
         self.model_name = self.config['file_name']
 
-    def save_model(self, params, step,generator_idx,algo='LD'):
+    def save_model(self, params, step, generator_idx, algo='LD'):
         cwd = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}'  # project root
         models_dir = cwd + '/models/'
 
@@ -30,18 +30,25 @@ class Saver(object):
 
             }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
         elif algo == 'ours-natural':
-                deformator, cr_discriminator, deformator_opt, cr_optimizer = params
-                torch.save({
-                    'step': step,
-                    'deformator': deformator.state_dict(),
-                    'cr_discriminator': cr_discriminator.state_dict(),
-                    'deformator_opt': deformator_opt.state_dict(),
-                    'cr_optimizer': cr_optimizer.state_dict(),
-                    'torch_rng_state': torch.get_rng_state(),
-                    'np_rng_state': np.random.get_state(),
-                    'random_state': random.getstate()
+            deformator, cr_discriminator, deformator_opt, cr_optimizer = params
+            torch.save({
+                'step': step,
+                'deformator': deformator.state_dict(),
+                'cr_discriminator': cr_discriminator.state_dict(),
+                'deformator_opt': deformator_opt.state_dict(),
+                'cr_optimizer': cr_optimizer.state_dict(),
+                'torch_rng_state': torch.get_rng_state(),
+                'np_rng_state': np.random.get_state(),
+                'random_state': random.getstate()
 
-                }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
+            }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
+        elif algo == 'closedform':
+            deformator = params
+            torch.save({
+                'step': step,
+                'deformator': deformator.state_dict(),
+
+            }, os.path.join(models_dir, str(step) + str(generator_idx) + '_model.pkl'))
         else:
             raise NotImplementedError
 
@@ -59,7 +66,7 @@ class Saver(object):
             np.random.set_state(checkpoint['np_rng_state'])
             random.setstate(checkpoint['random_state'])
 
-            return deformator, shift_predictor, deformator_opt, shift_predictor_opt , checkpoint['step']
+            return deformator, shift_predictor, deformator_opt, shift_predictor_opt, checkpoint['step']
         elif algo == 'ours-natural':
             deformator, cr_discriminator, deformator_opt, cr_optimizer = params
             deformator.load_state_dict(checkpoint['deformator'])

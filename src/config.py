@@ -18,7 +18,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'proggan-closed_form + ours seed -123'
+    experiment_name = 'proggan-closed_form + ours with identity_loss'
     experiment_description = 'studying effect of scaling'
 else:
     experiment_name = input("Enter experiment name ")
@@ -52,12 +52,8 @@ opt.algorithm = 'ours-natural'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ou
 opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 opt.gan_resolution = 1024
 opt.w_shift = True
-# opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-# opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/stylegan2-ffhq-config-f.pt'
-# opt.pretrained_gen_root = 'models/pretrained/ProgGAN/100_celeb_hq_network-snapshot-010403.pth'
 opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/ProgGAN/pggan_celebahq1024.pth'
 opt.deformator_pretrained = 'models/pretrained/deformator_0.pt'
-# opt.deformator_pretrained = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/new_generators/generators/StyleGAN2/deformator_0.pt'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -108,6 +104,8 @@ opt.algo.ours.shift_predictor_size = None
 opt.algo.ours.logging_freq = 2000
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.shift_predictor_lr = 0.0001
+opt.algo.ours.ranking_weight = 1
+opt.algo.ours.identity_weight = 1
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form
