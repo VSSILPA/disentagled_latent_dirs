@@ -62,11 +62,12 @@ class Trainer(object):
             del real_aug
             del imgs_petrurbed
             del imgs
+            training_loss.append(identity_loss.item()+ ranking_loss.item())
 
-            if i%1000 == 0 :
+            if i%1000 == 0 and i!=0:
                 tc =0
                 ts =0
-                for k in range(500):
+                for k in range(2500):
                     z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.z_space_dim).cuda()
                     z_diff = torch.randn(int(self.opt.algo.ours.batch_size / 2),generator.z_space_dim).cuda()
                     z = torch.cat((z_, z_diff), dim=0)
@@ -87,9 +88,9 @@ class Trainer(object):
                     correct = (predictions == labels).float().sum()
                     tc = tc + correct
                     ts = ts + labels.shape[0]
-                logging.info("Epoch {}/{}, Loss: {:.3f}, Accuracy: {:.3f}".format(i + 1, 100000, loss.item(),
+                logging.info("Epoch {}/{}, Loss: {:.3f}, Accuracy: {:.3f}".format(i + 1, 100000, sum(training_loss)/len(training_loss),
                                                                            tc / ts))
-
+                training_loss = []
 
         return deformator, deformator_opt, cr_discriminator, cr_optimizer, ranking_loss.item()
 
@@ -211,7 +212,7 @@ class Trainer(object):
     def make_shifts_rank(self):
 
         epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size/2),
-                                    self.opt.algo.ours.num_directions).uniform_(-5, 5).cuda()
+                                    self.opt.algo.ours.num_directions).uniform_(-2, 2).cuda()
 
 #        epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
 #        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
