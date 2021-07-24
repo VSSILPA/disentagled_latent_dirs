@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'stylegan2-with identity'
+    experiment_name = 'same_identity_not_classifier_-2_2'
     experiment_description = 'best setting expected'
 else:
     experiment_name = input("Enter experiment name ")

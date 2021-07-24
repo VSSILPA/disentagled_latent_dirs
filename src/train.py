@@ -43,7 +43,7 @@ class Trainer(object):
             imgs = generator(z)
             imgs1, imgs2 = torch.split(imgs, int(self.opt.algo.ours.batch_size / 2))
             imgs_mod = torch.cat((imgs1,imgs2),dim=1)
-            logits, identity = cr_discriminator(imgs_mod.detach())
+            identity = cr_discriminator(imgs_mod.detach())
             identity_loss = self.ranking_loss(identity, self.y_real_) # since images are sampled at  different  random z ,identity will be always diff
             loss = identity_loss
             loss.backward()
@@ -55,7 +55,7 @@ class Trainer(object):
             shift_epsilon = deformator(epsilon)
             imgs_petrurbed = generator(z_ + shift_epsilon)
             real_aug = torch.cat((imgs1.detach(), imgs_petrurbed.detach()), dim=1).cuda()
-            _, identity = cr_discriminator(real_aug.detach())
+            identity = cr_discriminator(real_aug.detach())
             ranking_loss = self.ranking_loss(identity, self.y_fake_)
             ranking_loss.backward()
             cr_optimizer.step()
@@ -67,6 +67,8 @@ class Trainer(object):
             if i%1000 == 0 and i!=0:
                 tc =0
                 ts =0
+                torch.save({'cr_discriminator': cr_discriminator.state_dict()}, str(i) + '_model.pkl')
+
                 for k in range(2500):
                     z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.z_space_dim).cuda()
                     z_diff = torch.randn(int(self.opt.algo.ours.batch_size / 2),generator.z_space_dim).cuda()
@@ -74,14 +76,14 @@ class Trainer(object):
                     imgs = generator(z)
                     imgs1, imgs2 = torch.split(imgs, int(self.opt.algo.ours.batch_size / 2))
                     imgs_mod = torch.cat((imgs1,imgs2),dim=1)
-                    logits, identity = cr_discriminator(imgs_mod.detach())
+                    identity = cr_discriminator(imgs_mod.detach())
                     pred_1 = (torch.sigmoid(identity) > torch.Tensor([0.5]).cuda()).float()
 
                     epsilon, ground_truths = self.make_shifts_rank()
                     shift_epsilon = deformator(epsilon)
                     imgs_petrurbed = generator(z_ + shift_epsilon)
                     real_aug = torch.cat((imgs1.detach(), imgs_petrurbed.detach()), dim=1).cuda()
-                    _, identity = cr_discriminator(real_aug.detach())
+                    identity = cr_discriminator(real_aug.detach())
                     pred_2 = (torch.sigmoid(identity) > torch.Tensor([0.5]).cuda()).float()
                     predictions = torch.cat((pred_1,pred_2))
                     labels = torch.cat((self.y_real_,self.y_fake_))

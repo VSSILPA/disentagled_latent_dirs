@@ -20,10 +20,6 @@ class ResNetRankPredictor(nn.Module):
 
         self.features = self.features_extractor.avgpool
         self.features.register_forward_hook(save_hook)
-        self.downsample = downsample
-
-
-        self.shift_estimator = nn.Linear(512, num_dirs )
         self.identity_dir = nn.Linear(512, 1)
         ## regressing on 10 directions
 
@@ -34,10 +30,9 @@ class ResNetRankPredictor(nn.Module):
         self.features_extractor(x)
         features = self.features.output.view([batch_size, -1])
 
-        shift = self.shift_estimator(features)
         identity = self.identity_dir(features)
 
-        return shift.squeeze() , identity
+        return identity
 
 
 class LeNetShiftPredictor(nn.Module):
