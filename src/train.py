@@ -13,7 +13,7 @@ class Trainer(object):
         self.opt = opt
         self.cross_entropy = nn.CrossEntropyLoss()
         self.ranking_loss = nn.BCEWithLogitsLoss()
-        self.torch_transform = torchvision.transforms.Compose([transforms.RandomRotation((-20, 20)),transforms.RandomHorizontalFlip(p=1)])
+#        self.torch_transform = torchvision.transforms.Compose([transforms.RandomRotation((-20, 20)),transforms.RandomHorizontalFlip(p=1)])
         self.y_real_, self.y_fake_ = torch.ones(int(self.opt.algo.ours.batch_size/2), 1, device="cuda"), torch.zeros(int(self.opt.algo.ours.batch_size/2),
                                                                                                     1,
                                                                                                     device="cuda")
@@ -73,15 +73,15 @@ class Trainer(object):
                     imgs = generator(z)
                     imgs1, imgs2 = torch.split(imgs, int(self.opt.algo.ours.batch_size / 2))
                     imgs_mod = torch.cat((imgs1,imgs2),dim=1)
-                    logits, identity = torch.sigmoid(cr_discriminator(imgs_mod.detach()))
-                    pred_1 = (identity > torch.Tensor([0.5])).cuda().float()
+                    logits, identity = cr_discriminator(imgs_mod.detach())
+                    pred_1 = (torch.sigmoid(identity) > torch.Tensor([0.5]).cuda()).float()
 
                     epsilon, ground_truths = self.make_shifts_rank()
                     shift_epsilon = deformator(epsilon)
                     imgs_petrurbed = generator(z_ + shift_epsilon)
                     real_aug = torch.cat((imgs1.detach(), imgs_petrurbed.detach()), dim=1).cuda()
                     _, identity = cr_discriminator(real_aug.detach())
-                    pred_2 = (identity > torch.Tensor([0.5])).cuda().float()
+                    pred_2 = (torch.sigmoid(identity) > torch.Tensor([0.5]).cuda()).float()
                     predictions = torch.cat((pred_1,pred_2))
                     labels = torch.cat((self.y_real_,self.y_fake_))
                     correct = (predictions == labels).float().sum()
@@ -210,13 +210,13 @@ class Trainer(object):
 
     def make_shifts_rank(self):
 
-        epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size),
+        epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size/2),
                                     self.opt.algo.ours.num_directions).uniform_(-5, 5).cuda()
 
-        epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
-        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
-        epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
-        return epsilon, ground_truths
+#        epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
+#        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
+#        epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
+        return epsilon, None
 
     def make_shifts_linear_combo(self):
 

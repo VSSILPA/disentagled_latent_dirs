@@ -14,7 +14,7 @@ class ResNetRankPredictor(nn.Module):
         super(ResNetRankPredictor, self).__init__()
         self.features_extractor = resnet18(pretrained=False)
         self.features_extractor.conv1 = nn.Conv2d(
-            channels, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            channels*2, 64,kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         nn.init.kaiming_normal_(self.features_extractor.conv1.weight,
                                 mode='fan_out', nonlinearity='relu')
 
@@ -28,7 +28,6 @@ class ResNetRankPredictor(nn.Module):
         ## regressing on 10 directions
 
     def forward(self, x):
-        x = x.view(-1,3,1024,1024)
         batch_size = x.shape[0]
         # if self.downsample is not None:
         #     x1, x2 = F.interpolate(x, self.downsample), F.interpolate(x, self.downsample)
