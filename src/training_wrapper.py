@@ -98,7 +98,17 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         elif opt.algorithm == 'ours-natural':
             generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             generator.eval()
-            deformator = model_trainer.train_closed_form(generator)
+            layers = [0]
+            weights = []
+            for idx in layers:
+                layer_name = f'layer{idx}'
+                weight = generator.__getattr__(layer_name).weight
+                weight = weight.flip(2, 3).permute(1, 0, 2, 3).flatten(1)
+                weights.append(weight.cpu().detach().numpy())
+            weight = np.concatenate(weights, axis=1).astype(np.float32)
+            weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
+            eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
+            deformator.linear.weight.data = torch.Tensor(eigen_vectors.T)
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
             deformator.train()
             deformator.cuda()

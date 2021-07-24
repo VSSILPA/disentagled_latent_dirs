@@ -29,7 +29,7 @@ class LatentDeformator(nn.Module):
             self.fc4 = nn.Linear(inner_dim, self.out_dim)
 
         elif self.type in ['linear', 'proj']:
-            self.linear = nn.Linear(self.input_dim, self.out_dim,bias=bias)
+            self.linear = nn.Linear(self.input_dim, self.out_dim,bias=False)
             self.linear.weight.data = torch.zeros_like(self.linear.weight.data)
 
             min_dim = int(min(self.input_dim, self.out_dim))
