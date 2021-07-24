@@ -95,7 +95,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours-natural':
-            generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
+            generator, deformator, deformator_opt, cr_discriminator, cr_optimizer,identity_discriminator = models
             generator.eval()
             layers = [0]
             weights = []
@@ -107,7 +107,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             weight = np.concatenate(weights, axis=1).astype(np.float32)
             weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
             eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
-            deformator.linear.weight.data = torch.Tensor(eigen_vectors.T)
+            deformator.ortho_mat.data = torch.Tensor(eigen_vectors.T)
             params = deformator
             saver.save_model(params, 'cf', i, algo='closedform')
             deformator.cuda()
@@ -116,7 +116,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             for k in range(opt.algo.ours.num_steps):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                     model_trainer.train_ours(
-                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer,identity_discriminator)
                 if k % opt.algo.ours.saving_freq == 0 and k != 0:
                     params = (deformator, cr_discriminator, deformator_opt, cr_optimizer)
                     perf_logger.start_monitoring("Saving Model")

@@ -69,7 +69,7 @@ class Trainer(object):
         epsilon_diff = epsilon1 - epsilon2
         ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
         identity_loss = self.ranking_loss(identity, self.y_fake_)
-        loss = self.opt.algo.ours.ranking_weight*ranking_loss + self.opt.algo.ranking_identity*identity_loss
+        loss = self.opt.algo.ours.ranking_weight*ranking_loss + self.opt.algo.ours.identity_weight*identity_loss
 
         loss.backward()
 
