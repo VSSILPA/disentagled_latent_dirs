@@ -26,8 +26,6 @@ class ResNetRankPredictor(nn.Module):
 
     def forward(self, x):
         batch_size = x.shape[0]
-        # if self.downsample is not None:
-        #     x1, x2 = F.interpolate(x, self.downsample), F.interpolate(x, self.downsample)
         self.features_extractor(x)
         features = self.features.output.view([batch_size, -1])
 
