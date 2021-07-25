@@ -97,6 +97,7 @@ def get_model(opt):
                                                num_dirs=opt.algo.ours.num_directions).to(device)
         identity_discriminator = IdentityPredictor()
         identity_discriminator.load_state_dict(torch.load('../pretrained_models/best_identity_classifier.pkl')['cr_discriminator'])
+        identity_discriminator.cuda()
         cr_optimizer = torch.optim.Adam(cr_discriminator.parameters(), lr=opt.algo.ours.shift_predictor_lr)
         return G, deformator, deformator_opt, cr_discriminator, cr_optimizer, identity_discriminator
     else:

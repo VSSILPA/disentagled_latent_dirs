@@ -18,7 +18,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'proggan-closed_form + ours with identity_loss'
+    experiment_name = 'proggan-closed_form + ours with identity_loss 1_0,5'
     experiment_description = 'studying effect of scaling'
 else:
     experiment_name = input("Enter experiment name ")
@@ -105,7 +105,7 @@ opt.algo.ours.logging_freq = 2000
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.shift_predictor_lr = 0.0001
 opt.algo.ours.ranking_weight = 1
-opt.algo.ours.identity_weight = 1
+opt.algo.ours.identity_weight = 0.5
 
 # ---------------------------------------------------------------------------- #
 # Options for Closed form
