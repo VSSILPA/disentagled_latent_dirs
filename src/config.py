@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed form initialisation-ortho-seed91'
-    experiment_description = 'Running for random seed-2 for shapes 3 ortho init'
+    experiment_name = 'ours with closed form initialisation shapes3d reversed inequality'
+    experiment_description = 'Running for random seed-2 mpi3d'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -55,7 +55,7 @@ opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
 opt.num_generator_seeds = 5 if opt.dataset != 'cars3d' else 7
-opt.random_seed = 91
+opt.random_seed =2
 if opt.dataset == 'dsprites':
     opt.num_generator_seeds = 1
 
@@ -99,7 +99,7 @@ opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
 opt.algo.ours.logging_freq = 6000
-opt.algo.ours.saving_freq = 1000
+opt.algo.ours.saving_freq = 6000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #

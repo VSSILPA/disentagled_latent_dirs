@@ -101,13 +101,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             initialisation = model_trainer.train_closed_form(generator)
             deformator.ortho_mat.data = initialisation.weight
             deformator.cuda()
- #           deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
- #           metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
- #           logging.info("---------------------Closed form initialisation results------------------------")
- #           logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
- #           logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
- #           logging.info("MIG : " + str(metrics['mig']))
- #           logging.info("DCI Metric : " + str(metrics['dci']))
+            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
+            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+            logging.info("---------------------Closed form initialisation results------------------------")
+            logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
+            logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
+            logging.info("MIG : " + str(metrics['mig']))
+            logging.info("DCI Metric : " + str(metrics['dci']))
             resume_step = 0
             if configuration['resume_train']:
                 resume_step = 20000
@@ -117,7 +117,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
                     model_trainer.train_ours(
                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                if k % opt.algo.ld.saving_freq == 0 and k != 0:
+                if k % opt.algo.ours.saving_freq == 0 and k != 0:
                     params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
                     perf_logger.start_monitoring("Saving Model")
                     saver.save_model(params, k, i , algo='ours')

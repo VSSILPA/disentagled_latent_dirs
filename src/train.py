@@ -45,7 +45,7 @@ class Trainer(object):
         ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
         ranking_loss.backward()
         cr_optimizer.step()
-
+        
         generator.zero_grad()
         deformator.zero_grad()
 
@@ -64,7 +64,6 @@ class Trainer(object):
         ranking_loss = self.ranking_loss(epsilon_diff, ground_truths)
 
         ranking_loss.backward()
-
         deformator_opt.step()
         del imgs
         return deformator, deformator_opt, cr_discriminator, cr_optimizer , ranking_loss.item()
@@ -190,6 +189,6 @@ class Trainer(object):
                                     self.opt.algo.ours.num_directions).uniform_(-1, 1).cuda()
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
-        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
+        ground_truths = (epsilon_1 < epsilon_2).type(torch.float32).cuda()
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths
