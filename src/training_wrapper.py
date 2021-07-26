@@ -107,8 +107,8 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             weight = np.concatenate(weights, axis=1).astype(np.float32)
             weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
             eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
-            deformator.ortho_mat.data = torch.Tensor(eigen_vectors.T)
-            params = deformator
+            deformator.linear.weight.data = torch.Tensor(eigen_vectors.T)
+            params = (deformator)
             saver.save_model(params, 'cf', i, algo='closedform')
             deformator.cuda()
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)

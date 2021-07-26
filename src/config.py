@@ -18,11 +18,11 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'CelebA HQ Ours with identity loss - hyperparameter tuning'
-    experiment_description = 'Testing if identity loss is working'
+    experiment_name = 'proggan-closed_form + ours with identity_loss 1_0,5'
+    experiment_description = 'studying effect of scaling'
 else:
     experiment_name = input("Enter experiment name ")
-    experiment_description = None
+    experiment_description = 'first run of shapes 3d for latent discovert with ortho'
     if experiment_name == '':
         print('enter valid experiment name')
         sys.exit()
@@ -44,21 +44,49 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default=None, help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='80007_model.pkl', help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
-
 opt = CN()
 opt.gan_type = 'prog-gan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours-natural'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
 opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 opt.gan_resolution = 1024
-opt.num_channels = 3
 opt.w_shift = True
-opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/src/models/pretrained/ProgGAN/pggan_celebahq1024.pth'
-opt.classifier_pretrained_path = '../pretrained_models/best_identity_classifier.pkl'
+opt.pretrained_gen_root = 'models/pretrained/ProgGAN/pggan_celebahq1024.pth'
+opt.deformator_pretrained = 'models/pretrained/deformator_0.pt'
+opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
+opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7
 opt.random_seed = 123
+if opt.dataset == 'dsprites':
+    opt.num_generator_seeds = 1
+
+# ---------------------------------------------------------------------------- #
+# Options for Latent Discovery
+# ---------------------------------------------------------------------------- #
+opt.algo = CN()
+opt.algo.ld = CN()
+opt.algo.ld.batch_size = 32
+opt.algo.ld.latent_dim = 512
+opt.algo.ld.num_steps = 5001
+opt.algo.ld.num_directions = 10
+opt.algo.ld.shift_scale = 6
+opt.algo.ld.min_shift = 0.5
+opt.algo.ld.deformator_lr = 0.0001
+opt.algo.ld.shift_predictor_lr = 0.0001
+opt.algo.ld.beta1 = 0.9
+opt.algo.ld.beta2 = 0.999
+opt.algo.ld.deformator_randint = True
+opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
+opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
+opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
+opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
+opt.algo.ld.label_weight = 1.0
+opt.algo.ld.shift_weight = 0.25
+opt.algo.ld.truncation = None
+opt.algo.ld.logging_freq = 1000
+opt.algo.ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Ours
@@ -67,7 +95,7 @@ opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 140001
 opt.algo.ours.batch_size = 6
-opt.algo.ours.deformator_type = 'ortho'
+opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 512
