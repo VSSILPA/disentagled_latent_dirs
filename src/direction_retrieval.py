@@ -11,6 +11,7 @@ from torchvision.models import resnet18
 import torch.nn as nn
 from logger import PerfomanceLogger
 
+
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -54,7 +55,7 @@ perf_logger = PerfomanceLogger()
 gan_type = 'prog-gan-sefa'
 num_directions = 512
 
-visualisation_data_path = '../results/'
+visualisation_data_path = '/media/adarsh/DATA/CelebA-Analysis/'
 result_path = os.path.join(visualisation_data_path, 'Closed-Form-Analysis-results')
 os.makedirs(result_path, exist_ok=True)
 
@@ -67,9 +68,10 @@ else:
 G = G.cuda()
 G.eval()
 
-pretrained_model = torch.load('../pretrained_models/cf_model.pkl', map_location='cpu')
+pretrained_model = torch.load(visualisation_data_path + 'models/cf_model.pkl', map_location='cpu')
 deformator = LatentDeformator(shift_dim=G.z_space_dim, input_dim=num_directions,
-                              out_dim=G.z_space_dim, type='linear', random_init=True, bias=False) ##TODO Change bias True
+                              out_dim=G.z_space_dim, type='linear', random_init=True,
+                              bias=False)  ##TODO Change bias True
 
 deformator.load_state_dict(pretrained_model['deformator'])
 deformator.cuda()
@@ -90,6 +92,23 @@ class NoiseDataset(Dataset):
         return len(self.data)
 
 
+class ImageDataset(Dataset):
+    def __init__(self, images, images_shifted):
+        self.images = images
+        self.images_shifted = images_shifted
+
+    def __getitem__(self, index):
+        return self.images[index], self.images_shifted[index]
+
+    def __len__(self):
+        return len(self.images)
+
+
+# images = torch.load('images_eval')
+# image_shiftted = torch.load('images_shift')
+# images, images_shifted = ImageDataset(images, images_shift)
+# image_loader = DataLoader(images, images_shifted, batch_size=batch_size, shuffle=False)
+
 num_samples = 2000
 batch_size = 5
 num_batches = int(num_samples / batch_size)
@@ -102,7 +121,7 @@ attr_var_dict = collections.OrderedDict()
 for attr_selected in attr_list:
     print('Attribute : ', attr_selected)
     predictor = get_classifier(
-        os.path.join("../pretrained_models/classifier", attr_selected, "weight.pkl"),
+        os.path.join(visualisation_data_path, "pretrain/classifier", attr_selected, "weight.pkl"),
         'cpu')
     predictor.cuda()
     predictor.eval()
@@ -110,29 +129,22 @@ for attr_selected in attr_list:
     dir_dict = {}
     for dir in range(num_directions):
         attr_variation = 0
-        for noise in z_loader:
-            noise = noise.cuda()
-            image = G(noise)
-            image = F.avg_pool2d(image, 4, 4)
+        for image, image_shifted in image_loader:
             img_score = torch.softmax(predictor(image), dim=1)[0][0]
-            latent_shift = deformator(one_hot(deformator.input_dim, shift, dir).cuda())
-            image_shifted = G(noise + latent_shift.cuda())
-            image_shifted = F.avg_pool2d(image_shifted, 4, 4)
             img_shift_score = torch.softmax(predictor(image_shifted), dim=1)[0][0]
             attr_variation = attr_variation + (abs(img_shift_score.detach() - img_score.detach())).mean()
             del image
             del image_shifted
         attr_variation = attr_variation / num_batches
         dir_dict['Direction ' + str(dir)] = attr_variation.item()
-        if dir % 5 == 0 or dir == (num_directions- 1):
-            perf_logger.start_monitoring("Direction ' + str(dir) + ' completed")
+        if dir % 5 == 0 or dir == (num_directions - 1):
+            print('\n Direction ' + str(dir) + ' completed')
             sorted_dict = sorted(dir_dict.items(), key=lambda x: x[1], reverse=True)
             sorted_dict = collections.OrderedDict(sorted_dict)
             attr_var_dict[attr_selected] = sorted_dict
             print('\n Saving JSON File (Intermediate)!')
             with open(os.path.join(result_path, 'Attribute_variation_dictionary.json'), 'w') as fp:
                 json.dump(attr_var_dict, fp)
-            perf_logger.stop_monitoring("Direction ' + str(dir) + ' completed")
 
     # sorted_dict = sorted(dir_dict.items(), key=lambda x: x[1], reverse=True)
     # sorted_dict = collections.OrderedDict(sorted_dict)
