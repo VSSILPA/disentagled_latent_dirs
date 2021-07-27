@@ -9,7 +9,7 @@ from models.proggan_sefa import PGGANGenerator
 import torch.nn.functional as F
 from torchvision.models import resnet18
 import torch.nn as nn
-
+from logger import PerfomanceLogger
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -49,10 +49,12 @@ class ClassifyModel(nn.Module):
         return out
 
 
+perf_logger = PerfomanceLogger()
+
 gan_type = 'prog-gan-sefa'
 num_directions = 512
 
-visualisation_data_path = '/media/adarsh/DATA/CelebA-Analysis/'
+visualisation_data_path = '../results/'
 result_path = os.path.join(visualisation_data_path, 'Closed-Form-Analysis-results')
 os.makedirs(result_path, exist_ok=True)
 
@@ -65,7 +67,7 @@ else:
 G = G.cuda()
 G.eval()
 
-pretrained_model = torch.load(visualisation_data_path + 'models/cf_model.pkl', map_location='cpu')
+pretrained_model = torch.load('../pretrained_models/cf_model.pkl', map_location='cpu')
 deformator = LatentDeformator(shift_dim=G.z_space_dim, input_dim=num_directions,
                               out_dim=G.z_space_dim, type='linear', random_init=True, bias=False) ##TODO Change bias True
 
@@ -95,12 +97,12 @@ z = NoiseDataset(num_samples=num_samples, z_dim=G.z_space_dim)
 z_loader = DataLoader(z, batch_size=batch_size, shuffle=False)
 torch.save(z, os.path.join(result_path, 'z_analysis.pkl'))
 shift = 10
-attr_list = ['pose', 'eyeglasses', 'male', 'pose', 'smiling', 'young']
+attr_list = ['pose', 'eyeglasses', 'male', 'smiling', 'young']
 attr_var_dict = collections.OrderedDict()
 for attr_selected in attr_list:
     print('Attribute : ', attr_selected)
     predictor = get_classifier(
-        os.path.join(visualisation_data_path, "pretrain/classifier", attr_selected, "weight.pkl"),
+        os.path.join("../pretrained_models/classifier", attr_selected, "weight.pkl"),
         'cpu')
     predictor.cuda()
     predictor.eval()
@@ -122,24 +124,25 @@ for attr_selected in attr_list:
             del image_shifted
         attr_variation = attr_variation / num_batches
         dir_dict['Direction ' + str(dir)] = attr_variation.item()
-        if dir % 50 == 0:
-            print('Direction ' + str(dir) + ' completed')
-            # sorted_dict = sorted(dir_dict.items(), key=lambda x: x[1], reverse=True)
-            # sorted_dict = collections.OrderedDict(sorted_dict)
-            # attr_var_dict[attr_selected] = sorted_dict
-            # print('\n Saving JSON File!')
-            # with open(os.path.join(result_path, 'Attribute_variation_dictionary.json'), 'w') as fp:
-            #     json.dump(attr_var_dict, fp)
+        if dir % 5 == 0 or dir == (num_directions- 1):
+            perf_logger.start_monitoring("Direction ' + str(dir) + ' completed")
+            sorted_dict = sorted(dir_dict.items(), key=lambda x: x[1], reverse=True)
+            sorted_dict = collections.OrderedDict(sorted_dict)
+            attr_var_dict[attr_selected] = sorted_dict
+            print('\n Saving JSON File (Intermediate)!')
+            with open(os.path.join(result_path, 'Attribute_variation_dictionary.json'), 'w') as fp:
+                json.dump(attr_var_dict, fp)
+            perf_logger.stop_monitoring("Direction ' + str(dir) + ' completed")
 
-    sorted_dict = sorted(dir_dict.items(), key=lambda x: x[1], reverse=True)
-    sorted_dict = collections.OrderedDict(sorted_dict)
-    attr_var_dict[attr_selected] = sorted_dict
+    # sorted_dict = sorted(dir_dict.items(), key=lambda x: x[1], reverse=True)
+    # sorted_dict = collections.OrderedDict(sorted_dict)
+    # attr_var_dict[attr_selected] = sorted_dict
 
-print('Computed Attribute variation scores for all attributes')
-print('\n Saving JSON File!')
-with open(os.path.join(result_path, 'Attribute_variation_dictionary.json'), 'w') as fp:
-    json.dump(attr_var_dict, fp)
-print('Completed')
+# print('Computed Attribute variation scores for all attributes')
+# print('\n Saving JSON File!')
+# with open(os.path.join(result_path, 'Attribute_variation_dictionary.json'), 'w') as fp:
+#     json.dump(attr_var_dict, fp)
+# print('Completed')
 
 ## Load JSON Code
 ## with open(os.path.join(result_path, 'Attribute_variation_dictionary.json'), 'r') as f:
