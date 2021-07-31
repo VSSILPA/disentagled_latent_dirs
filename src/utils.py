@@ -6,6 +6,7 @@ import fnmatch
 import shutil
 from typing import List, Tuple
 from scipy.stats import truncnorm
+from torch.utils.data import Dataset
 TINY = 1e-12
 
 def cartesian_product(*arrays):
@@ -16,6 +17,18 @@ def cartesian_product(*arrays):
         arr[..., i] = a
     return arr.reshape(-1, la)
 
+class NoiseDataset(Dataset):
+    def __init__(self, num_samples, z_dim):
+        self.num_samples = num_samples
+        self.z_dim = z_dim
+        self.data = torch.randn(num_samples, z_dim)
+
+    def __getitem__(self, index):
+        x = self.data[index]
+        return x
+
+    def __len__(self):
+        return len(self.data)
 
 def make_noise(batch, dim, truncation=None):
     if isinstance(dim, int):

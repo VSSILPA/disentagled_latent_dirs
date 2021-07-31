@@ -55,7 +55,7 @@ perf_logger = PerfomanceLogger()
 gan_type = 'prog-gan-sefa'
 num_directions = 512
 
-visualisation_data_path = '../results/'
+visualisation_data_path = '/media/adarsh/DATA/CelebA-Analysis/'
 result_path = os.path.join(visualisation_data_path, 'Closed-Form-Analysis-results')
 os.makedirs(result_path, exist_ok=True)
 
@@ -68,9 +68,10 @@ else:
 G = G.cuda()
 G.eval()
 
-pretrained_model = torch.load('../pretrained_models/CelebAAnalysis/cf_model.pkl', map_location='cpu')
+pretrained_model = torch.load(visualisation_data_path + 'models/cf_model.pkl', map_location='cpu')
 deformator = LatentDeformator(shift_dim=G.z_space_dim, input_dim=num_directions,
-                              out_dim=G.z_space_dim, type='linear', random_init=True, bias=False) ##TODO Change bias True
+                              out_dim=G.z_space_dim, type='linear', random_init=True,
+                              bias=False)  ##TODO Change bias True
 
 deformator.load_state_dict(pretrained_model['deformator'])
 deformator.cuda()
@@ -91,8 +92,8 @@ class NoiseDataset(Dataset):
         return len(self.data)
 
 
-num_samples = 2000
-batch_size = 1
+num_samples = 2
+batch_size = 2
 num_batches = int(num_samples / batch_size)
 z = NoiseDataset(num_samples=num_samples, z_dim=G.z_space_dim)
 z_loader = DataLoader(z, batch_size=batch_size, shuffle=False)
@@ -103,19 +104,19 @@ attr_var_dict = collections.OrderedDict()
 
 
 pose_predictor = get_classifier(
-        os.path.join("../pretrained_models/classifier", 'pose', "weight.pkl"),
+        os.path.join(visualisation_data_path, "pretrain/classifier", 'pose', "weight.pkl"),
         'cpu')
 glass_predictor = get_classifier(
-        os.path.join("../pretrained_models/classifier", 'eyeglasses', "weight.pkl"),
+        os.path.join(visualisation_data_path, "pretrain/classifier", 'eyeglasses', "weight.pkl"),
         'cpu')
 gender_predictor = get_classifier(
-        os.path.join("../pretrained_models/classifier", 'male', "weight.pkl"),
+        os.path.join(visualisation_data_path, "pretrain/classifier", 'male', "weight.pkl"),
         'cpu')
 smile_predictor = get_classifier(
-        os.path.join("../pretrained_models/classifier", 'smiling', "weight.pkl"),
+        os.path.join(visualisation_data_path, "pretrain/classifier", 'smiling', "weight.pkl"),
         'cpu')
 age_predictor = get_classifier(
-        os.path.join("../pretrained_models/classifier", 'young', "weight.pkl"),
+        os.path.join(visualisation_data_path, "pretrain/classifier", 'young', "weight.pkl"),
         'cpu')
 pose_predictor.cuda()
 pose_predictor.eval()
@@ -135,11 +136,11 @@ with torch.no_grad():
         noise = noise.cuda()
         image = G(noise)
         image = F.avg_pool2d(image, 4, 4)
-        img_score_1 = torch.softmax(pose_predictor(image), dim=1)[0][0].detach()
-        img_score_2 = torch.softmax(glass_predictor(image), dim=1)[0][0].detach()
-        img_score_3 = torch.softmax(gender_predictor(image), dim=1)[0][0].detach()
-        img_score_4 = torch.softmax(smile_predictor(image), dim=1)[0][0].detach()
-        img_score_5 = torch.softmax(age_predictor(image), dim=1)[0][0].detach()
+        img_score_1 = torch.softmax(pose_predictor(image), dim=1)[:,0].detach()
+        img_score_2 = torch.softmax(glass_predictor(image), dim=1)[:,0].detach()
+        img_score_3 = torch.softmax(gender_predictor(image), dim=1)[:,0].detach()
+        img_score_4 = torch.softmax(smile_predictor(image), dim=1)[:,0].detach()
+        img_score_5 = torch.softmax(age_predictor(image), dim=1)[:,0].detach()
         img_score = [img_score_1, img_score_2, img_score_3, img_score_4, img_score_5]
         attribute_scores_ref.append(img_score)
 
@@ -154,13 +155,13 @@ with torch.no_grad():
         perf_logger.start_monitoring("Direction " + str(dir) + " completed")
         for i, noise in enumerate(z_loader):
             latent_shift = deformator(one_hot(deformator.input_dim, shift, dir).cuda())
-            image_shifted = G(noise + latent_shift.cuda())
+            image_shifted = G(noise.cuda() + latent_shift.cuda())
             image_shifted = F.avg_pool2d(image_shifted, 4, 4)
-            img_shift_score_1 = torch.softmax(pose_predictor(image_shifted), dim=1)[0][0].detach()
-            img_shift_score_2 = torch.softmax(glass_predictor(image_shifted), dim=1)[0][0].detach()
-            img_shift_score_3 = torch.softmax(gender_predictor(image_shifted), dim=1)[0][0].detach()
-            img_shift_score_4 = torch.softmax(smile_predictor(image_shifted), dim=1)[0][0].detach()
-            img_shift_score_5 = torch.softmax(age_predictor(image_shifted), dim=1)[0][0].detach()
+            img_shift_score_1 = torch.softmax(pose_predictor(image_shifted), dim=1)[:,0].detach()
+            img_shift_score_2 = torch.softmax(glass_predictor(image_shifted), dim=1)[:,0].detach()
+            img_shift_score_3 = torch.softmax(gender_predictor(image_shifted), dim=1)[:,0].detach()
+            img_shift_score_4 = torch.softmax(smile_predictor(image_shifted), dim=1)[:,0].detach()
+            img_shift_score_5 = torch.softmax(age_predictor(image_shifted), dim=1)[:,0].detach()
             attr_variation_1 = attr_variation_1 + (abs(img_shift_score_1.detach() - attribute_scores_ref[i][0])).mean()
             attr_variation_2 = attr_variation_2 + (abs(img_shift_score_2.detach() - attribute_scores_ref[i][1])).mean()
             attr_variation_3 = attr_variation_3 + (abs(img_shift_score_3.detach() - attribute_scores_ref[i][2])).mean()

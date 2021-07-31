@@ -1,10 +1,8 @@
 from utils import *
 from torch.utils.data import DataLoader, Dataset
 from models.latent_deformator import LatentDeformator
-import collections
 import numpy as np
 import random
-import json
 from models.proggan_sefa import PGGANGenerator
 import torch.nn.functional as F
 from torchvision.models import resnet18
@@ -65,12 +63,12 @@ class ClassifyModel(nn.Module):
 
 gan_type = 'prog-gan-sefa'
 total_directions = 512
-num_samples = 2000
-batch_size = 5
+num_samples = 10 ##TODO 2000
+batch_size = 2 ##TODO 10
 shift = 10
-direction_indices = [12, 1, 9, 82, 107]  ##TODO Random directions
-num_directions = 5
-num_classifiers = 5
+direction_indices = [12, 1]  ##TODO Random directions
+num_directions = 2
+num_classifiers =2
 num_batches = int(num_samples / batch_size)
 
 visualisation_data_path = '/media/adarsh/DATA/CelebA-Analysis/'
@@ -95,7 +93,7 @@ deformator.load_state_dict(pretrained_model['deformator'])
 deformator.cuda()
 deformator.eval()
 
-attr_list = ['pose', 'eyeglasses', 'male', 'smiling', 'young']
+attr_list = ['pose', 'eyeglasses'] ##TODO ['pose', 'eyeglasses', 'male', 'smiling', 'young']
 predictor_list = []
 for attr_selected in attr_list:
     predictor = get_classifier(
@@ -108,29 +106,60 @@ for attr_selected in attr_list:
 # z = NoiseDataset(num_samples=num_samples, z_dim=G.z_space_dim)
 # torch.save(z, os.path.join(result_path, 'z_analysis.pkl'))
 #
-z = torch.load(os.path.join(result_path, 'z_analysis.pkl'))
+z = torch.load(os.path.join(result_path, 'z_analysis.pkl'))[0:10] ##TODO CHange
 z_loader = DataLoader(z, batch_size=batch_size, shuffle=False)
 
-ref_image_scores = torch.zeros([num_classifiers, num_batches])
+ref_image_scores = torch.zeros([num_classifiers, num_samples])
 with torch.no_grad():
-    for batch_idx, noise in z_loader:
+    for batch_idx, noise in enumerate(z_loader):
         noise = noise.cuda()
         image = G(noise)
         image = F.avg_pool2d(image, 4, 4)
         for predictor_idx, predictor in enumerate(predictor_list):
-            ref_image_scores[predictor_idx, batch_idx] = torch.softmax(predictor(image), dim=1)[0][0].item()
+            ref_image_scores[predictor_idx, batch_idx*batch_size:(batch_idx+1)*batch_size] = torch.softmax(predictor(image), dim=1)[:,0]
 ref_image_scores = ref_image_scores.unsqueeze(0).repeat(num_directions, 1, 1)
 
-shifted_image_scores = torch.zeros([num_directions, num_classifiers, num_batches])
+shifted_image_scores = torch.zeros([num_directions, num_classifiers, num_samples])
 with torch.no_grad():
     for dir in range(len(direction_indices)):
         latent_shift = deformator(one_hot(deformator.input_dim, shift, dir).cuda())
-        for batch_idx, noise in enumerate(z_loader):
-            image_shifted = G(noise + latent_shift.cuda())
+        for batch_idx,noise in enumerate(z_loader):
+            image_shifted = G(noise.cuda() + latent_shift.cuda())
             image_shifted = F.avg_pool2d(image_shifted, 4, 4)
             for predictor_idx, predictor in enumerate(predictor_list):
-                shifted_image_scores[dir, predictor_idx, batch_idx] = torch.softmax(predictor(image), dim=1)[0][
-                    0].item()
+                shifted_image_scores[dir, predictor_idx, batch_idx*batch_size:(batch_idx+1)*batch_size] = torch.softmax(predictor(image_shifted), dim=1)[:,0]
 
 difference_matrix = torch.abs(shifted_image_scores - ref_image_scores)
-rescoring_analysis_matrix = torch.mean(difference_matrix, dim=-1)
+rescoring_analysis_matrix = torch.mean(difference_matrix, dim=-1).numpy()
+
+import matplotlib
+import matplotlib.pyplot as plt
+
+attr_list = ['pose', 'eyeglasses']
+directions = [str(x) for x in range(2)]
+
+fig, ax = plt.subplots()
+im = ax.imshow(rescoring_analysis_matrix)
+
+ax.set_xticks(np.arange(len(attr_list)))
+ax.set_yticks(np.arange(len(directions)))
+# ... and label them with the respective list entries
+ax.set_xticklabels(attr_list)
+ax.set_yticklabels(directions)
+
+# Rotate the tick labels and set their alignment.
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor")
+
+# Loop over data dimensions and create text annotations.
+for i in range(len(attr_list)):
+    for j in range(len(directions)):
+        text = ax.text(j, i, rescoring_analysis_matrix[i, j],
+                       ha="center", va="center", color="w")
+
+ax.set_title("Rescoring analysis Closed form")
+fig.tight_layout()
+plt.show()
+plt.savefig('/home/adarsh/PycharmProjects/disentagled_latent_dirs/src/test.png')
+
+print("hello")
