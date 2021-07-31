@@ -1,4 +1,3 @@
-
 """
 -------------------------------------------------
    File Name:    config.py
@@ -12,7 +11,6 @@
 import argparse
 import os
 import sys
-import logging
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
 
@@ -43,122 +41,29 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # ---------------------------------------------------------------------------- #
 # Options for General settings
 # ---------------------------------------------------------------------------- #
-parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='80007_model.pkl', help='name of the model to be loaded')
+
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
-opt.gan_type = 'prog-gan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN']
-opt.algorithm = 'ours-natural'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
-opt.dataset = 'CelebAHQ'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-opt.gan_resolution = 1024
-opt.w_shift = True
-opt.pretrained_gen_root = 'models/pretrained/ProgGAN/pggan_celebahq1024.pth'
-opt.deformator_pretrained = 'models/pretrained/deformator_0.pt'
-opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
-opt.device = 'cuda:'
-opt.device_id = '0'
-opt.num_generator_seeds = 8 if opt.dataset != 'cars3d' else 7
+opt.gan_type = 'pggan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN' ,'StyleGAN']
+# choices=['AnimeFaceS', 'ImageNet',CelebAHQ' ,'LSUN-cars', 'LSUN-cats' , 'LSUN-landscapes']
 opt.random_seed = 123
-if opt.dataset == 'dsprites':
-    opt.num_generator_seeds = 1
-
-# ---------------------------------------------------------------------------- #
-# Options for Latent Discovery
-# ---------------------------------------------------------------------------- #
-opt.algo = CN()
-opt.algo.ld = CN()
-opt.algo.ld.batch_size = 32
-opt.algo.ld.latent_dim = 512
-opt.algo.ld.num_steps = 5001
-opt.algo.ld.num_directions = 10
-opt.algo.ld.shift_scale = 6
-opt.algo.ld.min_shift = 0.5
-opt.algo.ld.deformator_lr = 0.0001
-opt.algo.ld.shift_predictor_lr = 0.0001
-opt.algo.ld.beta1 = 0.9
-opt.algo.ld.beta2 = 0.999
-opt.algo.ld.deformator_randint = True
-opt.algo.ld.deformator_type = 'ortho'  # choices=['fc', 'linear', 'id', 'ortho', 'proj', 'random']
-opt.algo.ld.shift_predictor = 'ResNet'  # choices=['ResNet', 'LeNet']1
-opt.algo.ld.shift_distribution = 'uniform'  # choices=['normal', 'uniform']
-opt.algo.ld.shift_predictor_size = None  # reconstructor resolution
-opt.algo.ld.label_weight = 1.0
-opt.algo.ld.shift_weight = 0.25
-opt.algo.ld.truncation = None
-opt.algo.ld.logging_freq = 1000
-opt.algo.ld.saving_freq = 1000
 
 # ---------------------------------------------------------------------------- #
 # Options for Ours
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
-opt.algo.ours.initialisation = 'cf'
+opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
+opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps = 140001
-opt.algo.ours.batch_size = 6
-opt.algo.ours.deformator_type = 'linear'
-opt.algo.ours.deformator_randint = True
+opt.algo.ours.batch_size = 8
+opt.algo.ours.deformator_type = 'linear'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
+opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
-opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 2000
 opt.algo.ours.saving_freq = 2000
-opt.algo.ours.shift_predictor_lr = 0.0001
-opt.algo.ours.ranking_weight = 1
-opt.algo.ours.identity_weight = 0.5
-
-# ---------------------------------------------------------------------------- #
-# Options for Closed form
-# ---------------------------------------------------------------------------- #
-opt.algo.cf = CN()
-opt.algo.cf.num_directions = 10
-
-# ---------------------------------------------------------------------------- #
-# Options for Gan space
-# ---------------------------------------------------------------------------- #
-opt.algo.gs = CN()
-opt.algo.gs.num_directions = 10
-opt.algo.gs.num_samples = 20000
-
-# ---------------------------------------------------------------------------- #
-# Options for StyleGAN2
-# ---------------------------------------------------------------------------- #
-generator_kwargs = {
-    "input_is_latent": True,
-    "randomize_noise": False,
-    "truncation": 1} ##todo changed from 0.8 to 1
-
-# ---------------------------------------------------------------------------- #
-# Options for Encoder
-# ---------------------------------------------------------------------------- #
-
-opt.encoder = CN()
-opt.encoder.num_samples = 10000
-opt.encoder.latent_dimension = 10  # this is the number of directions (w)(1*512)*(A)(512*64) == (1*64)
-opt.encoder.generator_bs = 50
-opt.encoder.batch_size = 128
-opt.encoder.root = 'generated_data'
-opt.encoder.latent_train_size = 500000
-opt.encoder.latent_nb_epochs = 20
-opt.encoder.latent_lr = 0.001
-opt.encoder.latent_step_size = 10
-opt.encoder.latent_gamma = 0.5
-opt.encoder.create_new_data = True
-
-# ---------------------------------------------------------------------------- #
-# Options for Encoder Backbone
-# ---------------------------------------------------------------------------- #
-BB_KWARGS = {
-    "shapes3d": {"in_channel": 3, "size": 64},
-    "mpi3d": {"in_channel": 3, "size": 64},
-    # grayscale -> rgb
-    "CelebAHQ": {"in_channel": 3, "size": 64},##TODO
-    "dsprites": {"in_channel": 1, "size": 64},
-    "cars3d": {"in_channel": 3, "size": 64, "f_size": 512},
-    "isaac": {"in_channel": 3, "size": 128, "f_size": 512},
-}
-if opt.algorithm == 'LD':
-    assert opt.encoder.latent_dimension == opt.algo.ld.num_directions
+opt.algo.ours.logging_freq = 500
+self.opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
 
 
 def get_config(inputs):

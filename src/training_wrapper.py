@@ -9,141 +9,43 @@
 """
 from model_loader import get_model
 from train import Trainer
-from evaluation import Evaluator
 from saver import Saver
-from visualiser import Visualiser, plot_generated_images
-import logging
-import time
 from utils import *
 
 
-def run_training_wrapper(configuration, opt, data, perf_logger):
-    device = torch.device(opt.device + opt.device_id)
+def run_training_wrapper(configuration, opt, perf_logger):
+
     directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt', '__pycache__'])
     filtered_dirs = []
     for file in directories:
         x, y = file
         if x.count('/') < 3:
             filtered_dirs.append((x, y))
-    files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
+    files = [(f[0], os.path.join(opt.result_dir, "src_copy", f[1])) for f in filtered_dirs]
+
     copy_files_and_create_dirs(files)
 
-    for i in range(opt.num_generator_seeds):
+    perf_logger.start_monitoring("Fetching data, models and class instantiations")
+    models = get_model(opt)
+    model_trainer = Trainer(configuration, opt)
+    saver = Saver(configuration)
+    perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
-        resume_step = 0
-        opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
-        perf_logger.start_monitoring("Fetching data, models and class instantiations")
-        models = get_model(opt)
-        model_trainer = Trainer(configuration, opt)
-        evaluator = Evaluator(configuration, opt)
-        saver = Saver(configuration)
-        visualise_results = Visualiser(configuration, opt)
-        perf_logger.stop_monitoring("Fetching data, models and class instantiations")
+    generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt = models
+    should_gen_classes = False
+    if opt.gan_type == 'BigGAN':
+        should_gen_classes = True
+    generator.eval()
+    deformator.train()
+    for step in range(opt.algo.ours.num_steps):
+        deformator, deformator_opt, rank_predictor, rank_predictor_opt, losses = \
+            model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes)
 
-        if opt.algorithm == 'LD':
-            generator, deformator, shift_predictor, deformator_opt, shift_predictor_opt = models
-            if configuration['resume_train']:
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, resume_step = saver.load_model(
-                    (deformator, shift_predictor, deformator_opt, shift_predictor_opt), algo='LD')
-            generator.to(device).eval()
-            deformator.to(device).train()
-            shift_predictor.to(device).train()
-            loss, logit_loss, shift_loss = 0, 0, 0
-            for k in range(resume_step + 1, opt.algo.ld.num_steps):
-                start_time = time.time()
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
-                    model_trainer.train_latent_discovery(
-                        generator, deformator, shift_predictor, deformator_opt,
-                        shift_predictor_opt)
-                loss = loss + losses[0]
-                logit_loss = logit_loss + losses[1]
-                shift_loss = shift_loss + losses[2]
-                if k % opt.algo.ld.logging_freq == 0 and k != 0:
-                    metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-                    # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
-                    total_loss, logit_loss, shift_loss = losses
-                    logging.info(
-                        "Step  %d / %d Time taken %d sec loss: %.5f  logitLoss: %.5f, shift_Loss %.5F " % (
-                            k, opt.algo.ld.num_steps, time.time() - start_time,
-                            total_loss / opt.algo.ld.logging_freq, logit_loss / opt.algo.ld.logging_freq,
-                            shift_loss / opt.algo.ld.logging_freq))
-                    perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.ld.num_directions, opt.algo.ld.latent_dim)
-                    if opt.algo.ld.deformator_type == 'ortho':
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
-                    else:
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
-                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
-                                                               shifts_count=5)
-                    perf_logger.stop_monitoring("Latent Traversal Visualisations")
-                    loss, logit_loss, shift_loss = 0, 0, 0
-                if k % opt.algo.ld.saving_freq == 0 and k != 0:
-                    params = (deformator, shift_predictor, deformator_opt, shift_predictor_opt)
-                    perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i, algo='LD')
-                    perf_logger.stop_monitoring("Saving Model")
-        elif opt.algorithm == 'CF':
-            generator = models
-            plot_generated_images(opt, generator)
-            directions = model_trainer.train_closed_form(generator)
-            visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
-            metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
-        elif opt.algorithm == 'GS':
-            generator = models
-            plot_generated_images(opt, generator)
-            directions = model_trainer.train_ganspace(generator)
-            visualise_results.make_interpolation_chart(i, generator, directions, shift_r=10, shifts_count=5)
-            metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
-        elif opt.algorithm == 'ours-natural':
-            generator, deformator, deformator_opt, cr_discriminator, cr_optimizer,identity_discriminator = models
-            generator.eval()
-            layers = [0]
-            weights = []
-            for idx in layers:
-                layer_name = f'layer{idx}'
-                weight = generator.__getattr__(layer_name).weight
-                weight = weight.flip(2, 3).permute(1, 0, 2, 3).flatten(1)
-                weights.append(weight.cpu().detach().numpy())
-            weight = np.concatenate(weights, axis=1).astype(np.float32)
-            weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
-            eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
-            deformator.linear.weight.data = torch.Tensor(eigen_vectors.T)
-            params = (deformator)
-            saver.save_model(params, 'cf', i, algo='closedform')
-            deformator.cuda()
-            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-            deformator.train()
-            for k in range(opt.algo.ours.num_steps):
-                deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
-                    model_trainer.train_ours(
-                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer,identity_discriminator)
-                if k % opt.algo.ours.saving_freq == 0 and k != 0:
-                    params = (deformator, cr_discriminator, deformator_opt, cr_optimizer)
-                    perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i, algo='ours-natural')
-                    perf_logger.stop_monitoring("Saving Model")
-        elif opt.algorithm == 'ours-synthetic':
-            generator, deformator, deformator_opt, cr_discriminator, cr_optimizer = models
-            deformator = model_trainer.train_closed_form(generator)
-            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-            deformator.train()
-            deformator.cuda()
-            for k in range(opt.algo.ours.num_steps):
-                deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
-                    model_trainer.train_ours(
-                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                if k % opt.algo.ours.logging_freq == 0 and k != 0:
-                    metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-                    perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
-                                                       opt.algo.ours.latent_dim)
-                    if opt.algo.linear_combo.deformator_type == 'ortho':
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
-                    else:
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.linear.weight.data.cpu())
-                    visualise_results.make_interpolation_chart(i, z, generator, deformator_layer, shift_r=10,
-                                                               shifts_count=5)
-                    perf_logger.stop_monitoring("Latent Traversal Visualisations")
-        else:
-            raise NotImplementedError
+        if step % opt.algo.ours.logging_freq == 0:
+            print(" step : {} / {} Ranking loss : %.4f".format(step, opt.algo.ours.num_steps, losses.item()))
+
+        if step % opt.algo.ours.saving_freq == 0 and step != 0:
+            params = (deformator, deformator_opt, rank_predictor, rank_predictor_opt)
+            perf_logger.start_monitoring("Saving Model")
+            saver.save_model(params, step)
+            perf_logger.stop_monitoring("Saving Model")
