@@ -507,8 +507,8 @@ class SynthesisModule(nn.Module):
                          + self.upsample(image) * (1 - alpha))
             elif lod >= current_lod + 1:
                 image = self.upsample(image)
-        results['image'] = self.final_activate(image)
-        return results
+        final_image = self.final_activate(image)
+        return final_image
 
 
 class PixelNormLayer(nn.Module):

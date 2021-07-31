@@ -3,8 +3,8 @@ from torch import nn
 from torch.nn import functional as F
 from enum import Enum
 import numpy as np
+from utils import *
 
-from ortho_utils import torch_expm
 
 
 class DeformatorType(Enum):

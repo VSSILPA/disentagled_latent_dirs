@@ -2,7 +2,7 @@ from collections import namedtuple
 import torch
 from torch import nn
 import numpy as np
-from models.SNGAN.distribution import NormalDistribution
+from models.latentdiscovery.SNGAN.distribution import NormalDistribution
 
 
 ResNetGenConfig = namedtuple('ResNetGenConfig', ['channels', 'seed_dim'])

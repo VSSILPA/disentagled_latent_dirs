@@ -195,12 +195,7 @@ class PGGANGenerator(nn.Module):
                 image = self.upsample(image)
         image = self.final_activate(image)
 
-        results = {
-            'z': z,
-            'label': label,
-            'image': image,
-        }
-        return results
+        return image
 
 
 class PixelNormLayer(nn.Module):

@@ -1,8 +1,8 @@
 import os
 import json
 import torch
-from models.SNGAN.sn_gen_resnet import SN_RES_GEN_CONFIGS, make_resnet_generator
-from models.SNGAN.distribution import NormalDistribution
+from models.latentdiscovery.SNGAN.sn_gen_resnet import SN_RES_GEN_CONFIGS, make_resnet_generator
+from models.latentdiscovery.SNGAN.distribution import NormalDistribution
 
 
 MODELS = {

@@ -1,14 +1,16 @@
 import os
 import torch
 import subprocess
-from model_zoo import MODEL_ZOO
-from closedform_directions import CfLinear, CfOrtho
-from pggan_generator import PGGANGenerator
-from stylegan_generator import StyleGANGenerator
-from stylegan2_generator import StyleGAN2Generator
+from models.closedform.model_zoo import MODEL_ZOO
+from models.closedform.closedform_directions import CfLinear, CfOrtho
+from models.closedform.pggan_generator import PGGANGenerator
+from models.closedform.stylegan_generator import StyleGANGenerator
+from models.closedform.stylegan2_generator import StyleGAN2Generator
 
-GEN_CHECKPOINT_DIR = 'pretrained_models/generators/ClosedForm'
-DEFORMATOR_CHECKPOINT_DIR = 'pretrained_models/deformator/ClosedForm'
+
+
+GEN_CHECKPOINT_DIR = '../pretrained_models/generators/ClosedForm'
+DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/ClosedForm'
 
 
 def build_generator(gan_type, resolution, **kwargs):
@@ -81,9 +83,9 @@ def load_deformator(opt):
     _, directions, _ = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, model_name + '.pkl'))
     if deformator_type == 'linear':
         deformator = CfLinear(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
-        deformator.linear.weight.data = directions
+        deformator.linear.weight.data = torch.FloatTensor(directions)
     elif deformator_type == 'ortho':
         deformator = CfOrtho(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
-        deformator.ortho_mat.data = directions
+        deformator.ortho_mat.data = torch.FloatTensor(directions)
     deformator.cuda()
     return deformator

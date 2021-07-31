@@ -8,7 +8,6 @@ class Saver(object):
     def __init__(self, config):
         self.config = config
         self.experiment_name = self.config['experiment_name']
-        self.model_name = self.config['file_name']
 
     def save_model(self, params, step):
         cwd = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}'  # project root

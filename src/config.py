@@ -51,19 +51,20 @@ opt.random_seed = 123
 # ---------------------------------------------------------------------------- #
 # Options for Ours
 # ---------------------------------------------------------------------------- #
+opt.algo = CN()
 opt.algo.ours = CN()
 opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps = 140001
-opt.algo.ours.batch_size = 8
+opt.algo.ours.batch_size = 2
 opt.algo.ours.deformator_type = 'linear'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
-opt.algo.ours.saving_freq = 2000
-opt.algo.ours.logging_freq = 500
-self.opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
+opt.algo.ours.saving_freq = 5
+opt.algo.ours.logging_freq = 5
+opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
 
 
 def get_config(inputs):

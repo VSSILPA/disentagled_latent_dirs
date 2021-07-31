@@ -535,8 +535,8 @@ class SynthesisModule(nn.Module):
             image, style = self.__getattr__(f'output{layer_idx // 2 + 1}')(
                 x, wp[:, layer_idx + 2])
             results[f'output_style{layer_idx // 2}'] = style
-        results['image'] = self.final_activate(image)
-        return results
+        final_image = self.final_activate(image)
+        return final_image
 
 
 class PixelNormLayer(nn.Module):

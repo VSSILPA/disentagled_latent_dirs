@@ -2,10 +2,10 @@ import json
 import numpy as np
 import torch
 from torch import nn
-from BigGAN import BigGAN, utils
-from ProgGAN.model import Generator as ProgGenerator
-from SNGAN.load import load_model_from_state_dict
-from gan_with_shift import gan_with_shift
+from .BigGAN import BigGAN, utils
+from .ProgGAN.model import Generator as ProgGenerator
+from .SNGAN.load import load_model_from_state_dict
+from .gan_with_shift import gan_with_shift
 
 try:
     from StyleGAN2.model import Generator as StyleGAN2Generator

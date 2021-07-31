@@ -14,7 +14,6 @@ from utils import *
 
 
 def run_training_wrapper(configuration, opt, perf_logger):
-
     directories = list_dir_recursively_with_ignore('.', ignores=['checkpoint.pt', '__pycache__'])
     filtered_dirs = []
     for file in directories:
@@ -40,14 +39,17 @@ def run_training_wrapper(configuration, opt, perf_logger):
     rank_predictor_loss_list = []
     deformator_ranking_loss_list = []
     for step in range(opt.algo.ours.num_steps):
-        deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss , deformator_ranking_loss = \
-            model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes)
+        deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \
+            model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt,
+                                     should_gen_classes)
         rank_predictor_loss_list.append(rank_predictor_loss)
         deformator_ranking_loss_list.append(deformator_ranking_loss)
 
         if step % opt.algo.ours.logging_freq == 0:
-            print(" step : {} / {} Rank predictor loss : %.4f Deformator_ranking loss ".format(step, opt.algo.ours.num_steps,
-                                                                                               sum(rank_predictor_loss_list)/len(rank_predictor_loss_list), sum(deformator_ranking_loss_list)/len(deformator_ranking_loss_list)))
+            rank_predictor_loss_avg = sum(rank_predictor_loss_list) / len(rank_predictor_loss_list)
+            deformator_ranking_loss_avg = sum(deformator_ranking_loss_list) / len(deformator_ranking_loss_list)
+            print("step : %d / %d Rank predictor loss : %.4f Deformator_ranking loss  %.4f " % (
+                step, opt.algo.ours.num_steps, rank_predictor_loss_avg, deformator_ranking_loss_avg))
             rank_predictor_loss_list = []
             deformator_ranking_loss_list = []
 

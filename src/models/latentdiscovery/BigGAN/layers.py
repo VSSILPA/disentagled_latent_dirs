@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter as P
 
-from models.BigGAN.sync_batchnorm import SynchronizedBatchNorm2d as SyncBN2d
+from models.latentdiscovery.BigGAN.sync_batchnorm import SynchronizedBatchNorm2d as SyncBN2d
 
 
 # Projection of x onto y

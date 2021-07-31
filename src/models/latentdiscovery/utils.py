@@ -1,10 +1,10 @@
 import os
 import torch
-from gan_load import make_big_gan, make_proggan, make_sngan
-from latent_deformator import LatentDeformator
+from .gan_load import make_big_gan, make_proggan, make_sngan
+from .latent_deformator import LatentDeformator
 
-GEN_CHECKPOINT_DIR = 'pretrained_models/generators/LatentDiscovery'
-DEFORMATOR_CHECKPOINT_DIR = 'pretrained_models/deformator/LatentDiscovery'
+GEN_CHECKPOINT_DIR = '../pretrained_models/generators/LatentDiscovery'
+DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/LatentDiscovery'
 
 
 def load_generator(opt):

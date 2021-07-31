@@ -28,7 +28,7 @@ class Trainer(object):
 
         rank_predictor.train()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.ours.latent_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
 
         if should_gen_classes:
@@ -54,7 +54,7 @@ class Trainer(object):
 
         rank_predictor.eval()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.ours.latent_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
@@ -72,7 +72,7 @@ class Trainer(object):
 
         deformator_opt.step()
 
-        return deformator, deformator_opt, rank_predictor, rank_predictor_opt, (rank_predictor_loss.item(), deformator_ranking_loss.item())
+        return deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss.item(), deformator_ranking_loss.item()
 
     def make_shifts_rank(self):
         epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size),

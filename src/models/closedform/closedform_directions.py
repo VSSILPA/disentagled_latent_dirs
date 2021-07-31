@@ -7,7 +7,7 @@ class CfLinear(nn.Module):
         super(CfLinear, self).__init__()
 
         self.input_dim = input_dim
-        self.out_im = out_dim
+        self.out_dim = out_dim
         self.linear = torch.nn.Linear(self.input_dim, self.out_dim, bias=False)
 
     def forward(self, input):

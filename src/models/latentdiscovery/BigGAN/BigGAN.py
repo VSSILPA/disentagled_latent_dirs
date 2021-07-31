@@ -6,7 +6,7 @@ from torch.nn import init
 import torch.optim as optim
 import torch.nn.functional as F
 
-from models.BigGAN import layers
+from models.latentdiscovery.BigGAN import layers
 
 
 # Architectures for G
