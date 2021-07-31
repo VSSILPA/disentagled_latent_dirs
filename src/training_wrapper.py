@@ -37,12 +37,19 @@ def run_training_wrapper(configuration, opt, perf_logger):
         should_gen_classes = True
     generator.eval()
     deformator.train()
+    rank_predictor_loss_list = []
+    deformator_ranking_loss_list = []
     for step in range(opt.algo.ours.num_steps):
-        deformator, deformator_opt, rank_predictor, rank_predictor_opt, losses = \
+        deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss , deformator_ranking_loss = \
             model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes)
+        rank_predictor_loss_list.append(rank_predictor_loss)
+        deformator_ranking_loss_list.append(deformator_ranking_loss)
 
         if step % opt.algo.ours.logging_freq == 0:
-            print(" step : {} / {} Ranking loss : %.4f".format(step, opt.algo.ours.num_steps, losses.item()))
+            print(" step : {} / {} Rank predictor loss : %.4f Deformator_ranking loss ".format(step, opt.algo.ours.num_steps,
+                                                                                               sum(rank_predictor_loss_list)/len(rank_predictor_loss_list), sum(deformator_ranking_loss_list)/len(deformator_ranking_loss_list)))
+            rank_predictor_loss_list = []
+            deformator_ranking_loss_list = []
 
         if step % opt.algo.ours.saving_freq == 0 and step != 0:
             params = (deformator, deformator_opt, rank_predictor, rank_predictor_opt)
