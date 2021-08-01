@@ -28,7 +28,7 @@ class LatentDataset(Dataset):
         if opt.algorithm == 'ours' and opt.algo.ours.deformator_type == 'ortho':
             directions = latent_directions.ortho_mat.data.detach().cpu().numpy()
         else:
-            directions = latent_directions.weight.detach().cpu().numpy()
+            directions = latent_directions.linear.weight.detach().cpu().numpy()
         self.labels = self.labels @ directions
 
     def _try_load_cached(self, dataset):

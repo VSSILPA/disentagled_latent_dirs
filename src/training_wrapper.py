@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(7,8):
+    for i in range(1):
         logging.info("Running for generator model : " + str(i))
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
@@ -99,7 +99,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
         elif opt.algorithm == 'ours':
             generator,deformator, deformator_opt, cr_discriminator, cr_optimizer = models
             initialisation = model_trainer.train_closed_form(generator)
-            deformator.ortho_mat.data = initialisation.weight
+#            checkpoint = torch.load('/home/ubuntu/src/disentagled_latent_dirs/results/mpi3d with best setting and inequality reversed--linear/models/60000_model.pkl')['deformator']
+            deformator.linear.weight.data = initialisation.weight
+#            deformator.load_state_dict(checkpoint)
             deformator.cuda()
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
 #            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)

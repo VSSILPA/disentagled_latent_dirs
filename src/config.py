@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'shapes3d with eval on rank predictor with zero grad and eval'
-    experiment_description = 'Running for random seed-2 mpi3d'
+    experiment_name = 'mpi3d with best setting and inequality reversed--linear'
+    experiment_description = 'studying effect of flipping on best setting'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -48,7 +48,7 @@ parser.add_argument('--resume_train', type=bool, default=False, help='name of th
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
-opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
+opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 #opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
@@ -92,7 +92,7 @@ opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 6001
 opt.algo.ours.batch_size = 32
-opt.algo.ours.deformator_type = 'ortho'
+opt.algo.ours.deformator_type = 'linear'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
