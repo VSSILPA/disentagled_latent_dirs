@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ours with closed form initialisation shapes3d reversed inequality'
+    experiment_name = 'shapes3d with eval on rank predictor with zero grad and eval'
     experiment_description = 'Running for random seed-2 mpi3d'
 else:
     experiment_name = input("Enter experiment name ")

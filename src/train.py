@@ -28,6 +28,8 @@ class Trainer(object):
 
         generator.zero_grad()
         deformator.zero_grad()
+        cr_optimizer.zero_grad()
+        cr_discriminator.train()
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.style_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
@@ -48,6 +50,7 @@ class Trainer(object):
         
         generator.zero_grad()
         deformator.zero_grad()
+        cr_discriminator.eval()
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.style_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
@@ -189,6 +192,6 @@ class Trainer(object):
                                     self.opt.algo.ours.num_directions).uniform_(-1, 1).cuda()
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
-        ground_truths = (epsilon_1 < epsilon_2).type(torch.float32).cuda()
+        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths
