@@ -21,6 +21,7 @@ def get_model(opt):
         generator = load_cf_generator(opt)
         deformator = load_cf_deformator(opt)
 
+
     elif opt.algo.ours.initialisation == 'latent_discovery':
         generator = load_ld_generator(opt)
         deformator = load_ld_deformator(opt)

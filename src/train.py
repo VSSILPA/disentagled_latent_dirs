@@ -25,7 +25,7 @@ class Trainer(object):
     def train_ours(self, generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes):
         generator.zero_grad()
         deformator.zero_grad()  # TODO Rank Predictor zero grad
-
+        rank_predictor_opt.zero_grad()
         rank_predictor.train()
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
@@ -51,7 +51,6 @@ class Trainer(object):
 
         generator.zero_grad()
         deformator.zero_grad()
-
         rank_predictor.eval()
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
@@ -80,6 +79,6 @@ class Trainer(object):
                                                                                 self.opt.algo.ours.shift_min).cuda()
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
-        ground_truths = (epsilon_1 > epsilon_2).type(torch.float32).cuda()
+        ground_truths = (epsilon_1 < epsilon_2).type(torch.float32).cuda()
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths

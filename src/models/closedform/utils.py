@@ -7,8 +7,6 @@ from models.closedform.pggan_generator import PGGANGenerator
 from models.closedform.stylegan_generator import StyleGANGenerator
 from models.closedform.stylegan2_generator import StyleGAN2Generator
 
-
-
 GEN_CHECKPOINT_DIR = '../pretrained_models/generators/ClosedForm'
 DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/ClosedForm'
 
@@ -81,11 +79,12 @@ def load_deformator(opt):
     model_name = opt.algo.ours.model_name
     deformator_type = opt.algo.ours.deformator_type
     _, directions, _ = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, model_name + '.pkl'))
+    directions_T = directions.T  ## Sefa returns eigenvectors as rows, so transpose required
     if deformator_type == 'linear':
         deformator = CfLinear(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
-        deformator.linear.weight.data = torch.FloatTensor(directions)
+        deformator.linear.weight.data = torch.FloatTensor(directions_T)
     elif deformator_type == 'ortho':
         deformator = CfOrtho(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
-        deformator.ortho_mat.data = torch.FloatTensor(directions)
+        deformator.ortho_mat.data = torch.FloatTensor(directions_T)
     deformator.cuda()
     return deformator
