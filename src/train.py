@@ -24,7 +24,7 @@ class Trainer(object):
 
     def train_ours(self, generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes):
         generator.zero_grad()
-        deformator.zero_grad()  # TODO Rank Predictor zero grad
+        deformator.zero_grad()
         rank_predictor_opt.zero_grad()
         rank_predictor.train()
 

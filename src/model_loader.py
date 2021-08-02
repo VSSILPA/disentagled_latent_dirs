@@ -19,8 +19,7 @@ from models.latentdiscovery.utils import load_deformator as load_ld_deformator
 def get_model(opt):
     if opt.algo.ours.initialisation == 'closed_form':
         generator = load_cf_generator(opt)
-        deformator = load_cf_deformator(opt)
-
+        deformator = load_cf_deformator(opt) ##TODO first eigenvectos normalisation check
 
     elif opt.algo.ours.initialisation == 'latent_discovery':
         generator = load_ld_generator(opt)

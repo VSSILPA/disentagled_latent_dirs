@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'proggan-closed_form + ours with identity_loss 1_0,5'
-    experiment_description = 'studying effect of scaling'
+    experiment_name = 'celeba_linear'
+    experiment_description = 'linear -1_1 eps1<eps2 best setting of synthetic'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -56,7 +56,7 @@ opt.algo.ours = CN()
 opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps = 140001
-opt.algo.ours.batch_size = 2
+opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'linear'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
@@ -64,7 +64,7 @@ opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 500
-opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
+opt.algo.ours.shift_min = 1 ##TODO Hyperparameter tuning
 
 
 def get_config(inputs):
