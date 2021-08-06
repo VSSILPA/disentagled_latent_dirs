@@ -34,21 +34,21 @@ class Evaluator():
         self.result_path = result_path
         self.pretrained_path = pretrained_path
         self.num_directions = num_directions
-        self.directions_idx = list(range(1, self.num_directions+1)) ##TODOD change from 0 to 512
+        self.directions_idx = list(range(0, self.num_directions)) ##TODOD change from 0 to 512
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        # attribute_list = ['Receding_Hairline', 'Oval_Face', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
-        #                   'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Black_Hair', 'Heavy_Makeup', 'Pointy_Nose',
-        #                   'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
-        #                   'No_Beard', 'Eyeglasses', 'Wearing_Earrings', 'Brown_Hair', 'Wearing_Hat', 'Goatee',
-        #                   'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Attractive', 'Young', 'Gray_Hair',
-        #                   '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
-        #                   'Wavy_Hair', 'Blond_Hair', 'Straight_Hair', 'Wearing_Necklace', 'Bangs']
+        self.all_attr_list = ['pose','Receding_Hairline', 'Oval_Face', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
+                           'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Black_Hair', 'Heavy_Makeup', 'Pointy_Nose',
+                           'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
+                           'No_Beard', 'Eyeglasses', 'Wearing_Earrings', 'Brown_Hair', 'Wearing_Hat', 'Goatee',
+                           'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Attractive', 'Young', 'Gray_Hair',
+                           '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
+                           'Wavy_Hair', 'Blond_Hair', 'Straight_Hair', 'Wearing_Necklace', 'Bangs']
 
         # ['pose', 'eyeglasses', 'male', 'smiling', 'young']
-        self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
+       # self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -103,21 +103,29 @@ class Evaluator():
                 attr_variation = [0.0] * len(predictor_list)
                 attr_manipulation_acc = [0] * len(predictor_list)
                 for i, z in enumerate(z_loader):
-                    perf_logger.start_monitoring("Batch" + str(i) + " completed")
+#                    perf_logger.start_monitoring("Batch" + str(i) + " completed")
+                    perf_logger.start_monitoring("image_prep" + str(i) + " completed")
+
                     w_shift = z.detach().cpu() + deformator[dir: dir + 1] * self.epsilon
                     w_shift = w_shift.cuda()
                     images_shifted = generator(w_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
+                    perf_logger.stop_monitoring("image_prep" + str(i) + " completed")
+
                     for pred_idx, predictor in enumerate(predictor_list):
+                        perf_logger.start_monitoring("forward_pass" + str(i) + " completed")
+
                         softmax_values = torch.softmax(predictor(predict_images), dim=1)
+                        perf_logger.stop_monitoring("forward_pass" + str(i) + " completed")
+
                         img_shift_score = softmax_values[:, 1].detach()
                         predictions = torch.argmax(softmax_values, dim=-1).sum()
                         delta = img_shift_score.detach() - reference_attr_scores[i][pred_idx]
                         attr_variation[pred_idx] = attr_variation[pred_idx] + delta.mean()
                         attr_manipulation_acc[pred_idx] = attr_manipulation_acc[pred_idx] + predictions.item()
                     del predict_images
-                    perf_logger.stop_monitoring("Batch" + str(i) + " completed")
+#                    perf_logger.stop_monitoring("Batch" + str(i) + " completed")
 
                 all_attr_variation = []
                 for var in attr_variation:
@@ -126,13 +134,18 @@ class Evaluator():
                 all_dir_attr_manipulation_acc.append(np.array(attr_manipulation_acc) / self.num_samples)
                 perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
+                torch.save(rescoring_matrix, os.path.join(self.result_path, 'rescoring matrix.pkl'))
+                torch.save(all_dir_attr_manipulation_acc,
+                   os.path.join(self.result_path, 'attribute manipulation accuracy.pkl'))
+
+
         rescoring_matrix = np.array(rescoring_matrix)
         all_dir_attr_manipulation_acc = np.array(all_dir_attr_manipulation_acc)
 
         torch.save(rescoring_matrix, os.path.join(self.result_path, 'rescoring matrix.pkl'))
         torch.save(all_dir_attr_manipulation_acc,
                    os.path.join(self.result_path, 'attribute manipulation accuracy.pkl'))
-        self.get_heat_map(rescoring_matrix, directions_idx, attribute_list, self.result_path)
+        #self.get_heat_map(rescoring_matrix, directions_idx, attribute_list, self.result_path)
         return rescoring_matrix, all_dir_attr_manipulation_acc
 
     def get_partial_metrics(self, attributes, direction_idx, attr_vs_direction, rescoring_matrix,
@@ -213,15 +226,15 @@ class Evaluator():
 
 if __name__ == '__main__':
     random_seed = 1234
-    result_path = 'results/closed_form_celeba'
+    result_path = 'results/closed_form_celeba-qualitative trial'
     deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
-    classifier_path = 'pretrained_models'
+    classifier_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models/'
     os.makedirs(result_path, exist_ok=True)
 
-    pretrained_models_path = 'pretrained_models/'
-    num_directions = 512
+    pretrained_models_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
+    num_directions = 5
     num_samples = 1000
-    z_batch_size = 2
+    z_batch_size = 4
     epsilon = 2
     layers, deformator, eigen_values = torch.load(
         os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
