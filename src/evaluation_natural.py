@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from logger import PerfomanceLogger
 import seaborn as sns
 
-from src.models import attribute_predictor
+from models.attribute_predictors import attribute_predictor ,attribute_utils
 
 sns.set_theme()
 perf_logger = PerfomanceLogger()
@@ -34,23 +34,43 @@ class Evaluator():
         self.result_path = result_path
         self.pretrained_path = pretrained_path
         self.num_directions = num_directions
-        self.directions_idx = list(range(self.num_directions))
+        self.directions_idx = list(range(1, self.num_directions+1)) ##TODOD change from 0 to 512
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'eyeglasses', 'male', 'smiling', 'young']
+        # attribute_list = ['Receding_Hairline', 'Oval_Face', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
+        #                   'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Black_Hair', 'Heavy_Makeup', 'Pointy_Nose',
+        #                   'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
+        #                   'No_Beard', 'Eyeglasses', 'Wearing_Earrings', 'Brown_Hair', 'Wearing_Hat', 'Goatee',
+        #                   'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Attractive', 'Young', 'Gray_Hair',
+        #                   '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
+        #                   'Wavy_Hair', 'Blond_Hair', 'Straight_Hair', 'Wearing_Necklace', 'Bangs']
+
+        # ['pose', 'eyeglasses', 'male', 'smiling', 'young']
+        self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
-    def _get_predictor_list(self, attr_list):
+    def _get_predictor_list(self, attr_list , source ='nvidia'):
         predictor_list = []
-        for each in attr_list:
+        if source == 'nvidia':
             predictor = attribute_predictor.get_classifier(
-                os.path.join(self.pretrained_path, "classifiers", each, "weight.pkl"),
+                os.path.join(self.pretrained_path, "classifiers", 'pose', "weight.pkl"),
                 'cuda')
             predictor.cuda().eval()
             predictor_list.append(predictor)
+            for classifier_name in self.all_attr_list[1:]:
+                predictor = attribute_utils.ClassifierWrapper(classifier_name, device='cuda')
+                predictor.cuda().eval()
+                predictor_list.append(predictor)
+        else:
+            for each in attr_list:
+                predictor = attribute_predictor.get_classifier(
+                    os.path.join(self.pretrained_path, "classifiers", each, "weight.pkl"),
+                    'cuda')
+                predictor.cuda().eval()
+                predictor_list.append(predictor)
         return predictor_list
 
     def get_reference_attribute_scores(self, generator, z_loader, attribute_list):
@@ -64,7 +84,9 @@ class Evaluator():
                 predict_images = F.avg_pool2d(images, 4, 4)
                 img_score = []
                 for predictor in predictor_list:
-                    each_img_score = torch.softmax(predictor(predict_images), dim=1)[:, 1].detach()
+                    softmax_out = predictor(predict_images)
+                    each_img_score = softmax_out[:, 1].detach()
+                    # each_img_score = torch.softmax(predictor(predict_images), dim=1)[:, 1].detach()
                     img_score.append(each_img_score)
                 attribute_scores_ref.append(img_score)
         torch.save(attribute_scores_ref, os.path.join(self.result_path, 'reference_attribute_scores.pkl'))
@@ -191,18 +213,19 @@ class Evaluator():
 
 if __name__ == '__main__':
     random_seed = 1234
-    result_path = 'sefa_master/Closed_Form'
+    result_path = 'results/closed_form_celeba'
     deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
 
     pretrained_models_path = 'pretrained_models/'
-    num_directions = 5
-    num_samples = 50
+    num_directions = 512
+    num_samples = 1000
     z_batch_size = 2
     epsilon = 2
-    layers, deformator, eigen_values = torch.load(os.path.join(pretrained_models_path, deformator_path,'pggan_celebahq1024.pkl'),
-                                                  map_location='cpu')
+    layers, deformator, eigen_values = torch.load(
+        os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
+        map_location='cpu')
     deformator = torch.FloatTensor(deformator)
     evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_directions, num_samples, z_batch_size,
                           epsilon)
