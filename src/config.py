@@ -17,7 +17,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'mpi3d with best setting and inequality reversed--linear'
+    experiment_name = 'cars3d best setting ortho-seed 123'
     experiment_description = 'studying effect of flipping on best setting'
 else:
     experiment_name = input("Enter experiment name ")
@@ -48,14 +48,14 @@ parser.add_argument('--resume_train', type=bool, default=False, help='name of th
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
-opt.dataset = 'mpi3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
+opt.dataset = 'cars3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
 #opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
 opt.pretrained_gen_root = 'models/pretrained/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
 opt.num_generator_seeds = 5 if opt.dataset != 'cars3d' else 7
-opt.random_seed =2
+opt.random_seed =123
 if opt.dataset == 'dsprites':
     opt.num_generator_seeds = 1
 
@@ -92,7 +92,7 @@ opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
 opt.algo.ours.num_steps = 6001
 opt.algo.ours.batch_size = 32
-opt.algo.ours.deformator_type = 'linear'
+opt.algo.ours.deformator_type = 'ortho'
 opt.algo.ours.deformator_randint = True
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
