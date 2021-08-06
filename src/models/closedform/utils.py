@@ -33,8 +33,11 @@ def build_generator(gan_type, resolution, **kwargs):
     raise NotImplementedError(f'Unsupported GAN type `{gan_type}`!')
 
 
-def load_generator(opt):
-    model_name = opt.algo.ours.model_name
+def load_generator(opt, model_name=''):
+    try:
+        model_name = opt.algo.ours.model_name
+    except AttributeError:
+        model_name = model_name
     """Loads pre-trained generator.
 
     Args:
