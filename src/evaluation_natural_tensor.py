@@ -127,7 +127,7 @@ class Evaluator():
         torch.save(rescoring_matrix, os.path.join(self.result_path, 'rescoring matrix.pkl'))
         torch.save(all_dir_attr_manipulation_acc,
                    os.path.join(self.result_path, 'attribute manipulation accuracy.pkl'))
-        self.get_heat_map(rescoring_matrix, directions_idx, attribute_list, self.result_path)
+        #self.get_heat_map(rescoring_matrix, directions_idx, attribute_list, self.result_path)
         return rescoring_matrix, all_dir_attr_manipulation_acc
 
     def get_partial_metrics(self, attributes, direction_idx, attr_vs_direction, rescoring_matrix,
@@ -176,12 +176,14 @@ class Evaluator():
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        ax = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
+        fig, ax = plt.subplots(figsize=(30, 10))
+        hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
-        plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
-        plt.yticks(np.arange(len(dir)) + 0.5, labels=dir)
-        plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'))
-        plt.close()
+        plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list, fontsize=8)
+        plt.yticks(np.arange(len(dir)) + 0.5, labels=dir, fontsize=8)
+        plt.tight_layout()
+        plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
+        plt.close('all'))
 
     def evaluate_directions(self, deformator, resume=False, resume_dir=None):
         generator = load_generator(None, model_name='pggan_celebahq1024')
