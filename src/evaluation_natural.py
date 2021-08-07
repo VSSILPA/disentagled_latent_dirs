@@ -48,7 +48,7 @@ class Evaluator():
                            'Wavy_Hair', 'Blond_Hair', 'Straight_Hair', 'Wearing_Necklace', 'Bangs']
 
         # ['pose', 'eyeglasses', 'male', 'smiling', 'young']
-       # self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
+        self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -111,14 +111,8 @@ class Evaluator():
                     images_shifted = generator(w_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
-                    perf_logger.stop_monitoring("image_prep" + str(i) + " completed")
-
                     for pred_idx, predictor in enumerate(predictor_list):
-                        perf_logger.start_monitoring("forward_pass" + str(i) + " completed")
-
                         softmax_values = torch.softmax(predictor(predict_images), dim=1)
-                        perf_logger.stop_monitoring("forward_pass" + str(i) + " completed")
-
                         img_shift_score = softmax_values[:, 1].detach()
                         predictions = torch.argmax(softmax_values, dim=-1).sum()
                         delta = img_shift_score.detach() - reference_attr_scores[i][pred_idx]
@@ -129,7 +123,7 @@ class Evaluator():
 
                 all_attr_variation = []
                 for var in attr_variation:
-                    all_attr_variation.append(round(abs((var / self.num_batches).item()), 2)), 2
+                    all_attr_variation.append(round(abs((var / self.num_batches).item()), 2))
                 rescoring_matrix.append(all_attr_variation)
                 all_dir_attr_manipulation_acc.append(np.array(attr_manipulation_acc) / self.num_samples)
                 perf_logger.stop_monitoring("Direction " + str(dir) + " completed")

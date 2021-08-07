@@ -21,20 +21,20 @@ perf_logger = PerfomanceLogger()
 def _set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
     np.random.seed(seed)
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 class Evaluator():
-    def __init__(self, random_seed, result_path, pretrained_path, num_directions, num_samples, z_batch_size, epsilon):
+    def __init__(self, random_seed, result_path, pretrained_path, num_samples, z_batch_size, epsilon):
         _set_seed(random_seed)
         self.result_path = result_path
         self.pretrained_path = pretrained_path
-        self.num_directions = num_directions
-        self.directions_idx = [1, 2]  ##TODOD change from 0 to 512
+        self.directions_idx = [1, 2, 3, 4, 5]  ##TODOD change from 0 to 512
+        self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
@@ -79,35 +79,35 @@ class Evaluator():
         with torch.no_grad():
             for batch_idx, z in enumerate(z_loader):
                 images = generator(z)
+                images = (images + 1) / 2
                 predict_images = F.avg_pool2d(images, 4, 4)
                 for predictor_idx, predictor in enumerate(predictor_list):
                     ref_image_scores[predictor_idx,
                     batch_idx * self.z_batch_size:(batch_idx + 1) * self.z_batch_size] = torch.softmax(
                         predictor(predict_images), dim=1)[:, 1]
-        ref_image_scores = ref_image_scores.unsqueeze(0).repeat(num_directions, 1, 1)
+        ref_image_scores = ref_image_scores.unsqueeze(0).repeat(len(self.directions_idx), 1, 1)
         torch.save(ref_image_scores, os.path.join(self.result_path, 'reference_attribute_scores.pkl'))
         return ref_image_scores
 
     def get_evaluation_metric_values(self, generator, deformator, attribute_list, reference_attr_scores, z_loader,
                                      directions_idx):
         predictor_list = self._get_predictor_list(attribute_list)
-        shifted_image_scores = torch.zeros([self.num_directions, len(predictor_list), self.num_samples])
+        shifted_image_scores = torch.zeros([len(self.directions_idx), len(predictor_list), self.num_samples])
         with torch.no_grad():
-            for dir in directions_idx:
+            for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("direction started")
                 for batch_idx, z in enumerate(z_loader):
                     perf_logger.start_monitoring("Batch done")
                     w_shift = z + deformator[dir: dir + 1] * self.epsilon
                     images_shifted = generator(w_shift)
+                    images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
                     for predictor_idx, predictor in enumerate(predictor_list):
-                        shifted_image_scores[dir, predictor_idx,
+                        shifted_image_scores[dir_index, predictor_idx,
                         batch_idx * self.z_batch_size:(batch_idx + 1) * self.z_batch_size] = torch.softmax(
-                            predictor(predict_images),
-                            dim=1)[:, 1]
+                            predictor(predict_images), dim=1)[:, 1]
                     perf_logger.stop_monitoring("Batch done")
                 perf_logger.stop_monitoring("direction started")
-
 
         difference_matrix = shifted_image_scores - reference_attr_scores
         rescoring_matrix = np.round(torch.abs(torch.mean(difference_matrix, dim=-1)).numpy(), 2)
@@ -199,21 +199,20 @@ class Evaluator():
 
 if __name__ == '__main__':
     random_seed = 1234
-    result_path = 'results/closed_form_celeba_tensor_eval'
+    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/closed_form_celeba_tensor_image_10_samples'
     deformator_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models/deformators/ClosedForm/pggan_celebahq1024'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
 
     pretrained_models_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
-    num_directions = 2
-    num_samples = 500
+    num_samples = 2000
     z_batch_size = 2
     epsilon = 2
     layers, deformator, eigen_values = torch.load(
         os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
         map_location='cpu')
     deformator = torch.FloatTensor(deformator).cuda()
-    evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_directions, num_samples, z_batch_size,
+    evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_samples, z_batch_size,
                           epsilon)
     evaluator.evaluate_directions(deformator)
 
