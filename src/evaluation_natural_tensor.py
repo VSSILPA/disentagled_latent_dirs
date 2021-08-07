@@ -33,22 +33,22 @@ class Evaluator():
         _set_seed(random_seed)
         self.result_path = result_path
         self.pretrained_path = pretrained_path
-        self.directions_idx = [1,2]  ##TODOD change from 0 to 512
+        self.directions_idx = list(range(512))  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        # attribute_list = ['Receding_Hairline', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
-        #                   'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Heavy_Makeup',
-        #                   'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
-        #                   'No_Beard', 'Eyeglasses', 'Wearing_Earrings',  'Wearing_Hat', 'Goatee',
-        #                   'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Young','Gray_Hair'
-        #                   '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
-        #                   'Wavy_Hair',  'Straight_Hair', 'Wearing_Necklace', 'Bangs']
+        self.all_attr_list = ['pose','Receding_Hairline', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
+                           'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Heavy_Makeup',
+                           'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
+                           'No_Beard', 'Eyeglasses', 'Wearing_Earrings',  'Wearing_Hat', 'Goatee',
+                           'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Young','Gray_Hair',
+                           '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
+                           'Wavy_Hair',  'Straight_Hair', 'Wearing_Necklace', 'Bangs']
         #removed = ['Attractive','Black_Hair' ,'Brown_Hair , 'Blond_Hair',Pointy_Nose ,'Wavy_Hair','Oval_Face']
-        # ['pose', 'eyeglasses', 'male', 'smiling', 'young']
-        self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
+        
+        
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -76,7 +76,6 @@ class Evaluator():
     def get_reference_attribute_scores(self, generator, z_loader, attribute_list):
         predictor_list = self._get_predictor_list(attribute_list)
         ref_image_scores = []
-        # ref_image_scores = torch.zeros(len(predictor_list), self.num_samples)
         with torch.no_grad():
             for batch_idx, z in enumerate(z_loader):
                 images = generator(z)
@@ -85,9 +84,6 @@ class Evaluator():
                 for predictor_idx, predictor in enumerate(predictor_list):
                     ref_image_scores.append(torch.softmax(
                         predictor(predict_images), dim=1)[:, 1])
-                    # ref_image_scores[predictor_idx,
-                    # batch_idx * self.z_batch_size:(batch_idx + 1) * self.z_batch_size] = torch.softmax(
-                    #     predictor(predict_images), dim=1)[:, 1]
         ref_image_scores = torch.stack(ref_image_scores).view(len(predictor_list), -1)
         ref_image_scores = torch.stack([ref_image_scores.view(-1, self.z_batch_size)[i::len(predictor_list)] for i in
                                         range(len(predictor_list))]).view(len(predictor_list), self.num_samples)
@@ -211,25 +207,25 @@ class Evaluator():
                                                                                               direction_to_resume= resume_dir)
         perf_logger.stop_monitoring("Metrics done")
         classifiers_to_analyse = self.all_attr_list
-        top_k = 3
+        top_k = 5
         self.get_classifer_analysis(classifiers_to_analyse, self.directions_idx, top_k, full_rescoring_matrix,
                                     full_attr_manipulation_acc)
 
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'ortho' #['closedform','linear','ortho']
-    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/celeba_ortho_trial'
-    deformator_path = 'analysis_models/celeba_ortho-55'
-    ##deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
-    file_name = '12000_model.pkl'
-    #'pggan_celebahq1024.pkl'
-    pretrained_models_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
+    algo = 'closedform' #['closedform','linear','ortho']
+    result_path = '/home/ubuntu/src/disentagled_latent_dirs/results/closedform_results'
+    #deformator_path = 'analysis_models/celeba_ortho-55'
+    deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
+    #file_name = '12000_model.pkl'
+    file_name ='pggan_celebahq1024.pkl'
+    pretrained_models_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
 
-    num_samples = 2000
-    z_batch_size = 2
+    num_samples = 1000
+    z_batch_size = 8
     epsilon = 2
     resume = False
     resume_direction = None ## If resume false, set None
