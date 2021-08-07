@@ -33,20 +33,20 @@ class Evaluator():
         _set_seed(random_seed)
         self.result_path = result_path
         self.pretrained_path = pretrained_path
-        self.directions_idx = [0, 1, 2, 3, 4, 5]  ##TODOD change from 0 to 512
+        self.directions_idx = [1,2]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        # attribute_list = ['Receding_Hairline', 'Oval_Face', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
-        #                   'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Black_Hair', 'Heavy_Makeup', 'Pointy_Nose',
+        # attribute_list = ['Receding_Hairline', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
+        #                   'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Heavy_Makeup',
         #                   'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
-        #                   'No_Beard', 'Eyeglasses', 'Wearing_Earrings', 'Brown_Hair', 'Wearing_Hat', 'Goatee',
-        #                   'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Attractive', 'Young', 'Gray_Hair',
+        #                   'No_Beard', 'Eyeglasses', 'Wearing_Earrings',  'Wearing_Hat', 'Goatee',
+        #                   'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Young','Gray_Hair'
         #                   '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
-        #                   'Wavy_Hair', 'Blond_Hair', 'Straight_Hair', 'Wearing_Necklace', 'Bangs']
-
+        #                   'Wavy_Hair',  'Straight_Hair', 'Wearing_Necklace', 'Bangs']
+        #removed = ['Attractive','Black_Hair' ,'Brown_Hair , 'Blond_Hair',Pointy_Nose ,'Wavy_Hair','Oval_Face']
         # ['pose', 'eyeglasses', 'male', 'smiling', 'young']
         self.all_attr_list = ['Pose', 'Eyeglasses', 'Male', 'Smiling', 'Young']
         attr_index = list(range(len(self.all_attr_list)))
@@ -218,21 +218,32 @@ class Evaluator():
 
 if __name__ == '__main__':
     random_seed = 1234
-    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/closed_form_celeba_list_test_resume'
-    deformator_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models/deformators/ClosedForm/pggan_celebahq1024'
+    algo = 'ortho' #['closedform','linear','ortho']
+    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/celeba_ortho_trial'
+    deformator_path = 'analysis_models/celeba_ortho-55'
+    ##deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
+    file_name = '12000_model.pkl'
+    #'pggan_celebahq1024.pkl'
+    pretrained_models_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
 
-    pretrained_models_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
-    num_samples = 10
+    num_samples = 2000
     z_batch_size = 2
     epsilon = 2
     resume = False
-    resume_direction = 2
-    layers, deformator, eigen_values = torch.load(
-        os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
-        map_location='cpu')
-    deformator = torch.FloatTensor(deformator).cuda()
+    resume_direction = None ## If resume false, set None
+    if algo == 'closedform':
+        _, deformator, _ = torch.load(
+            os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
+            map_location='cpu')
+        deformator = torch.FloatTensor(deformator).cuda()
+    elif algo == 'ortho':
+        deformator = torch.load(os.path.join(pretrained_models_path, deformator_path, file_name))['deformator']['ortho_mat']
+        deformator = deformator.T
+    elif algo == 'linear':
+        deformator = torch.load(os.path.join(pretrained_models_path, deformator_path, file_name))['deformator']
+        deformator = deformator.T
     evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_samples, z_batch_size,
                           epsilon)
     evaluator.evaluate_directions(deformator, resume=resume,  resume_dir=resume_direction)
