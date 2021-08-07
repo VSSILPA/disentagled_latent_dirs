@@ -33,7 +33,7 @@ class Evaluator():
         _set_seed(random_seed)
         self.result_path = result_path
         self.pretrained_path = pretrained_path
-        self.directions_idx = [1, 2, 3, 4, 5]  ##TODOD change from 0 to 512
+        self.directions_idx = [0, 1, 2, 3, 4, 5]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
@@ -89,21 +89,24 @@ class Evaluator():
                     # batch_idx * self.z_batch_size:(batch_idx + 1) * self.z_batch_size] = torch.softmax(
                     #     predictor(predict_images), dim=1)[:, 1]
         ref_image_scores = torch.stack(ref_image_scores).view(len(predictor_list), -1)
-        ref_image_scores = torch.stack([ref_image_scores.view(-1, self.z_batch_size)[i::len(predictor_list)] for i in range(len(predictor_list))]).view(len(predictor_list), self.num_samples)
+        ref_image_scores = torch.stack([ref_image_scores.view(-1, self.z_batch_size)[i::len(predictor_list)] for i in
+                                        range(len(predictor_list))]).view(len(predictor_list), self.num_samples)
         ref_image_scores = ref_image_scores.unsqueeze(0).repeat(len(self.directions_idx), 1, 1)
         torch.save(ref_image_scores, os.path.join(self.result_path, 'reference_attribute_scores.pkl'))
         return ref_image_scores
 
     def get_evaluation_metric_values(self, generator, deformator, attribute_list, reference_attr_scores, z_loader,
-                                     directions_idx):
+                                     directions_idx, resume=False, direction_to_resume=None):
         predictor_list = self._get_predictor_list(attribute_list)
-        # shifted_image_scores = torch.zeros([len(self.directions_idx), len(predictor_list), self.num_samples])
-        shifted_image_scores = []
+        if not resume:
+            shifted_image_scores = []
+        else:
+            shifted_image_scores = torch.load(os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
+            directions_idx = list(range(direction_to_resume, self.num_directions))
         with torch.no_grad():
             for dir_index, dir in enumerate(directions_idx):
-                perf_logger.start_monitoring("direction started")
+                perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
-                    perf_logger.start_monitoring("Batch done")
                     w_shift = z + deformator[dir: dir + 1] * self.epsilon
                     images_shifted = generator(w_shift)
                     images_shifted = (images_shifted + 1) / 2
@@ -111,14 +114,14 @@ class Evaluator():
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
                             predictor(predict_images), dim=1)[:, 1])
-                        # shifted_image_scores[dir_index, predictor_idx,
-                        # batch_idx * self.z_batch_size:(batch_idx + 1) * self.z_batch_size] = torch.softmax(
-                        #     predictor(predict_images), dim=1)[:, 1]
-                    perf_logger.stop_monitoring("Batch done")
-                perf_logger.stop_monitoring("direction started")
+                torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
+                perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
-        shifted_image_scores = torch.stack(shifted_image_scores).view(len(self.directions_idx), len(predictor_list),-1)
-        shifted_image_scores = torch.stack([shifted_image_scores.view(-1, self.z_batch_size)[i::len(predictor_list)] for i in range(len(predictor_list))]).view(len(predictor_list),self.num_directions,self.num_samples).permute(1,0,2)
+        shifted_image_scores = torch.stack(shifted_image_scores).view(len(self.directions_idx), len(predictor_list), -1)
+        shifted_image_scores = torch.stack(
+            [shifted_image_scores.view(-1, self.z_batch_size)[i::len(predictor_list)] for i in
+             range(len(predictor_list))]).view(len(predictor_list), self.num_directions, self.num_samples).permute(1, 0,
+                                                                                                                   2)
 
         difference_matrix = shifted_image_scores - reference_attr_scores
         rescoring_matrix = np.round(torch.abs(torch.mean(difference_matrix, dim=-1)).cpu().numpy(), 2)
@@ -174,6 +177,7 @@ class Evaluator():
             with open(os.path.join(classifier_analysis_result_path, 'Classifier_top_directions_details.json'),
                       'w') as fp:
                 json.dump(classifier_direction_dict, fp)
+            print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
         ax = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
@@ -183,14 +187,16 @@ class Evaluator():
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'))
         plt.close()
 
-    def evaluate_directions(self, deformator):
+    def evaluate_directions(self, deformator, resume=False, resume_dir=None):
         generator = load_generator(None, model_name='pggan_celebahq1024')
-        codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
-        codes = generator.layer0.pixel_norm(codes)
-        codes = codes.detach()
-        z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
-        # z = torch.load(os.path.join(self.pretrained_path, 'z_analysis.pkl'))
-        torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
+        if not resume:
+            codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
+            codes = generator.layer0.pixel_norm(codes)
+            codes = codes.detach()
+            z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
+            torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
+        else:
+            z = torch.load(os.path.join(self.result_path, 'z_analysis.pkl'))
         z_loader = DataLoader(z, batch_size=self.z_batch_size, shuffle=False)
         perf_logger.start_monitoring("Reference attribute scores done")
         reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
@@ -200,7 +206,9 @@ class Evaluator():
                                                                                               self.all_attr_list,
                                                                                               reference_attr_scores,
                                                                                               z_loader,
-                                                                                              self.directions_idx)
+                                                                                              self.directions_idx,
+                                                                                              resume=resume,
+                                                                                              direction_to_resume= resume_dir)
         perf_logger.stop_monitoring("Metrics done")
         classifiers_to_analyse = self.all_attr_list
         top_k = 3
@@ -210,7 +218,7 @@ class Evaluator():
 
 if __name__ == '__main__':
     random_seed = 1234
-    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/closed_form_celeba_list_image_10_samples'
+    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/closed_form_celeba_list_test_resume'
     deformator_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models/deformators/ClosedForm/pggan_celebahq1024'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
@@ -219,13 +227,15 @@ if __name__ == '__main__':
     num_samples = 10
     z_batch_size = 2
     epsilon = 2
+    resume = False
+    resume_direction = 2
     layers, deformator, eigen_values = torch.load(
         os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
         map_location='cpu')
     deformator = torch.FloatTensor(deformator).cuda()
     evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_samples, z_batch_size,
                           epsilon)
-    evaluator.evaluate_directions(deformator)
+    evaluator.evaluate_directions(deformator, resume=resume,  resume_dir=resume_direction)
 
     # attributes = ['male', 'pose']
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
