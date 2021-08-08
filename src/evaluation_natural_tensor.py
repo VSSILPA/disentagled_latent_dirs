@@ -83,7 +83,7 @@ class Evaluator():
                 predict_images = F.avg_pool2d(images, 4, 4)
                 for predictor_idx, predictor in enumerate(predictor_list):
                     ref_image_scores.append(torch.softmax(
-                        predictor(predict_images), dim=1)[:, 1])
+                        predictor(predict_images), dim=1)[:, 1].detach())
         ref_image_scores = torch.stack(ref_image_scores).view(len(predictor_list), -1)
         ref_image_scores = torch.stack([ref_image_scores.view(-1, self.z_batch_size)[i::len(predictor_list)] for i in
                                         range(len(predictor_list))]).view(len(predictor_list), self.num_samples)
@@ -109,8 +109,9 @@ class Evaluator():
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
-                            predictor(predict_images), dim=1)[:, 1])
-                torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
+                            predictor(predict_images), dim=1)[:, 1].detach())
+                if dir_index % 25 == 0:
+                    torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
                 perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
         shifted_image_scores = torch.stack(shifted_image_scores).view(len(self.directions_idx), len(predictor_list), -1)
@@ -183,7 +184,7 @@ class Evaluator():
         plt.yticks(np.arange(len(dir)) + 0.5, labels=dir, fontsize=8)
         plt.tight_layout()
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
-        plt.close('all'))
+        plt.close('all')
 
     def evaluate_directions(self, deformator, resume=False, resume_dir=None):
         generator = load_generator(None, model_name='pggan_celebahq1024')
@@ -216,17 +217,17 @@ class Evaluator():
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'closedform' #['closedform','linear','ortho']
-    result_path = '/home/ubuntu/src/disentagled_latent_dirs/results/closedform_results'
-    #deformator_path = 'analysis_models/celeba_ortho-55'
-    deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
-    #file_name = '12000_model.pkl'
-    file_name ='pggan_celebahq1024.pkl'
+    algo = 'ortho' #['closedform','linear','ortho']
+    result_path = '/home/ubuntu/src/disentagled_latent_dirs/results/ortho-11_500_samples_18k'
+    deformator_path = 'analysis/celeba_ortho-11_18k/'
+    #deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
+    file_name = '18000_model.pkl'
+    #file_name ='pggan_celebahq1024.pkl'
     pretrained_models_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
 
-    num_samples = 1000
+    num_samples = 512
     z_batch_size = 8
     epsilon = 2
     resume = False
