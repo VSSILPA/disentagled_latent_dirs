@@ -15,44 +15,44 @@ import seaborn as sns
 from models.attribute_predictors import attribute_predictor, attribute_utils
 
 sns.set_theme()
-perf_logger = PerfomanceLogger()
+# perf_logger = PerfomanceLogger()
 
 
-def _set_seed(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = False
-    torch.backends.cudnn.benchmark = True
-    np.random.seed(seed)
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+# def _set_seed(seed):
+#     torch.manual_seed(seed)
+#     torch.cuda.manual_seed_all(seed)
+#     torch.backends.cudnn.deterministic = False
+#     torch.backends.cudnn.benchmark = True
+#     np.random.seed(seed)
+#     random.seed(seed)
+#     os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 class Evaluator():
-    def __init__(self, random_seed, result_path, pretrained_path, num_samples, z_batch_size, epsilon):
-        _set_seed(random_seed)
-        self.result_path = result_path
-        self.pretrained_path = pretrained_path
-        self.directions_idx = list(range(512))  ##TODOD change from 0 to 512
+    def __init__(self, opt):
+        # _set_seed(random_seed)
+        self.result_path = ''
+        self.pretrained_path = opt.evaluation.pretrained_classifier_path
+        self.directions_idx = list(range(10))  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
-        self.num_samples = num_samples
-        self.epsilon = epsilon
-        self.z_batch_size = z_batch_size
+        self.num_samples = opt.evaluation.num_samples
+        self.epsilon = opt.evaluation.eval_eps
+        self.z_batch_size = opt.evaluation.eval_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose','Receding_Hairline', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
-                           'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Heavy_Makeup',
-                           'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
-                           'No_Beard', 'Eyeglasses', 'Wearing_Earrings',  'Wearing_Hat', 'Goatee',
-                           'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Young','Gray_Hair',
-                           '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
-                           'Wavy_Hair',  'Straight_Hair', 'Wearing_Necklace', 'Bangs']
+        # self.all_attr_list = ['pose','Receding_Hairline', 'Bags_Under_Eyes', 'Smiling', 'Mouth_Slightly_Open',
+        #                    'Bald', 'Bushy_Eyebrows', 'High_Cheekbones', 'Heavy_Makeup',
+        #                    'Sideburns', 'Wearing_Lipstick', 'Chubby', 'Pale_Skin', 'Arched_Eyebrows', 'Big_Nose',
+        #                    'No_Beard', 'Eyeglasses', 'Wearing_Earrings',  'Wearing_Hat', 'Goatee',
+        #                    'Mustache', 'Narrow_Eyes', 'Double_Chin', 'Young','Gray_Hair',
+        #                    '5_o_Clock_Shadow', 'Big_Lips', 'Rosy_Cheeks', 'Wearing_Necktie', 'Male', 'Blurry',
+        #                    'Wavy_Hair',  'Straight_Hair', 'Wearing_Necklace', 'Bangs']
         #removed = ['Attractive','Black_Hair' ,'Brown_Hair , 'Blond_Hair',Pointy_Nose ,'Wavy_Hair','Oval_Face']
         
-        
+        self.all_attr_list = ['pose', 'eyeglasses', 'male', 'smiling', 'young']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
-    def _get_predictor_list(self, attr_list, source='nvidia'):
+    def _get_predictor_list(self, attr_list, source='not_nvidia'):
         predictor_list = []
         if source == 'nvidia':
             predictor = attribute_predictor.get_classifier(
@@ -101,7 +101,7 @@ class Evaluator():
             directions_idx = list(range(direction_to_resume, self.num_directions))
         with torch.no_grad():
             for dir_index, dir in enumerate(directions_idx):
-                perf_logger.start_monitoring("Direction " + str(dir) + " completed")
+                # perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
                     w_shift = z + deformator[dir: dir + 1] * self.epsilon
                     images_shifted = generator(w_shift)
@@ -110,9 +110,9 @@ class Evaluator():
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
                             predictor(predict_images), dim=1)[:, 1].detach())
-                if dir_index % 25 == 0:
-                    torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
-                perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
+                # if dir_index % 25 == 0:
+                #     torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
+                # perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
         shifted_image_scores = torch.stack(shifted_image_scores).view(len(self.directions_idx), len(predictor_list), -1)
         shifted_image_scores = torch.stack(
@@ -174,13 +174,16 @@ class Evaluator():
             with open(os.path.join(classifier_analysis_result_path, 'Classifier_top_directions_details.json'),
                       'w') as fp:
                 json.dump(classifier_direction_dict, fp)
-            print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
+            # print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        fig, ax = plt.subplots(figsize=(30, 10))
-        hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
+        # fig, ax = plt.subplots(figsize=(30, 10))
+        # fig, ax = plt.subplots(figsize=(10, 10))
+        # hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
+        ax = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
-        plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list, fontsize=8)
+        plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
+        # plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list, fontsize=12)
         plt.yticks(np.arange(len(dir)) + 0.5, labels=dir, fontsize=8)
         plt.tight_layout()
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
@@ -197,10 +200,10 @@ class Evaluator():
         else:
             z = torch.load(os.path.join(self.result_path, 'z_analysis.pkl'))
         z_loader = DataLoader(z, batch_size=self.z_batch_size, shuffle=False)
-        perf_logger.start_monitoring("Reference attribute scores done")
+        # perf_logger.start_monitoring("Reference attribute scores done")
         reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
-        perf_logger.stop_monitoring("Reference attribute scores done")
-        perf_logger.start_monitoring("Metrics done")
+        # perf_logger.stop_monitoring("Reference attribute scores done")
+        # perf_logger.start_monitoring("Metrics done")
         full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
                                                                                               self.all_attr_list,
                                                                                               reference_attr_scores,
@@ -208,49 +211,49 @@ class Evaluator():
                                                                                               self.directions_idx,
                                                                                               resume=resume,
                                                                                               direction_to_resume= resume_dir)
-        perf_logger.stop_monitoring("Metrics done")
+        # perf_logger.stop_monitoring("Metrics done")
         classifiers_to_analyse = self.all_attr_list
         top_k = 5
         self.get_classifer_analysis(classifiers_to_analyse, self.directions_idx, top_k, full_rescoring_matrix,
                                     full_attr_manipulation_acc)
 
-
-if __name__ == '__main__':
-    random_seed = 1234
-    algo = 'ortho' #['closedform','linear','ortho']
-    result_path = '/home/ubuntu/src/disentagled_latent_dirs/results/ortho-11_500_samples_18k'
-    deformator_path = 'analysis/celeba_ortho-11_18k/'
-    #deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
-    file_name = '18000_model.pkl'
-    #file_name ='pggan_celebahq1024.pkl'
-    pretrained_models_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
-    classifier_path = 'pretrained_models'
-    os.makedirs(result_path, exist_ok=True)
-
-    num_samples = 512
-    z_batch_size = 8
-    epsilon = 2
-    resume = False
-    resume_direction = None ## If resume false, set None
-    if algo == 'closedform':
-        _, deformator, _ = torch.load(
-            os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
-            map_location='cpu')
-        deformator = torch.FloatTensor(deformator).cuda()
-    elif algo == 'ortho':
-        deformator = torch.load(os.path.join(pretrained_models_path, deformator_path, file_name))['deformator']['ortho_mat']
-        deformator = deformator.T
-    elif algo == 'linear':
-        deformator = torch.load(os.path.join(pretrained_models_path, deformator_path, file_name))['deformator']
-        deformator = deformator.T
-    evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_samples, z_batch_size,
-                          epsilon)
-    evaluator.evaluate_directions(deformator, resume=resume,  resume_dir=resume_direction)
-
-    # attributes = ['male', 'pose']
-    # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
-    # attr_manipulation_acc = torch.load(os.path.join(result_path, 'attribute manipulation accuracy.pkl'))
-    # direction_idx = [1, 2]
-    # attr_vs_direction = {'male': 1, 'pose': 2}
-    # evaluator.get_partial_metrics(attributes, direction_idx, attr_vs_direction, rescoring_matrix,
-    #                     attr_manipulation_acc)
+#
+# if __name__ == '__main__':
+#     random_seed = 1234
+#     algo = 'ortho' #['closedform','linear','ortho']
+#     result_path = '/home/ubuntu/src/disentagled_latent_dirs/results/ortho-11_500_samples_18k'
+#     deformator_path = 'analysis/celeba_ortho-11_18k/'
+#     #deformator_path = 'deformators/ClosedForm/pggan_celebahq1024'
+#     file_name = '18000_model.pkl'
+#     #file_name ='pggan_celebahq1024.pkl'
+#     pretrained_models_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
+#     classifier_path = 'pretrained_models'
+#     os.makedirs(result_path, exist_ok=True)
+#
+#     num_samples = 512
+#     z_batch_size = 8
+#     epsilon = 2
+#     # resume = False
+#     # resume_direction = None ## If resume false, set None
+#     # if algo == 'closedform':
+#     #     _, deformator, _ = torch.load(
+#     #         os.path.join(pretrained_models_path, deformator_path, 'pggan_celebahq1024.pkl'),
+#     #         map_location='cpu')
+#     #     deformator = torch.FloatTensor(deformator).cuda()
+#     # elif algo == 'ortho':
+#     #     deformator = torch.load(os.path.join(pretrained_models_path, deformator_path, file_name))['deformator']['ortho_mat']
+#     #     deformator = deformator.T
+#     # elif algo == 'linear':
+#     #     deformator = torch.load(os.path.join(pretrained_models_path, deformator_path, file_name))['deformator']
+#     #     deformator = deformator.T
+#     evaluator = Evaluator(random_seed, result_path, pretrained_models_path, num_samples, z_batch_size,
+#                           epsilon)
+#     evaluator.evaluate_directions(deformator, resume=resume,  resume_dir=resume_direction)
+#
+#     # attributes = ['male', 'pose']
+#     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
+#     # attr_manipulation_acc = torch.load(os.path.join(result_path, 'attribute manipulation accuracy.pkl'))
+#     # direction_idx = [1, 2]
+#     # attr_vs_direction = {'male': 1, 'pose': 2}
+#     # evaluator.get_partial_metrics(attributes, direction_idx, attr_vs_direction, rescoring_matrix,
+#     #                     attr_manipulation_acc)

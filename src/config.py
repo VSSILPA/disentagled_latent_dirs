@@ -66,6 +66,17 @@ opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 10
 opt.algo.ours.shift_min = 1 ##TODO Hyperparameter tuning
 
+# ---------------------------------------------------------------------------- #
+# Options for Evaluation
+# ---------------------------------------------------------------------------- #
+
+opt.evaluation = CN()
+opt.evaluation.num_samples = 1
+opt.evaluation.eval_batch_size = 1
+opt.evaluation.eval_eps = 2
+opt.evaluation.pretrained_classifier_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
+#'/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
+
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
@@ -77,6 +88,7 @@ def save_config(config, opt):
     exp_name = config['experiment_name']
     cwd = os.path.dirname(os.getcwd()) + f'/results/{exp_name}'  # project root
     opt.result_dir = cwd
+    opt.evaluation.eval_result_dir = os.path.join(opt.result_dir, 'quantitative_results')
     models_dir = cwd + '/models'  # models directory
     visualisations_dir = cwd + '/visualisations'  # directory in which images and plots are saved
     os.makedirs(cwd, exist_ok=True)
