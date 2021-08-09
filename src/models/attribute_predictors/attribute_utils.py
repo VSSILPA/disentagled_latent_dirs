@@ -52,7 +52,8 @@ class ClassifierWrapper(torch.nn.Module):
     def __init__(self, classifier_name, ckpt_path=None, device='cuda'):
         super(ClassifierWrapper, self).__init__()
         self.net = load_attribute_classifier(classifier_name, ckpt_path).eval().to(device)
-#    @torch.no_grad()
+
+    @torch.no_grad()
     @torch.cuda.amp.autocast()
     def forward(self, ims):
         # returns (N,) softmax values for binary classification
