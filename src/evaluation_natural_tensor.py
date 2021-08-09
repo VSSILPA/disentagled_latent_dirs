@@ -18,22 +18,22 @@ sns.set_theme()
 # perf_logger = PerfomanceLogger()
 
 
-# def _set_seed(seed):
-#     torch.manual_seed(seed)
-#     torch.cuda.manual_seed_all(seed)
-#     torch.backends.cudnn.deterministic = False
-#     torch.backends.cudnn.benchmark = True
-#     np.random.seed(seed)
-#     random.seed(seed)
-#     os.environ['PYTHONHASHSEED'] = str(seed)
+def _set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
+    np.random.seed(seed)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 class Evaluator():
     def __init__(self, opt):
-        # _set_seed(random_seed)
+        _set_seed(opt.random_seed)
         self.result_path = ''
         self.pretrained_path = opt.evaluation.pretrained_classifier_path
-        self.directions_idx = list(range(10))  ##TODOD change from 0 to 512
+        self.directions_idx = list(range(512))  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = opt.evaluation.num_samples
         self.epsilon = opt.evaluation.eval_eps
@@ -48,7 +48,7 @@ class Evaluator():
         #                    'Wavy_Hair',  'Straight_Hair', 'Wearing_Necklace', 'Bangs']
         #removed = ['Attractive','Black_Hair' ,'Brown_Hair , 'Blond_Hair',Pointy_Nose ,'Wavy_Hair','Oval_Face']
         
-        self.all_attr_list = ['pose', 'eyeglasses', 'male', 'smiling', 'young']
+        self.all_attr_list = ['pose', 'male', 'smiling', 'young']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -184,7 +184,7 @@ class Evaluator():
         ax.xaxis.tick_top()
         plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
         # plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list, fontsize=12)
-        plt.yticks(np.arange(len(dir)) + 0.5, labels=dir, fontsize=8)
+        plt.yticks(np.arange(len(dir)) + 0.5, labels=dir)
         plt.tight_layout()
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
         plt.close('all')
