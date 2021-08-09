@@ -56,26 +56,30 @@ opt.algo.ours = CN()
 opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps = 140001
-opt.algo.ours.batch_size = 2
+opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
-opt.algo.ours.logging_freq = 10
-opt.algo.ours.shift_min = 1 ##TODO Hyperparameter tuning
+opt.algo.ours.logging_freq = 100
+opt.algo.ours.evaluation_freq = 5000
+opt.algo.ours.shift_min = 10  #TODO Hyperparameter tuning
 
 # ---------------------------------------------------------------------------- #
 # Options for Evaluation
 # ---------------------------------------------------------------------------- #
 
 opt.evaluation = CN()
-opt.evaluation.num_samples = 1
-opt.evaluation.eval_batch_size = 1
+opt.evaluation.evaluation_freq = 5000
+opt.evaluation.num_samples = 512
+opt.evaluation.eval_batch_size = 8
 opt.evaluation.eval_eps = 2
-opt.evaluation.pretrained_classifier_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
-#'/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
+opt.evaluation.pretrained_classifier_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
+
+
+# '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
 
 
 def get_config(inputs):

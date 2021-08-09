@@ -49,19 +49,19 @@ def run_training_wrapper(configuration, opt, perf_logger):
         deformator_ranking_loss_list.append(deformator_ranking_loss)
 
         if step % opt.algo.ours.logging_freq == 0:
-            perf_logger.start_monitoring("Generating logs")
-            if opt.algo.ours.deformator_type == 'ortho':
-                directions = (deformator.ortho_mat.data.clone()).T
-            else:
-                directions = (deformator.weight.data.clone()).T
             rank_predictor_loss_avg = sum(rank_predictor_loss_list) / len(rank_predictor_loss_list)
             deformator_ranking_loss_avg = sum(deformator_ranking_loss_list) / len(deformator_ranking_loss_list)
             print("step : %d / %d Rank predictor loss : %.4f Deformator_ranking loss  %.4f " % (
                 step, opt.algo.ours.num_steps, rank_predictor_loss_avg, deformator_ranking_loss_avg))
+
+        if step > 9999 and step % opt.evaluation.evaluation_freq == 0:
+            if opt.algo.ours.deformator_type == 'ortho':
+                directions = (deformator.ortho_mat.data.clone()).T
+            else:
+                directions = (deformator.weight.data.clone()).T
             evaluator.result_path = os.path.join(opt.evaluation.eval_result_dir, str(step))
             os.makedirs(evaluator.result_path, exist_ok=True)
             evaluator.evaluate_directions(directions)
-            perf_logger.stop_monitoring("Generating logs")
 
             rank_predictor_loss_list = []
             deformator_ranking_loss_list = []
