@@ -28,22 +28,13 @@ class Trainer(object):
         rank_predictor_opt.zero_grad()
         rank_predictor.train()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim,1 , 1).cuda()
         z = torch.cat((z_, z_), dim=0)
-
-        if should_gen_classes:
-            classes = generator.mixed_classes(z.shape[0])
 
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        if should_gen_classes:
-            imgs = generator(z + shift_epsilon, classes)
-        elif self.opt.gan_type == 'StyleGAN2':
-            w = generator.mapping(z)['w']
-            w = generator.truncation(w, trunc_psi=0.7, trunc_layers=8)
-            imgs = generator.synthesis(w+shift_epsilon.unsqueeze(1).repeat(1,len(layers),1))
-        else:
-            imgs = generator(z + shift_epsilon)
+
+        imgs = generator(z + shift_epsilon)
         logits = rank_predictor(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -61,14 +52,7 @@ class Trainer(object):
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        if should_gen_classes:
-            imgs = generator(z + shift_epsilon, classes)
-        elif self.opt.gan_type == 'StyleGAN2':
-            w = generator.mapping(z)['w']
-            w = generator.truncation(w, trunc_psi=0.7, trunc_layers=8)
-            imgs = generator.synthesis(w+shift_epsilon.unsqueeze(1).repeat(1,len(layers),1))
-        else:
-            imgs = generator(z + shift_epsilon)
+        imgs = generator(z + shift_epsilon)
 
         logits = rank_predictor(imgs)
 

@@ -10,7 +10,7 @@ DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/LatentDiscovery'
 def load_generator(opt):
     model_name = opt.algo.ours.model_name
     gan_type = opt.gan_type
-    G_weights = os.path.join(GEN_CHECKPOINT_DIR, model_name + '.pkl')
+    G_weights = os.path.join(GEN_CHECKPOINT_DIR, model_name + '.pth')
     if gan_type == 'BigGAN':
         G = make_big_gan(G_weights, [239]).eval()  ##TODO 239 class
     elif gan_type in ['ProgGAN']:
@@ -24,13 +24,15 @@ def load_generator(opt):
     G.cuda().eval()
     return G
 
+
 def load_deformator(opt):
     model_name = opt.algo.ours.model_name
     deformator = LatentDeformator(shift_dim=opt.algo.ours.latent_dim,
                                   input_dim=opt.algo.ours.num_directions,
-                                  out_dim=opt.latent_dim,
+                                  out_dim=opt.algo.ours.latent_dim,
                                   type=opt.algo.ours.deformator_type,
                                   random_init=True).cuda()
-    deformator.load_state_dict(torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu')))
-    deformator.cuda()
+    deformator.load_state_dict(torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'),
+                                          map_location=torch.device('cpu')))
+    deformator.cuda().train()
     return deformator
