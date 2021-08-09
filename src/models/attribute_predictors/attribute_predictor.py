@@ -21,6 +21,7 @@ class ClassifyModel(nn.Module):
         self.backbone = get_resnet()
         self.extra_layer = nn.Linear(512, n_class)
 
+    @torch.cuda.amp.autocast()
     def forward(self, x):
         out = self.backbone(x)
         out = torch.flatten(out, 1)
