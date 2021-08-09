@@ -33,7 +33,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
 
     perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
-    generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt = models
+    generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt ,layers = models
     should_gen_classes = False
     if opt.gan_type == 'BigGAN':
         should_gen_classes = True
@@ -44,7 +44,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
     for step in range(opt.algo.ours.num_steps):
         deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \
             model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt,
-                                     should_gen_classes)
+                                     should_gen_classes, layers)
         rank_predictor_loss_list.append(rank_predictor_loss)
         deformator_ranking_loss_list.append(deformator_ranking_loss)
 

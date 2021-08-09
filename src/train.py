@@ -22,7 +22,7 @@ class Trainer(object):
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
 
-    def train_ours(self, generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes):
+    def train_ours(self, generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes,layers):
         generator.zero_grad()
         deformator.zero_grad()
         rank_predictor_opt.zero_grad()
@@ -38,6 +38,10 @@ class Trainer(object):
         shift_epsilon = deformator(epsilon)
         if should_gen_classes:
             imgs = generator(z + shift_epsilon, classes)
+        elif self.opt.gan_type == 'StyleGAN2':
+            w = generator.mapping(z)['w']
+            w = generator.truncation(w, trunc_psi=0.7, trunc_layers=8)
+            imgs = generator.synthesis(w+shift_epsilon.unsqueeze(1).repeat(1,len(layers),1))
         else:
             imgs = generator(z + shift_epsilon)
         logits = rank_predictor(imgs.detach())
@@ -59,8 +63,13 @@ class Trainer(object):
         shift_epsilon = deformator(epsilon)
         if should_gen_classes:
             imgs = generator(z + shift_epsilon, classes)
+        elif self.opt.gan_type == 'StyleGAN2':
+            w = generator.mapping(z)['w']
+            w = generator.truncation(w, trunc_psi=0.7, trunc_layers=8)
+            imgs = generator.synthesis(w+shift_epsilon.unsqueeze(1).repeat(1,len(layers),1))
         else:
             imgs = generator(z + shift_epsilon)
+
         logits = rank_predictor(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
