@@ -5,9 +5,10 @@ import random
 
 
 class Saver(object):
-    def __init__(self, config):
+    def __init__(self, config,opt):
         self.config = config
         self.experiment_name = self.config['experiment_name']
+        self.opt = opt
 
     def save_model(self, params, step):
         cwd = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}'  # project root
@@ -31,7 +32,7 @@ class Saver(object):
         return True
 
     def load_model(self, params):
-        models_dir = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/models/' + self.config['file_name']  # project root
+        models_dir = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/models/' + str(self.opt.latest_step)+'_model.pkl' # project root
         checkpoint = torch.load(models_dir)
 
         deformator, deformator_opt, rank_predictor, rank_predictor_opt = params
