@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'celeba_linear'
-    experiment_description = 'linear -1_1 eps1<eps2 best setting of synthetic'
+    experiment_name = 'celeba_ortho-10 10 lr tuning_0.001_0.0001'
+    experiment_description = 'lr_0.001_0.0001'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -37,7 +37,7 @@ else:
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment_name', type=str, default=experiment_name)
 parser.add_argument('--experiment_description', type=str, default=experiment_description)
-
+parser.add_argument('--file_name', type=str, default='14000_model.pkl', help='name of the model to be loaded')
 # ---------------------------------------------------------------------------- #
 # Options for General settings
 # ---------------------------------------------------------------------------- #
@@ -58,14 +58,13 @@ opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'laten
 opt.algo.ours.num_steps = 140001
 opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
-opt.algo.ours.deformator_lr = 0.0001
+opt.algo.ours.deformator_lr = 0.001
 opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
-opt.algo.ours.logging_freq = 100
-opt.algo.ours.evaluation_freq = 5000
-opt.algo.ours.shift_min = 10  #TODO Hyperparameter tuning
+opt.algo.ours.logging_freq = 500
+opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
 
 # ---------------------------------------------------------------------------- #
 # Options for Evaluation
@@ -73,13 +72,10 @@ opt.algo.ours.shift_min = 10  #TODO Hyperparameter tuning
 
 opt.evaluation = CN()
 opt.evaluation.evaluation_freq = 5000
-opt.evaluation.num_samples = 512
+opt.evaluation.num_samples = 1000
 opt.evaluation.eval_batch_size = 8
 opt.evaluation.eval_eps = 2
 opt.evaluation.pretrained_classifier_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
-
-
-# '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
 
 
 def get_config(inputs):
