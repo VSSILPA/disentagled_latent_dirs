@@ -44,18 +44,12 @@ def run_training_wrapper(configuration, opt, perf_logger):
     if opt.latest_step != 0:
         deformator, rank_predictor, deformator_opt, rank_predictor_opt = saver.load_model(
             (deformator, rank_predictor, deformator_opt, rank_predictor_opt))
-    for step in range(opt.latest_step, opt.algo.ours.num_steps):
+    for step in range(opt.latest_step+1, opt.algo.ours.num_steps):
         deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \
             model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt,
                                      should_gen_classes)
         rank_predictor_loss_list.append(rank_predictor_loss)
         deformator_ranking_loss_list.append(deformator_ranking_loss)
-
-        if step % opt.algo.ours.saving_freq == 0 and step != 0:
-            params = (deformator, deformator_opt, rank_predictor, rank_predictor_opt)
-            perf_logger.start_monitoring("Saving Model")
-            saver.save_model(params, step)
-            perf_logger.stop_monitoring("Saving Model")
 
         if step % opt.algo.ours.logging_freq == 0:
             rank_predictor_loss_avg = sum(rank_predictor_loss_list) / len(rank_predictor_loss_list)
@@ -74,5 +68,11 @@ def run_training_wrapper(configuration, opt, perf_logger):
             os.makedirs(evaluator.result_path, exist_ok=True)
             evaluator.evaluate_directions(directions)
             print('evaluation completed')
+
+        if step % opt.algo.ours.saving_freq == 0 and step != 0:
+            params = (deformator, deformator_opt, rank_predictor, rank_predictor_opt)
+            perf_logger.start_monitoring("Saving Model")
+            saver.save_model(params, step)
+            perf_logger.stop_monitoring("Saving Model")
 
 
