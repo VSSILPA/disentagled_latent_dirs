@@ -41,7 +41,8 @@ def run_training_wrapper(configuration, opt, perf_logger):
     deformator.train()
     rank_predictor_loss_list = []
     deformator_ranking_loss_list = []
-    for step in range(opt.algo.ours.num_steps):
+    deformator, rank_predictor, deformator_opt, rank_predictor_opt = saver.load_model((deformator, rank_predictor, deformator_opt, rank_predictor_opt))
+    for step in range(14001,opt.algo.ours.num_steps):
         deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \
             model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt,
                                      should_gen_classes)
@@ -62,7 +63,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
             rank_predictor_loss_list = []
             deformator_ranking_loss_list = []
 
-        if step >9999 and step % opt.evaluation.evaluation_freq == 0:
+        if step >19999 and step % opt.evaluation.evaluation_freq == 0:
             if opt.algo.ours.deformator_type == 'ortho':
                 directions = (deformator.ortho_mat.data.clone()).T
             else:

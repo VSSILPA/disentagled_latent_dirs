@@ -34,7 +34,7 @@ class Saver(object):
         models_dir = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/models/' + self.config['file_name']  # project root
         checkpoint = torch.load(models_dir)
 
-        deformator, deformator_opt, rank_predictor, rank_predictor_opt = params
+        deformator, rank_predictor, deformator_opt, rank_predictor_opt = params
         deformator.load_state_dict(checkpoint['deformator'])
         rank_predictor.load_state_dict(checkpoint['rank_predictor'])
         deformator_opt.load_state_dict(checkpoint['deformator_opt'])

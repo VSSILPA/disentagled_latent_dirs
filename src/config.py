@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'celeba_ortho-10 10 lr tuning_0.001'
-    experiment_description = 'lr_0.001'
+    experiment_name = 'celeba_ortho-10 10 lr tuning_0.001_0.0001'
+    experiment_description = 'lr_0.001_0.0001'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -37,7 +37,7 @@ else:
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment_name', type=str, default=experiment_name)
 parser.add_argument('--experiment_description', type=str, default=experiment_description)
-
+parser.add_argument('--file_name', type=str, default='14000_model.pkl', help='name of the model to be loaded')
 # ---------------------------------------------------------------------------- #
 # Options for General settings
 # ---------------------------------------------------------------------------- #
@@ -59,7 +59,7 @@ opt.algo.ours.num_steps = 140001
 opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.001
-opt.algo.ours.rank_predictor_lr = 0.001
+opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
