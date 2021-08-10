@@ -28,7 +28,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
     perf_logger.start_monitoring("Fetching data, models and class instantiations")
     models = get_model(opt)
     model_trainer = Trainer(configuration, opt)
-    saver = Saver(configuration)
+    saver = Saver(configuration, opt)
     evaluator = Evaluator(opt)
 
     perf_logger.stop_monitoring("Fetching data, models and class instantiations")
@@ -41,8 +41,10 @@ def run_training_wrapper(configuration, opt, perf_logger):
     deformator.train()
     rank_predictor_loss_list = []
     deformator_ranking_loss_list = []
-    deformator, rank_predictor, deformator_opt, rank_predictor_opt = saver.load_model((deformator, rank_predictor, deformator_opt, rank_predictor_opt))
-    for step in range(14001,opt.algo.ours.num_steps):
+    if opt.latest_step != 0:
+        deformator, rank_predictor, deformator_opt, rank_predictor_opt = saver.load_model(
+            (deformator, rank_predictor, deformator_opt, rank_predictor_opt))
+    for step in range(opt.latest_step, opt.algo.ours.num_steps):
         deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \
             model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt,
                                      should_gen_classes)

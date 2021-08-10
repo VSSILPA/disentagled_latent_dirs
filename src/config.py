@@ -13,6 +13,8 @@ import os
 import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
+from os import listdir
+from os.path import isfile, join
 
 test_mode = True
 if test_mode:
@@ -37,7 +39,7 @@ else:
 parser = argparse.ArgumentParser()
 parser.add_argument('--experiment_name', type=str, default=experiment_name)
 parser.add_argument('--experiment_description', type=str, default=experiment_description)
-parser.add_argument('--file_name', type=str, default='14000_model.pkl', help='name of the model to be loaded')
+
 # ---------------------------------------------------------------------------- #
 # Options for General settings
 # ---------------------------------------------------------------------------- #
@@ -47,6 +49,7 @@ opt = CN()
 opt.gan_type = 'pggan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN' ,'StyleGAN']
 # choices=['AnimeFaceS', 'ImageNet',CelebAHQ' ,'LSUN-cars', 'LSUN-cats' , 'LSUN-landscapes']
 opt.random_seed = 123
+opt.latest_step = 0
 
 # ---------------------------------------------------------------------------- #
 # Options for Ours
@@ -88,6 +91,12 @@ def save_config(config, opt):
     exp_name = config['experiment_name']
     cwd = os.path.dirname(os.getcwd()) + f'/results/{exp_name}'  # project root
     opt.result_dir = cwd
+    mypath = cwd + '/models'
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    if len(onlyfiles) != 0:
+        latest_saved_step = max([int(x.split("_")[0]) for x in onlyfiles])
+        opt.latest_step = latest_saved_step
+
     opt.evaluation.eval_result_dir = os.path.join(opt.result_dir, 'quantitative_results')
     models_dir = cwd + '/models'  # models directory
     visualisations_dir = cwd + '/visualisations'  # directory in which images and plots are saved
