@@ -3,27 +3,12 @@ import torch
 import fnmatch
 import shutil
 from typing import List, Tuple
-from torch.utils.data import Dataset
 
 
 def one_hot(dims, value, indx):
     vec = torch.zeros(dims)
     vec[indx] = value
     return vec
-
-
-class NoiseDataset(Dataset):
-    def __init__(self, latent_codes, num_samples, z_dim):
-        self.num_samples = num_samples
-        self.z_dim = z_dim
-        self.data = latent_codes
-
-    def __getitem__(self, index):
-        x = self.data[index]
-        return x
-
-    def __len__(self):
-        return len(self.data)
 
 
 def copy_files_and_create_dirs(files: List[Tuple[str, str]]) -> None:

@@ -35,7 +35,7 @@ def get_linear_out(net, im):
 
 def load_attribute_classifier(attribute, ckpt_path=None):
     if ckpt_path is None:
-        base_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models/classifiers/celebahq'
+        base_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models/classifiers/celebahq'
         attribute_pkl = os.path.join(base_path, attribute, 'net_best.pth')
         ckpt = torch.load(attribute_pkl)
     else:
@@ -52,8 +52,7 @@ class ClassifierWrapper(torch.nn.Module):
     def __init__(self, classifier_name, ckpt_path=None, device='cuda'):
         super(ClassifierWrapper, self).__init__()
         self.net = load_attribute_classifier(classifier_name, ckpt_path).eval().to(device)
-
-    @torch.no_grad()
+#    @torch.no_grad()
     @torch.cuda.amp.autocast()
     def forward(self, ims):
         # returns (N,) softmax values for binary classification

@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'celeba_ortho-10 10 lr tuning_0.001'
-    experiment_description = 'lr_0.001'
+    experiment_name = 'celeba_best_setting_src_copy'
+    experiment_description = 'hyperparameter tuning of epsilon'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -55,27 +55,16 @@ opt.algo = CN()
 opt.algo.ours = CN()
 opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
-opt.algo.ours.num_steps = 140001
+opt.algo.ours.num_steps =40001
 opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
-opt.algo.ours.deformator_lr = 0.001
-opt.algo.ours.rank_predictor_lr = 0.001
+opt.algo.ours.deformator_lr = 0.0001
+opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 500
 opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
-
-# ---------------------------------------------------------------------------- #
-# Options for Evaluation
-# ---------------------------------------------------------------------------- #
-
-opt.evaluation = CN()
-opt.evaluation.evaluation_freq = 5000
-opt.evaluation.num_samples = 1000
-opt.evaluation.eval_batch_size = 8
-opt.evaluation.eval_eps = 2
-opt.evaluation.pretrained_classifier_path = '/home/ubuntu/src/disentagled_latent_dirs/pretrained_models'
 
 
 def get_config(inputs):
@@ -88,7 +77,6 @@ def save_config(config, opt):
     exp_name = config['experiment_name']
     cwd = os.path.dirname(os.getcwd()) + f'/results/{exp_name}'  # project root
     opt.result_dir = cwd
-    opt.evaluation.eval_result_dir = os.path.join(opt.result_dir, 'quantitative_results')
     models_dir = cwd + '/models'  # models directory
     visualisations_dir = cwd + '/visualisations'  # directory in which images and plots are saved
     os.makedirs(cwd, exist_ok=True)
