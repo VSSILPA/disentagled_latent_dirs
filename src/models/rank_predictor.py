@@ -1,5 +1,6 @@
 from torch import nn
 from torchvision.models import resnet18
+import torch
 
 
 def save_hook(module, input, output):
@@ -21,11 +22,11 @@ class ResNetRankPredictor(nn.Module):
 
         self.shift_estimator = nn.Linear(512, num_dirs)
 
-#    @torch.no_grad()
-#    @torch.cuda.amp.autocast()
+    @torch.no_grad()
+    # @torch.cuda.amp.autocast()
     def forward(self, x):
         batch_size = x.shape[0]
-        self.features_extractor(x.half().cuda())
+        self.features_extractor(x.cuda())
         features = self.features.output.view([batch_size, -1])
 
         shift = self.shift_estimator(features)

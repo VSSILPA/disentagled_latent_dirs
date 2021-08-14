@@ -33,7 +33,7 @@ class Evaluator(object):
         _set_seed(random_seed)
         self.result_path = result_path
         self.pretrained_path = pretrained_path
-        self.directions_idx = [11, 2, 4, 1]  ##TODOD change from 0 to 512
+        self.directions_idx = [11, 5, 2, 1, 22]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
@@ -215,11 +215,11 @@ class Evaluator(object):
 if __name__ == '__main__':
     random_seed = 1234
     algo = 'ortho'  # ['closedform','linear','ortho']
-    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/lr_tuning/lr_0.0001_0.001/34k_analysis'
+    result_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/lr_tuning/celeba_rerun/our_best_22k'
     # deformator_path = 'analysis_models/celeba_ortho-55'
-    deformator_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/lr_tuning/lr_0.0001_0.001/models'
+    deformator_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/lr_tuning/celeba_rerun/'
     # file_name = '12000_model.pkl'
-    file_name = '34000_model.pkl'
+    file_name = '22000_model.pkl'
     pretrained_models_path = '/home/adarsh/PycharmProjects/disentagled_latent_dirs/pretrained_models'
     classifier_path = 'pretrained_models'
     os.makedirs(result_path, exist_ok=True)
