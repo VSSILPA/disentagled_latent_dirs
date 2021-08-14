@@ -10,14 +10,15 @@ import matplotlib
 import random
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-
+from torchmetrics import RetrievalMAP
+import itertools
 
 class ImageRetriever(object):
     """
 
     """
 
-    def __init__(self,transform, pool_size=1000, batch_size=64):
+    def __init__(self,rank_predictor, transform, pool_size=1000, batch_size=64):
         self.pool_size = pool_size
         self.top_k = 6
         self.batch_size = batch_size
@@ -27,14 +28,14 @@ class ImageRetriever(object):
         self.eval_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         self.img_folder = '/media/adarsh/DATA/data1024x1024/'
         self.pool_loader = self._get_pool_loader()
-        self.num_eval = 2000
+        self.num_eval = 10
+        self.encoder = rank_predictor
 
-    def get_similar_images(self, query_image, encoder):
-        # with torch.cuda.amp.autocast():
-        attributes_query_image = encoder(query_image).view(-1,512)[:, self.attr_idx]
-        attributes_pool_image = self.get_attributes_pool_images(encoder).view(-1,512)[:, self.attr_idx]
-        similar_images = self._retrieve_similar_images(attributes_query_image.view(1, -1), attributes_pool_image)
-        return similar_images
+    def get_similar_images(self, query_image):
+        attributes_query_image = self.encoder(query_image).view(-1,512)[:, self.attr_idx]
+        attributes_pool_image = self.get_attributes_pool_images(self.encoder).view(-1,512)[:, self.attr_idx]
+        similar_images, similar_image_idx = self._retrieve_similar_images(attributes_query_image.view(1, -1), attributes_pool_image)
+        return similar_images, similar_image_idx
 
     def _get_pool_loader(self):
         celeba_dataset = CelebADataset(self.img_folder, self.transform)
@@ -42,13 +43,13 @@ class ImageRetriever(object):
                                                   pin_memory=True, shuffle=False, drop_last=True)
         return pool_loader
 
-    def get_attributes_pool_images(self, encoder, cache=True):
+    def get_attributes_pool_images(self, cache=True):
         if cache:
             return torch.load('../pretrained_models/pool_representations_to_tensor.pkl')
         representations = []
 
         for batch_idx, images in enumerate(self.pool_loader):
-            representation = encoder(images.cuda())
+            representation = self.encoder(images.cuda())
             representations.append(representation.detach().cpu())
         attributes = torch.stack(representations)
         return attributes
@@ -62,7 +63,7 @@ class ImageRetriever(object):
         celeba_dataset = CelebADataset(self.img_folder, self.transform)
         similar_images = [celeba_dataset.__getitem__(idx) for idx in similar_image_idx]
         similar_images = torch.stack(similar_images)
-        return similar_images
+        return similar_images ,similar_image_idx
 
     def compute_evaluation_metrics(self):
         query_idx = [str(random.randrange(1, self.pool_size, 1)).zfill(5) for i in range(self.num_eval)]
@@ -70,21 +71,21 @@ class ImageRetriever(object):
         for idx in query_idx:
             query_image_path = self.img_folder + idx + '.jpg'
             raw_image = Image.open(query_image_path)
-            query_image = self.eval_transform(raw_image)
+            query_image = self.transform(raw_image).unsqueeze(0)
             query_image_pre_processed = F.avg_pool2d(query_image, 4, 4)
             similar_images, similar_idx = self.get_similar_images(query_image_pre_processed)
-            application.generate_plots(query_image, similar_images, similar_images)
-            similar_images_indices.append(similar_idx)
+            similar_images_indices.append(similar_idx[1:])
 
         ground_truth_query_images = self.get_attribute_labels(query_idx)
         ground_truth_retrieved_images = self.get_attribute_labels(torch.stack(similar_images_indices).view(-1).tolist())
-        ground_truth_query_images = torch.Tensor(ground_truth_query_images).unsqueeze(1).repeat(1, self.top_k)
-        ground_truth_retrieved_images = torch.FloatTensor(ground_truth_retrieved_images).view(-1, self.top_k)
-        print("finish")
+        ground_truth_query_images = torch.Tensor(ground_truth_query_images).unsqueeze(1).repeat(1, self.top_k-1).view(-1)
+        ground_truth_retrieved_images = torch.FloatTensor(ground_truth_retrieved_images).view(-1, self.top_k-1).view(-1)
+        index = [[x] * (self.top_k-1) for x in range(len(query_idx))]
+        indexes = torch.LongTensor(list(itertools.chain(*index)))
+        rmap = RetrievalMAP()
+        metric = rmap(ground_truth_retrieved_images, ground_truth_query_images.bool(), indexes=indexes)
 
-
-
-
+        print("done")
 
     def get_classifier(self, attribute_name="Male"):
         if attribute_name != 'pose':
@@ -99,9 +100,9 @@ class ImageRetriever(object):
         for idx in image_idx:
             image_path = self.img_folder + str(idx).zfill(5) + '.jpg'
             raw_image = Image.open(image_path)
-            image = self.transform(raw_image)
+            image = self.eval_transform(raw_image).unsqueeze(0)
             predictions = classifier(image.cuda())
-            attribute_labels.append(torch.argmax(torch.softmax(predictions,dim=1), dim=-1).item())
+            attribute_labels.append(torch.argmax(torch.softmax(predictions, dim=1), dim=-1).item())
         return attribute_labels
 
     def get_nearest_neighbours(self, query_image):
@@ -145,13 +146,13 @@ checkpoint = torch.load('../pretrained_models/best_model_ours/celeba_hq/18000_mo
 rank_predictor = ResNetRankPredictor(num_dirs=512)
 rank_predictor.load_state_dict(checkpoint['rank_predictor'])
 rank_predictor.cuda().eval()
-# transform = transforms.Compose(
-#             [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
 transform = transforms.Compose([transforms.ToTensor()])
-application = ImageRetriever(transform, batch_size=4)
+application = ImageRetriever(rank_predictor, transform, batch_size=4)
 query_image_path = '/media/adarsh/DATA/data1024x1024/00224.jpg'
 raw_image = Image.open(query_image_path)
 query_image = transform(raw_image).unsqueeze(0)
+application.compute_evaluation_metrics()
 # similar_images_knn = application.get_nearest_neighbours(query_image)
 similar_images_ours = application.get_similar_images(query_image, rank_predictor)
 application.generate_plots(query_image, similar_images_ours, similar_images_ours)
