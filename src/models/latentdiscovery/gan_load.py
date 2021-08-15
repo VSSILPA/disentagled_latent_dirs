@@ -63,7 +63,7 @@ class StyleGAN2Wrapper(nn.Module):
 
 
 def make_biggan_config(weights_root):
-    with open('models/BigGAN/generator_config.json') as f:
+    with open('models/latentdiscovery/BigGAN/generator_config.json') as f:
         config = json.load(f)
     config['weights_root'] = weights_root
     return config
