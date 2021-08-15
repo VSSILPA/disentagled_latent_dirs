@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'celeba_best_setting_src_copy'
-    experiment_description = 'hyperparameter tuning of epsilon'
+    experiment_name = 'anime_dataset_closed_form+ours'
+    experiment_description = 'anime dataset'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -44,7 +44,7 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
-opt.gan_type = 'pggan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN' ,'StyleGAN']
+opt.gan_type = 'StyleGAN'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN' ,'StyleGAN']
 # choices=['AnimeFaceS', 'ImageNet',CelebAHQ' ,'LSUN-cars', 'LSUN-cats' , 'LSUN-landscapes']
 opt.random_seed = 123
 
@@ -53,10 +53,10 @@ opt.random_seed = 123
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.ours = CN()
-opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
+opt.algo.ours.model_name = 'stylegan_animeface512'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps =40001
-opt.algo.ours.batch_size = 8
+opt.algo.ours.batch_size = 2
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001

@@ -19,9 +19,10 @@ from models.latentdiscovery.utils import load_deformator as load_ld_deformator
 def get_model(opt):
     if opt.algo.ours.initialisation == 'closed_form':
         generator = load_cf_generator(opt)
-        deformator = load_cf_deformator(opt) ##TODO first eigenvectos normalisation check
+        deformator, layers = load_cf_deformator(opt) ##TODO first eigenvectos normalisation check
 
     elif opt.algo.ours.initialisation == 'latent_discovery':
+        layers = None
         generator = load_ld_generator(opt)
         deformator = load_ld_deformator(opt)
 
@@ -29,4 +30,4 @@ def get_model(opt):
     rank_predictor = ResNetRankPredictor(num_dirs=opt.algo.ours.num_directions).cuda()
     rank_predictor_opt = torch.optim.Adam(rank_predictor.parameters(), lr=opt.algo.ours.rank_predictor_lr)
 
-    return generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt
+    return generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt ,layers

@@ -81,7 +81,7 @@ def load_generator(opt, model_name=''):
 def load_deformator(opt):
     model_name = opt.algo.ours.model_name
     deformator_type = opt.algo.ours.deformator_type
-    _, directions, _ = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, model_name + '.pkl'))
+    layers, directions, _ = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, model_name + '.pkl'))
     directions_T = directions.T  ## Sefa returns eigenvectors as rows, so transpose required
     if deformator_type == 'linear':
         deformator = CfLinear(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
@@ -90,4 +90,4 @@ def load_deformator(opt):
         deformator = CfOrtho(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
         deformator.ortho_mat.data = torch.FloatTensor(directions_T)
     deformator.cuda()
-    return deformator
+    return deformator ,layers
