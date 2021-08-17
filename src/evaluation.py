@@ -48,9 +48,9 @@ class Evaluator(object):
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
-    def _get_predictor_list(self, attr_list , source ='nvidia'):
+    def _get_predictor_list(self, attr_list):
         predictor_list = []
-        if source == 'nvidia':
+        for each in attr_list[:5]:
             predictor = attribute_predictor.get_classifier(
                 os.path.join(self.simple_cls_path, "classifiers", each, "weight.pkl"),
                 'cuda')
@@ -99,7 +99,8 @@ class Evaluator(object):
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
                             predictor(predict_images), dim=1)[:, 1])
-                # torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
+                if dir % 25 :
+                    torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
                 perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
         shifted_image_scores = torch.stack(shifted_image_scores).view(len(self.directions_idx), len(predictor_list), -1)
@@ -157,15 +158,16 @@ class Evaluator(object):
             torch.save(classifier_rescoring_matrix,
                        os.path.join(classifier_analysis_result_path, cls + '_rescoring_matrix.pkl'))
 
-            self.get_heat_map(classifier_rescoring_matrix, top_k_directions, attributes,
-                              classifier_analysis_result_path, classifier=cls)
+            # self.get_heat_map(classifier_rescoring_matrix, top_k_directions, attributes,
+            #                   classifier_analysis_result_path, classifier=cls)
             with open(os.path.join(classifier_analysis_result_path, 'Classifier_top_directions_details.json'),
                       'w') as fp:
                 json.dump(classifier_direction_dict, fp)
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        fig, ax = plt.subplots(figsize=(10, 10))
+        sns.set(font_scale=1.4)
+        fig, ax = plt.subplots(figsize=(35, 5))
         hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
         plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
@@ -174,7 +176,8 @@ class Evaluator(object):
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
         plt.close('all')
 
-    def evaluate_directions(self, deformator, resume=False, resume_dir=None):
+
+def evaluate_directions(self, deformator, resume=False, resume_dir=None):
         generator = load_generator(None, model_name='pggan_celebahq1024')
         if not resume:
             codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
@@ -205,19 +208,19 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'closedform'  # ['closedform','linear','ortho']
+    algo = 'ortho'  # ['closedform','linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis')
-    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ClosedForm/pggan_celebahq1024/pggan_celebahq1024.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form_ours/quantitative_analysis')
+    deformator_path = os.path.join(root_folder, 'results/celeba_hq/closed_form_ours/models/18000_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 512
-    z_batch_size = 2
+    z_batch_size = 8
     epsilon = 10
     resume = False
     resume_direction = None  ## If resume false, set None
