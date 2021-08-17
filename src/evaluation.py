@@ -3,7 +3,6 @@ import numpy as np
 import random
 import torch
 import os
-import numpy
 from src.models.closedform.utils import load_generator
 from utils import NoiseDataset
 import json
@@ -209,6 +208,8 @@ if __name__ == '__main__':
     algo = 'closedform'  # ['closedform','linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
+    else:
+        root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
     result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis')
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ClosedForm/pggan_celebahq1024/pggan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
