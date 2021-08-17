@@ -3,6 +3,7 @@ import numpy as np
 import random
 import torch
 import os
+import numpy
 from src.models.closedform.utils import load_generator
 from utils import NoiseDataset
 import json
