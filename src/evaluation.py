@@ -99,7 +99,7 @@ class Evaluator(object):
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
                             predictor(predict_images), dim=1)[:, 1])
-                if dir % 25 :
+                if dir % 25 ==0:
                     torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
                 perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
@@ -178,32 +178,32 @@ class Evaluator(object):
 
 
 def evaluate_directions(self, deformator, resume=False, resume_dir=None):
-        generator = load_generator(None, model_name='pggan_celebahq1024')
-        if not resume:
-            codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
-            codes = generator.layer0.pixel_norm(codes)
-            codes = codes.detach()
-            z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
-            torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
-        else:
-            z = torch.load(os.path.join(self.result_path, 'z_analysis.pkl'))
-        z_loader = DataLoader(z, batch_size=self.z_batch_size, shuffle=False)
-        perf_logger.start_monitoring("Reference attribute scores done")
-        reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
-        perf_logger.stop_monitoring("Reference attribute scores done")
-        perf_logger.start_monitoring("Metrics done")
-        full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
-                                                                                              self.all_attr_list,
-                                                                                              reference_attr_scores,
-                                                                                              z_loader,
-                                                                                              self.directions_idx,
-                                                                                              resume=resume,
-                                                                                              direction_to_resume=resume_dir)
-        perf_logger.stop_monitoring("Metrics done")
-        classifiers_to_analyse = self.all_attr_list
-        top_k = 5
-        self.get_classifer_analysis(classifiers_to_analyse, self.directions_idx, top_k, full_rescoring_matrix,
-                                    full_attr_manipulation_acc)
+    generator = load_generator(None, model_name='pggan_celebahq1024')
+    if not resume:
+        codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
+        codes = generator.layer0.pixel_norm(codes)
+        codes = codes.detach()
+        z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
+        torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
+    else:
+        z = torch.load(os.path.join(self.result_path, 'z_analysis.pkl'))
+    z_loader = DataLoader(z, batch_size=self.z_batch_size, shuffle=False)
+    perf_logger.start_monitoring("Reference attribute scores done")
+    reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
+    perf_logger.stop_monitoring("Reference attribute scores done")
+    perf_logger.start_monitoring("Metrics done")
+    full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
+                                                                                          self.all_attr_list,
+                                                                                          reference_attr_scores,
+                                                                                          z_loader,
+                                                                                          self.directions_idx,
+                                                                                          resume=resume,
+                                                                                          direction_to_resume=resume_dir)
+    perf_logger.stop_monitoring("Metrics done")
+    classifiers_to_analyse = self.all_attr_list
+    top_k = 5
+    self.get_classifer_analysis(classifiers_to_analyse, self.directions_idx, top_k, full_rescoring_matrix,
+                                full_attr_manipulation_acc)
 
 
 if __name__ == '__main__':
