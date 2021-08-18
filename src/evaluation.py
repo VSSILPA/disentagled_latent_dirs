@@ -34,7 +34,7 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = list(range(100))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = list(range(200))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 512
-    z_batch_size = 2
+    z_batch_size = 8
     epsilon = 10
     resume = False
     resume_direction = None  ## If resume false, set None
@@ -226,6 +226,7 @@ if __name__ == '__main__':
         deformator = torch.load(deformator_path, map_location='cpu')['linear.weight'][:200]
         bias = torch.load(deformator_path, map_location='cpu')['linear.bias'][:200]
         deformator = torch.FloatTensor(deformator).cuda()
+        bias = torch.FloatTensor(bias).cuda()
 
     elif algo == 'ortho':
         deformator = torch.load(deformator_path)['deformator']['ortho_mat']
