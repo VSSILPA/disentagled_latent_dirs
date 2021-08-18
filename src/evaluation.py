@@ -34,13 +34,13 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = [2,1,10,4,1]#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = [2, 1, 11, 1, 4]#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'male', 'young', 'smiling', 'eyeglasses']
+        self.all_attr_list = ['pose', 'male', 'young', 'eyeglasses', 'smiling']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -160,7 +160,7 @@ class Evaluator(object):
                 json.dump(classifier_direction_dict, fp)
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
-    def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
+    def get_heat_map(self2, matrix, dir, attribute_list, path, classifier='full'):
         fig, ax = plt.subplots(figsize=(10, 10))
         hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
@@ -204,13 +204,13 @@ if __name__ == '__main__':
     algo = 'closedform'  # ['closedform','linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis_epsilon_2')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis_epsilon_2_2000')
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ClosedForm/pggan_celebahq1024/pggan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
-    num_samples = 512
+    num_samples = 2000
     z_batch_size = 2
     epsilon = 2
     resume = False
