@@ -131,9 +131,9 @@ class Evaluator(object):
         self.get_heat_map(partial_rescoring_matrix, direction_idx, attributes, dir_attr_path, classifier='partial')
         for cls, dir in attr_vs_direction.items():
             acc = attr_manipulation_acc[dir, selected_attr[cls]]
-            attr_vs_direction[cls] = acc
+            attr_vs_direction[cls] = eval(str(acc))
 
-        with open(os.path.join(dir_attr_path, 'Attribute_manipulation_accuracies.json'),
+        with open(os.path.join(dir_attr_path, 'Attribute_manipulation_accuracies_partial.json'),
                   'w') as fp:
             json.dump(attr_vs_direction, fp)
         return partial_rescoring_matrix, attr_vs_direction
@@ -213,7 +213,7 @@ if __name__ == '__main__':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form_ours/quantitative_analysis')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis')
     deformator_path = os.path.join(root_folder, 'results/celeba_hq/closed_form_ours/models/18000_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
@@ -235,12 +235,12 @@ if __name__ == '__main__':
         deformator = deformator.T
     evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
                           epsilon)
-    evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)
+    # evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)
 
-    # attributes = ['male', 'pose']
-    # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
-    # attr_manipulation_acc = torch.load(os.path.join(result_path, 'attribute manipulation accuracy.pkl'))
-    # direction_idx = [1, 2]
-    # attr_vs_direction = {'male': 1, 'pose': 2}
-    # evaluator.get_partial_metrics(attributes, direction_idx, attr_vs_direction, rescoring_matrix,
-    #                     attr_manipulation_acc)
+    attributes = ['pose','male','young','smiling','eyeglasses']
+    rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
+    attr_manipulation_acc = torch.load(os.path.join(result_path, 'attribute manipulation accuracy.pkl'))
+    direction_idx = [2,1,11,4,1]
+    attr_vs_direction = OrderedDict(zip(attributes, direction_idx))
+    evaluator.get_partial_metrics(attributes, direction_idx, attr_vs_direction, rescoring_matrix,
+                        attr_manipulation_acc)
