@@ -34,17 +34,13 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = list(range(100))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = [2,1,10,4,1]#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald',
-                              'Sideburns', 'Wearing_Lipstick', 'Pale_Skin',
-                              'No_Beard', 'Wearing_Hat', 'Goatee',
-                              'Mustache', 'Double_Chin',  'Gray_Hair',
-                               'Wearing_Necktie',  'Blurry', 'Bangs']
+        self.all_attr_list = ['pose', 'male', 'young', 'smiling', 'eyeglasses']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -208,7 +204,7 @@ if __name__ == '__main__':
     algo = 'closedform'  # ['closedform','linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis_epsilon_2')
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ClosedForm/pggan_celebahq1024/pggan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
@@ -216,7 +212,7 @@ if __name__ == '__main__':
 
     num_samples = 512
     z_batch_size = 2
-    epsilon = 10
+    epsilon = 2
     resume = False
     resume_direction = None  ## If resume false, set None
     if algo == 'closedform':
@@ -232,10 +228,10 @@ if __name__ == '__main__':
                           epsilon)
     evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)
 
-    # attributes = ['male', 'pose']
+    # attributes = evaluator.all_attr_list
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
     # attr_manipulation_acc = torch.load(os.path.join(result_path, 'attribute manipulation accuracy.pkl'))
-    # direction_idx = [1, 2]
-    # attr_vs_direction = {'male': 1, 'pose': 2}
+    # direction_idx = evaluator.directions_idx
+    # attr_vs_direction = OrderedDict(zip(attributes, direction_idx))
     # evaluator.get_partial_metrics(attributes, direction_idx, attr_vs_direction, rescoring_matrix,
     #                     attr_manipulation_acc)
