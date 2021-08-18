@@ -165,7 +165,8 @@ class Evaluator(object):
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        fig, ax = plt.subplots(figsize=(10, 10))
+        sns.set(font_scale=1.4)
+        fig, ax = plt.subplots(figsize=(35, 5))
         hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
         plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
@@ -208,6 +209,8 @@ if __name__ == '__main__':
     algo = 'latent_discovery'  # ['closedform','linear','ortho','latent_discovery']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
+    else:
+        root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
     result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery/quantitative_analysis')
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/LatentDiscovery/pggan_celebahq1024/deformator_0.pt')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
@@ -223,8 +226,9 @@ if __name__ == '__main__':
         _, deformator, _ = torch.load(deformator_path, map_location='cpu')
         deformator = torch.FloatTensor(deformator).cuda()
     elif algo == 'latent_discovery':
-        deformator = torch.load(deformator_path, map_location='cpu')['linear.weight'][:200]
-        bias = torch.load(deformator_path, map_location='cpu')['linear.bias'][:200]
+        deformator = torch.load(deformator_path, map_location='cpu')['linear.weight'][:,:200]
+        deformator = deformator.T
+        bias = torch.load(deformator_path, map_location='cpu')['linear.bias']
         deformator = torch.FloatTensor(deformator).cuda()
         bias = torch.FloatTensor(bias).cuda()
 
