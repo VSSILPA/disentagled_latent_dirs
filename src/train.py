@@ -28,7 +28,8 @@ class Trainer(object):
         rank_predictor_opt.zero_grad()
         rank_predictor.train()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim, generator.dim_z[1],
+                         generator.dim_z[2]).cuda()
         z = torch.cat((z_, z_), dim=0)
 
         if should_gen_classes:
@@ -36,6 +37,8 @@ class Trainer(object):
 
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
+        shift_epsilon = shift_epsilon.unsqueeze(2)
+        shift_epsilon = shift_epsilon.unsqueeze(3)
         if should_gen_classes:
             imgs = generator(z + shift_epsilon, classes)
         else:
@@ -53,10 +56,13 @@ class Trainer(object):
         deformator.zero_grad()
         rank_predictor.eval()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim,generator.dim_z[1],
+                         generator.dim_z[2]).cuda()
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
+        shift_epsilon = shift_epsilon.unsqueeze(2)
+        shift_epsilon = shift_epsilon.unsqueeze(3)
         if should_gen_classes:
             imgs = generator(z + shift_epsilon, classes)
         else:
