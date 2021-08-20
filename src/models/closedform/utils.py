@@ -33,7 +33,7 @@ def build_generator(gan_type, resolution, **kwargs):
     raise NotImplementedError(f'Unsupported GAN type `{gan_type}`!')
 
 
-def load_generator(opt, model_name=''):
+def load_generator(opt, model_name='pggan_celebahq1024'):
     try:
         model_name = opt.algo.ours.model_name
     except AttributeError:
