@@ -208,6 +208,8 @@ if __name__ == '__main__':
     algo = 'linear'  # ['closedform','linear','ortho','latent_discovery']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
+    else:
+        root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
     result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_linear') ## ortho/linear
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/LatentDiscovery/pggan_celebahq1024/deformator_0.pt')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
