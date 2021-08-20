@@ -14,6 +14,7 @@ def load_generator(opt):
     if gan_type == 'BigGAN':
         G = make_big_gan(G_weights, [239]).eval()  ##TODO 239 class
     elif gan_type in ['ProgGAN']:
+        G_weights = os.path.join(GEN_CHECKPOINT_DIR, model_name + '.pth')
         G = make_proggan(G_weights)
     elif 'StyleGAN2' in gan_type:
         from gan_load import make_style_gan2
@@ -28,9 +29,11 @@ def load_deformator(opt):
     model_name = opt.algo.ours.model_name
     deformator = LatentDeformator(shift_dim=opt.algo.ours.latent_dim,
                                   input_dim=opt.algo.ours.num_directions,
-                                  out_dim=opt.latent_dim,
+                                  out_dim=opt.algo.ours.latent_dim,
                                   type=opt.algo.ours.deformator_type,
-                                  random_init=True).cuda()
-    deformator.load_state_dict(torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu')))
+                                  random_init=True)
+    deformator_pretrained_weights = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu'))
+    deformator_pretrained_weights['linear.weight'] = deformator_pretrained_weights['linear.weight'][:,:200]
+    deformator.load_state_dict(deformator_pretrained_weights)
     deformator.cuda()
     return deformator
