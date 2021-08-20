@@ -57,7 +57,7 @@ opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq102
 opt.algo.ours.initialisation = 'latent_discovery'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps =40001
 opt.algo.ours.batch_size = 8
-opt.algo.ours.deformator_type = 'linear'  # choices = ['linear','ortho']
+opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 200

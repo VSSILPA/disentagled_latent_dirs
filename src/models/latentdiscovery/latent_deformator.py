@@ -74,7 +74,7 @@ class LatentDeformator(nn.Module):
             x = self.act3(self.bn3(x3 + x2 + x1))
 
             out = self.fc4(x) + input
-        elif self.type == DeformatorType.LINEAR:
+        elif self.type == 'linear':
             out  = self.linear(input)
         elif self.type == DeformatorType.PROJECTIVE:
             input_norm = torch.norm(input, dim=1, keepdim=True)

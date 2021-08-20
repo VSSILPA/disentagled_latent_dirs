@@ -3,12 +3,12 @@ import torch.nn as nn
 
 
 class CfLinear(nn.Module):
-    def __init__(self, input_dim=None, out_dim=None):
+    def __init__(self, input_dim=None, out_dim=None,bias=False):
         super(CfLinear, self).__init__()
 
         self.input_dim = input_dim
         self.out_dim = out_dim
-        self.linear = torch.nn.Linear(self.input_dim, self.out_dim, bias=False)
+        self.linear = torch.nn.Linear(self.input_dim, self.out_dim, bias=bias)
 
     def forward(self, input):
         input_ = input.view([-1, self.input_dim])
