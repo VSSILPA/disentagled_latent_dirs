@@ -60,8 +60,8 @@ opt.algo.ours.batch_size = 2
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
-opt.algo.ours.num_directions = 512
-opt.algo.ours.latent_dim = 512
+opt.algo.ours.num_directions = 120
+opt.algo.ours.latent_dim = 120
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 500
 opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
