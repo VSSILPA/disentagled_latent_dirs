@@ -16,17 +16,18 @@ class CfLinear(nn.Module):
         return out
 
 
-class CfProject(nn.Module):
+class CfProjection(nn.Module):
     def __init__(self, input_dim=None, out_dim=None,bias=False):
-        super(CfProject, self).__init__()
+        super(CfProjection, self).__init__()
 
         self.input_dim = input_dim
         self.out_dim = out_dim
         self.linear = torch.nn.Linear(self.input_dim, self.out_dim, bias=bias)
 
     def forward(self, input):
-        input_ = input.view([-1, self.input_dim])
-        out = self.linear(input_)
+        input_norm = torch.norm(input, dim=1, keepdim=True)
+        out = self.linear(input)
+        out = (input_norm / torch.norm(out, dim=1, keepdim=True)) * out
         return out
 
 
