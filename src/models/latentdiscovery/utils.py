@@ -1,7 +1,7 @@
 import os
 import torch
 from .gan_load import make_big_gan, make_proggan, make_sngan
-from models.closedform.closedform_directions import CfLinear,CfOrtho
+from models.closedform.closedform_directions import CfLinear,CfOrtho, CfProj
 
 GEN_CHECKPOINT_DIR = '../pretrained_models/generators/LatentDiscovery'
 DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/LatentDiscovery'
@@ -35,5 +35,8 @@ def load_deformator(opt):
     elif opt.algo.ours.deformator_type == 'ortho':
         deformator = CfOrtho(opt.algo.ours.num_directions, opt.algo.ours.latent_dim)
         deformator.ortho_mat.data = deformator_pretrained_weights['linear.weight']
+    elif opt.algo.ours.deformator_type == 'projection':
+        deformator = CfProj((opt.algo.ours.num_directions, opt.algo.ours.latent_dim))
+        deformator.load_state_dict(deformator_pretrained_weights)
     deformator.cuda()
     return deformator
