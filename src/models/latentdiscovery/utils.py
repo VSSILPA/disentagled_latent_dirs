@@ -36,7 +36,7 @@ def load_deformator(opt):
         deformator = CfOrtho(opt.algo.ours.num_directions, opt.algo.ours.latent_dim)
         deformator.ortho_mat.data = deformator_pretrained_weights['linear.weight']
     elif opt.algo.ours.deformator_type == 'projection':
-        deformator = CfProjection((opt.algo.ours.num_directions, opt.algo.ours.latent_dim))
+        deformator = CfProjection(opt.algo.ours.num_directions, opt.algo.ours.latent_dim,bias=True)
         deformator.load_state_dict(deformator_pretrained_weights)
     deformator.cuda()
     return deformator
