@@ -31,8 +31,8 @@ class Saver(object):
         return True
 
     def load_model(self, params):
-        models_dir = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/models/' + self.config['file_name']  # project root
-        checkpoint = torch.load(models_dir)
+#        models_dir = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}' + '/models/' + self.config['file_name']  # project root
+        checkpoint = torch.load('/home/ubuntu/src/disentagled_latent_dirs/results/ld_ours_celebahq_linear/models/12000_model.pkl')
 
         deformator, deformator_opt, rank_predictor, rank_predictor_opt = params
         deformator.load_state_dict(checkpoint['deformator'])
