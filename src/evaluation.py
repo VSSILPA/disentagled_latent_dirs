@@ -3,7 +3,6 @@ import numpy as np
 import random
 import torch
 import os
-from src.models.closedform.utils import load_generator
 from utils import NoiseDataset
 import json
 from collections import OrderedDict
@@ -11,12 +10,13 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from logger import PerfomanceLogger
 import seaborn as sns
-
+from src.models.latentdiscovery.gan_load import  make_proggan
 from models.attribute_predictors import attribute_predictor, attribute_utils
 
 sns.set_theme()
 perf_logger = PerfomanceLogger()
 
+GEN_CHECKPOINT_DIR = '../pretrained_models/generators/LatentDiscovery'
 
 def _set_seed(seed):
     torch.manual_seed(seed)
@@ -92,7 +92,10 @@ class Evaluator(object):
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
-                    w_shift = z + deformator[dir: dir + 1] * self.epsilon + bias
+                    direction =deformator[dir: dir + 1]
+                    direction = direction.unsqueeze(2)
+                    direction = direction.unsqueeze(3)
+                    w_shift = z + direction*self.epsilon + bias
                     images_shifted = generator(w_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
@@ -165,8 +168,7 @@ class Evaluator(object):
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        sns.set(font_scale=1.4)
-        fig, ax = plt.subplots(figsize=(35, 5))
+        fig, ax = plt.subplots(figsize=(10, 10))
         hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
         plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
@@ -175,12 +177,12 @@ class Evaluator(object):
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
         plt.close('all')
 
-    def evaluate_directions(self, deformator,bias, resume=False, resume_dir=None):
-        generator = load_generator(None, model_name='pggan_celebahq1024')
+    def evaluate_directions(self, deformator, bias, resume=False, resume_dir=None):
+        G_weights = os.path.join(GEN_CHECKPOINT_DIR, 'pggan_celebahq1024' + '.pth')
+        generator = make_proggan(G_weights)
         if not resume:
-            codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
-            codes = generator.layer0.pixel_norm(codes)
-            codes = codes.detach()
+            codes = torch.randn(self.num_samples, generator.dim_z[0],generator.dim_z[1],
+                         generator.dim_z[2]).cuda()
             z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
             torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
         else:
@@ -206,12 +208,12 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'latent_discovery'  # ['closedform','linear','ortho','latent_discovery']
+    algo = 'linear'  # ['linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
-        root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
+        root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery/quantitative_analysis')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery/quantitative_analysis') ## ortho/linear
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/LatentDiscovery/pggan_celebahq1024/deformator_0.pt')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
@@ -222,25 +224,11 @@ if __name__ == '__main__':
     epsilon = 10
     resume = False
     resume_direction = None  ## If resume false, set None
-    if algo == 'closedform':
-        _, deformator, _ = torch.load(deformator_path, map_location='cpu')
-        deformator = torch.FloatTensor(deformator).cuda()
-    elif algo == 'latent_discovery':
-        deformator = torch.load(deformator_path, map_location='cpu')['linear.weight'][:,:200]
-        deformator = deformator.T
-        bias = torch.load(deformator_path, map_location='cpu')['linear.bias']
-        deformator = torch.FloatTensor(deformator).cuda()
-        bias = torch.FloatTensor(bias).cuda()
-
-    elif algo == 'ortho':
-        deformator = torch.load(deformator_path)['deformator']['ortho_mat']
-        deformator = deformator.T
-    elif algo == 'linear':
-        deformator = torch.load(os.path.join(deformator_path))['deformator']
-        deformator = deformator.T
-    evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
+    deformator = torch.load(os.path.join(deformator_path))['linear.weight'].T
+    bias = torch.load(os.path.join(deformator_path))['linear.bias'].T
+    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
                           epsilon)
-    evaluator.evaluate_directions(deformator,bias, resume=resume, resume_dir=resume_direction)
+    evaluator.evaluate_directions(deformator, bias, resume=resume, resume_dir=resume_direction)
 
     # attributes = ['male', 'pose']
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
