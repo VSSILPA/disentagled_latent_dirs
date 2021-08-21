@@ -96,7 +96,7 @@ class Evaluator(object):
                     direction =deformator[dir: dir + 1]
                     direction = direction.unsqueeze(2)
                     direction = direction.unsqueeze(3)
-                    w_shift = z + direction*self.epsilon + bias
+                    w_shift = z + direction*self.epsilon + bias.view(-1,512,1,1)
                     images_shifted = generator(w_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
@@ -185,7 +185,7 @@ class Evaluator(object):
         if not resume:
             codes = torch.randn(self.num_samples, generator.dim_z[0],generator.dim_z[1],
                          generator.dim_z[2]).cuda()
-            z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
+            z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.dim_z[0])
             torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
         else:
             z = torch.load(os.path.join(self.result_path, 'z_analysis.pkl'))
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
     result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_'+algo) ## ortho/linear
-    deformator_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/linear/models/20000_model.pkl')
+    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_linear/models/20000_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
