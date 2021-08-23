@@ -37,8 +37,6 @@ class Trainer(object):
 
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
         if should_gen_classes:
             imgs = generator(z + shift_epsilon, classes)
         else:

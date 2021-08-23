@@ -1,6 +1,7 @@
 import os
 import torch
 from .gan_load import make_big_gan, make_proggan, make_sngan
+from .latent_deformator import LatentDeformator
 from models.closedform.closedform_directions import CfLinear,CfOrtho, CfProjection
 
 GEN_CHECKPOINT_DIR = '../pretrained_models/generators/LatentDiscovery'
@@ -25,18 +26,14 @@ def load_generator(opt):
     G.cuda().eval()
     return G
 
-def load_deformator(opt):
+def load_deformator(opt, G):
     model_name = opt.algo.ours.model_name
-    deformator_pretrained_weights = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu'))
-    deformator_pretrained_weights['linear.weight'] = deformator_pretrained_weights['linear.weight'][:,:200]
-    if opt.algo.ours.deformator_type == 'linear':
-        deformator = CfLinear(opt.algo.ours.num_directions, opt.algo.ours.latent_dim, bias=True)
-        deformator.load_state_dict(deformator_pretrained_weights)
-    elif opt.algo.ours.deformator_type == 'ortho':
-        deformator = CfOrtho(opt.algo.ours.num_directions, opt.algo.ours.latent_dim)
-        deformator.ortho_mat.data = deformator_pretrained_weights['linear.weight']
-    elif opt.algo.ours.deformator_type == 'projection':
-        deformator = CfProjection(opt.algo.ours.num_directions, opt.algo.ours.latent_dim,bias=True)
-        deformator.load_state_dict(deformator_pretrained_weights)
+    directions = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu'))
+    deformator = LatentDeformator(shift_dim=G.dim_z,
+                                  input_dim=opt.algo.ours.num_directions,  # dimension of one-hot encoded vector
+                                  out_dim=G.dim_z[0],
+                                  type=opt.algo.ours.deformator_type,
+                                  random_init=True).cuda()
+    deformator.log_mat_half.data = directions['linear.weight']
     deformator.cuda()
     return deformator
