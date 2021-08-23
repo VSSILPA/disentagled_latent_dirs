@@ -23,7 +23,7 @@ def get_model(opt):
 
     elif opt.algo.ours.initialisation == 'latent_discovery':
         generator = load_ld_generator(opt)
-        deformator = load_ld_deformator(opt)
+        deformator = load_ld_deformator(opt, generator)
 
     deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
     rank_predictor = ResNetRankPredictor(num_dirs=opt.algo.ours.num_directions).cuda()

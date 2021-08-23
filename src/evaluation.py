@@ -167,7 +167,7 @@ class Evaluator(object):
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
         sns.set(font_scale=1.4)
-        fig, ax = plt.subplots(figsize=(35, 5))
+        fig, ax = plt.subplots(figsize=(35, 35))
         hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
         plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)

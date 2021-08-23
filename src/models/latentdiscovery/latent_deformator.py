@@ -4,6 +4,7 @@ from torch.nn import functional as F
 from enum import Enum
 import numpy as np
 from utils import *
+from models.latentdiscovery.ortho_utils import torch_expm
 
 
 
@@ -49,7 +50,7 @@ class LatentDeformator(nn.Module):
             if random_init:
                 self.linear.weight.data = 0.1 * torch.randn_like(self.linear.weight.data)
 
-        elif self.type == DeformatorType.ORTHO:
+        elif self.type == 'ortho':
             assert self.input_dim == self.out_dim, 'In/out dims must be equal for ortho'
             self.log_mat_half = nn.Parameter((1.0 if random_init else 0.001) * torch.randn(
                 [self.input_dim, self.input_dim], device='cuda'), True)
@@ -76,11 +77,11 @@ class LatentDeformator(nn.Module):
             out = self.fc4(x) + input
         elif self.type == 'linear':
             out  = self.linear(input)
-        elif self.type == DeformatorType.PROJECTIVE:
+        elif self.type == 'projection':
             input_norm = torch.norm(input, dim=1, keepdim=True)
             out = self.linear(input)
             out = (input_norm / torch.norm(out, dim=1, keepdim=True)) * out
-        elif self.type == DeformatorType.ORTHO:
+        elif self.type == 'ortho':
             mat = torch_expm((self.log_mat_half - self.log_mat_half.transpose(0, 1)).unsqueeze(0))
             out = F.linear(input, mat)
         elif self.type == DeformatorType.RANDOM:
