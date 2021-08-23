@@ -1,0 +1,116 @@
+nohup: ignoring input
+StyleGAN2 load fail: No module named 'StyleGAN2'
+algo:
+  ours:
+    batch_size: 32
+    deformator_lr: 0.0001
+    deformator_type: ortho
+    initialisation: latent_discovery
+    latent_dim: 120
+    logging_freq: 500
+    model_name: biggan_imagenet
+    num_directions: 120
+    num_steps: 40001
+    rank_predictor_lr: 0.0001
+    saving_freq: 2000
+    shift_min: 10
+gan_type: BigGAN
+random_seed: 123
+2021-08-22 18:25:34,896 - root - INFO - PerfLog |Fetching data, models and class instantiations|TT:10.751888513565063s
+2021-08-22 18:25:36,370 - root - INFO - step : 0 / 40001 Rank predictor loss : 0.7098 Deformator_ranking loss  0.6958 
+2021-08-22 18:31:01,949 - root - INFO - step : 500 / 40001 Rank predictor loss : 0.6943 Deformator_ranking loss  0.6940 
+2021-08-22 18:36:27,905 - root - INFO - step : 1000 / 40001 Rank predictor loss : 0.6898 Deformator_ranking loss  0.6898 
+2021-08-22 18:41:53,828 - root - INFO - step : 1500 / 40001 Rank predictor loss : 0.6877 Deformator_ranking loss  0.6879 
+2021-08-22 18:47:19,701 - root - INFO - step : 2000 / 40001 Rank predictor loss : 0.6865 Deformator_ranking loss  0.6868 
+2021-08-22 18:47:20,096 - root - INFO - PerfLog |Saving Model|TT:0.39505791664123535s
+2021-08-22 18:52:46,100 - root - INFO - step : 2500 / 40001 Rank predictor loss : 0.6859 Deformator_ranking loss  0.6859 
+2021-08-22 18:58:12,599 - root - INFO - step : 3000 / 40001 Rank predictor loss : 0.6853 Deformator_ranking loss  0.6852 
+2021-08-22 19:03:40,027 - root - INFO - step : 3500 / 40001 Rank predictor loss : 0.6847 Deformator_ranking loss  0.6844 
+2021-08-22 19:09:07,805 - root - INFO - step : 4000 / 40001 Rank predictor loss : 0.6842 Deformator_ranking loss  0.6839 
+2021-08-22 19:09:08,187 - root - INFO - PerfLog |Saving Model|TT:0.38117480278015137s
+2021-08-22 19:14:36,175 - root - INFO - step : 4500 / 40001 Rank predictor loss : 0.6836 Deformator_ranking loss  0.6837 
+2021-08-22 19:20:03,069 - root - INFO - step : 5000 / 40001 Rank predictor loss : 0.6835 Deformator_ranking loss  0.6831 
+2021-08-22 19:25:30,592 - root - INFO - step : 5500 / 40001 Rank predictor loss : 0.6825 Deformator_ranking loss  0.6823 
+2021-08-22 19:30:58,263 - root - INFO - step : 6000 / 40001 Rank predictor loss : 0.6822 Deformator_ranking loss  0.6823 
+2021-08-22 19:30:58,623 - root - INFO - PerfLog |Saving Model|TT:0.35930848121643066s
+2021-08-22 19:36:25,494 - root - INFO - step : 6500 / 40001 Rank predictor loss : 0.6821 Deformator_ranking loss  0.6816 
+2021-08-22 19:41:52,848 - root - INFO - step : 7000 / 40001 Rank predictor loss : 0.6816 Deformator_ranking loss  0.6814 
+2021-08-22 19:47:19,707 - root - INFO - step : 7500 / 40001 Rank predictor loss : 0.6812 Deformator_ranking loss  0.6811 
+2021-08-22 19:52:46,662 - root - INFO - step : 8000 / 40001 Rank predictor loss : 0.6808 Deformator_ranking loss  0.6807 
+2021-08-22 19:52:47,032 - root - INFO - PerfLog |Saving Model|TT:0.3698098659515381s
+2021-08-22 19:58:14,240 - root - INFO - step : 8500 / 40001 Rank predictor loss : 0.6805 Deformator_ranking loss  0.6803 
+2021-08-22 20:03:41,755 - root - INFO - step : 9000 / 40001 Rank predictor loss : 0.6802 Deformator_ranking loss  0.6802 
+2021-08-22 20:09:09,288 - root - INFO - step : 9500 / 40001 Rank predictor loss : 0.6800 Deformator_ranking loss  0.6797 
+2021-08-22 20:14:36,083 - root - INFO - step : 10000 / 40001 Rank predictor loss : 0.6798 Deformator_ranking loss  0.6794 
+2021-08-22 20:14:36,448 - root - INFO - PerfLog |Saving Model|TT:0.3645961284637451s
+2021-08-22 20:20:02,981 - root - INFO - step : 10500 / 40001 Rank predictor loss : 0.6796 Deformator_ranking loss  0.6793 
+2021-08-22 20:25:29,597 - root - INFO - step : 11000 / 40001 Rank predictor loss : 0.6794 Deformator_ranking loss  0.6792 
+2021-08-22 20:30:57,002 - root - INFO - step : 11500 / 40001 Rank predictor loss : 0.6789 Deformator_ranking loss  0.6789 
+2021-08-22 20:36:24,163 - root - INFO - step : 12000 / 40001 Rank predictor loss : 0.6789 Deformator_ranking loss  0.6786 
+2021-08-22 20:36:24,536 - root - INFO - PerfLog |Saving Model|TT:0.3726668357849121s
+2021-08-22 20:41:52,162 - root - INFO - step : 12500 / 40001 Rank predictor loss : 0.6786 Deformator_ranking loss  0.6787 
+2021-08-22 20:47:18,782 - root - INFO - step : 13000 / 40001 Rank predictor loss : 0.6785 Deformator_ranking loss  0.6782 
+2021-08-22 20:52:44,373 - root - INFO - step : 13500 / 40001 Rank predictor loss : 0.6780 Deformator_ranking loss  0.6782 
+2021-08-22 20:58:10,190 - root - INFO - step : 14000 / 40001 Rank predictor loss : 0.6778 Deformator_ranking loss  0.6777 
+2021-08-22 20:58:10,646 - root - INFO - PerfLog |Saving Model|TT:0.45656466484069824s
+2021-08-22 21:03:37,555 - root - INFO - step : 14500 / 40001 Rank predictor loss : 0.6779 Deformator_ranking loss  0.6774 
+2021-08-22 21:09:04,881 - root - INFO - step : 15000 / 40001 Rank predictor loss : 0.6776 Deformator_ranking loss  0.6778 
+2021-08-22 21:14:31,590 - root - INFO - step : 15500 / 40001 Rank predictor loss : 0.6773 Deformator_ranking loss  0.6774 
+2021-08-22 21:19:58,161 - root - INFO - step : 16000 / 40001 Rank predictor loss : 0.6772 Deformator_ranking loss  0.6772 
+2021-08-22 21:19:58,554 - root - INFO - PerfLog |Saving Model|TT:0.39276719093322754s
+2021-08-22 21:25:25,326 - root - INFO - step : 16500 / 40001 Rank predictor loss : 0.6772 Deformator_ranking loss  0.6769 
+2021-08-22 21:30:51,290 - root - INFO - step : 17000 / 40001 Rank predictor loss : 0.6768 Deformator_ranking loss  0.6768 
+2021-08-22 21:36:18,269 - root - INFO - step : 17500 / 40001 Rank predictor loss : 0.6768 Deformator_ranking loss  0.6768 
+2021-08-22 21:41:44,111 - root - INFO - step : 18000 / 40001 Rank predictor loss : 0.6767 Deformator_ranking loss  0.6762 
+2021-08-22 21:41:44,481 - root - INFO - PerfLog |Saving Model|TT:0.3704648017883301s
+2021-08-22 21:47:10,282 - root - INFO - step : 18500 / 40001 Rank predictor loss : 0.6764 Deformator_ranking loss  0.6764 
+2021-08-22 21:52:37,017 - root - INFO - step : 19000 / 40001 Rank predictor loss : 0.6761 Deformator_ranking loss  0.6760 
+2021-08-22 21:58:02,501 - root - INFO - step : 19500 / 40001 Rank predictor loss : 0.6763 Deformator_ranking loss  0.6757 
+2021-08-22 22:03:28,457 - root - INFO - step : 20000 / 40001 Rank predictor loss : 0.6757 Deformator_ranking loss  0.6757 
+2021-08-22 22:03:28,829 - root - INFO - PerfLog |Saving Model|TT:0.37120532989501953s
+2021-08-22 22:08:54,704 - root - INFO - step : 20500 / 40001 Rank predictor loss : 0.6759 Deformator_ranking loss  0.6755 
+2021-08-22 22:14:20,601 - root - INFO - step : 21000 / 40001 Rank predictor loss : 0.6756 Deformator_ranking loss  0.6756 
+2021-08-22 22:19:46,608 - root - INFO - step : 21500 / 40001 Rank predictor loss : 0.6751 Deformator_ranking loss  0.6756 
+2021-08-22 22:25:12,650 - root - INFO - step : 22000 / 40001 Rank predictor loss : 0.6753 Deformator_ranking loss  0.6751 
+2021-08-22 22:25:13,080 - root - INFO - PerfLog |Saving Model|TT:0.4300823211669922s
+2021-08-22 22:30:38,980 - root - INFO - step : 22500 / 40001 Rank predictor loss : 0.6753 Deformator_ranking loss  0.6753 
+2021-08-22 22:36:04,781 - root - INFO - step : 23000 / 40001 Rank predictor loss : 0.6751 Deformator_ranking loss  0.6749 
+2021-08-22 22:41:30,762 - root - INFO - step : 23500 / 40001 Rank predictor loss : 0.6749 Deformator_ranking loss  0.6749 
+2021-08-22 22:46:56,484 - root - INFO - step : 24000 / 40001 Rank predictor loss : 0.6744 Deformator_ranking loss  0.6747 
+2021-08-22 22:46:56,901 - root - INFO - PerfLog |Saving Model|TT:0.41666555404663086s
+2021-08-22 22:52:22,822 - root - INFO - step : 24500 / 40001 Rank predictor loss : 0.6748 Deformator_ranking loss  0.6744 
+2021-08-22 22:57:48,771 - root - INFO - step : 25000 / 40001 Rank predictor loss : 0.6751 Deformator_ranking loss  0.6742 
+2021-08-22 23:03:14,605 - root - INFO - step : 25500 / 40001 Rank predictor loss : 0.6746 Deformator_ranking loss  0.6748 
+2021-08-22 23:08:40,618 - root - INFO - step : 26000 / 40001 Rank predictor loss : 0.6742 Deformator_ranking loss  0.6740 
+2021-08-22 23:08:41,055 - root - INFO - PerfLog |Saving Model|TT:0.43729066848754883s
+2021-08-22 23:14:07,076 - root - INFO - step : 26500 / 40001 Rank predictor loss : 0.6744 Deformator_ranking loss  0.6743 
+2021-08-22 23:19:35,261 - root - INFO - step : 27000 / 40001 Rank predictor loss : 0.6744 Deformator_ranking loss  0.6737 
+2021-08-22 23:25:03,472 - root - INFO - step : 27500 / 40001 Rank predictor loss : 0.6741 Deformator_ranking loss  0.6735 
+2021-08-22 23:30:31,811 - root - INFO - step : 28000 / 40001 Rank predictor loss : 0.6737 Deformator_ranking loss  0.6741 
+2021-08-22 23:30:32,251 - root - INFO - PerfLog |Saving Model|TT:0.44040536880493164s
+2021-08-22 23:36:00,634 - root - INFO - step : 28500 / 40001 Rank predictor loss : 0.6739 Deformator_ranking loss  0.6734 
+2021-08-22 23:41:29,126 - root - INFO - step : 29000 / 40001 Rank predictor loss : 0.6737 Deformator_ranking loss  0.6739 
+2021-08-22 23:46:57,562 - root - INFO - step : 29500 / 40001 Rank predictor loss : 0.6737 Deformator_ranking loss  0.6735 
+2021-08-22 23:52:26,060 - root - INFO - step : 30000 / 40001 Rank predictor loss : 0.6733 Deformator_ranking loss  0.6734 
+2021-08-22 23:52:26,509 - root - INFO - PerfLog |Saving Model|TT:0.44860029220581055s
+2021-08-22 23:57:54,988 - root - INFO - step : 30500 / 40001 Rank predictor loss : 0.6733 Deformator_ranking loss  0.6733 
+2021-08-23 00:03:23,374 - root - INFO - step : 31000 / 40001 Rank predictor loss : 0.6731 Deformator_ranking loss  0.6728 
+2021-08-23 00:08:51,585 - root - INFO - step : 31500 / 40001 Rank predictor loss : 0.6732 Deformator_ranking loss  0.6727 
+2021-08-23 00:14:19,973 - root - INFO - step : 32000 / 40001 Rank predictor loss : 0.6728 Deformator_ranking loss  0.6729 
+2021-08-23 00:14:20,462 - root - INFO - PerfLog |Saving Model|TT:0.48923349380493164s
+2021-08-23 00:19:48,819 - root - INFO - step : 32500 / 40001 Rank predictor loss : 0.6729 Deformator_ranking loss  0.6726 
+2021-08-23 00:25:17,080 - root - INFO - step : 33000 / 40001 Rank predictor loss : 0.6728 Deformator_ranking loss  0.6727 
+2021-08-23 00:30:45,462 - root - INFO - step : 33500 / 40001 Rank predictor loss : 0.6729 Deformator_ranking loss  0.6727 
+2021-08-23 00:36:14,121 - root - INFO - step : 34000 / 40001 Rank predictor loss : 0.6729 Deformator_ranking loss  0.6723 
+2021-08-23 00:36:14,575 - root - INFO - PerfLog |Saving Model|TT:0.4536566734313965s
+2021-08-23 00:41:43,075 - root - INFO - step : 34500 / 40001 Rank predictor loss : 0.6727 Deformator_ranking loss  0.6723 
+2021-08-23 00:47:11,220 - root - INFO - step : 35000 / 40001 Rank predictor loss : 0.6726 Deformator_ranking loss  0.6726 
+2021-08-23 00:52:39,638 - root - INFO - step : 35500 / 40001 Rank predictor loss : 0.6726 Deformator_ranking loss  0.6724 
+2021-08-23 00:58:08,043 - root - INFO - step : 36000 / 40001 Rank predictor loss : 0.6723 Deformator_ranking loss  0.6721 
+2021-08-23 00:58:08,504 - root - INFO - PerfLog |Saving Model|TT:0.46073150634765625s
+2021-08-23 01:03:36,730 - root - INFO - step : 36500 / 40001 Rank predictor loss : 0.6723 Deformator_ranking loss  0.6723 
+2021-08-23 01:09:05,065 - root - INFO - step : 37000 / 40001 Rank predictor loss : 0.6725 Deformator_ranking loss  0.6720 
+2021-08-23 01:14:33,380 - root - INFO - step : 37500 / 40001 Rank predictor loss : 0.6723 Deformator_ranking loss  0.6718 
+2021-08-23 01:20:01,270 - root - INFO - step : 38000 / 40001 Rank predictor loss : 0.6720 Deformator_ranking loss  0.6717 
+2021-08-23 01:20:01,681 - root - INFO - PerfLog |Saving Model|TT:0.4113426208496094s
+2021-08-23 01:25:29,789 - root - INFO - step : 38500 / 40001 Rank predictor loss : 0.6721 Deformator_ranking loss  0.6717 
