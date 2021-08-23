@@ -41,11 +41,8 @@ class Evaluator(object):
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald',
-                              'Sideburns', 'Wearing_Lipstick', 'Pale_Skin',
-                              'No_Beard', 'Wearing_Hat', 'Goatee',
-                              'Mustache', 'Double_Chin',  'Gray_Hair',
-                               'Wearing_Necktie',  'Blurry', 'Bangs']
+        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald', 'Wearing_Lipstick',
+                              'No_Beard',  'Gray_Hair', 'Bangs']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -96,7 +93,7 @@ class Evaluator(object):
                     direction =deformator[dir: dir + 1]
                     direction = direction.unsqueeze(2)
                     direction = direction.unsqueeze(3)
-                    w_shift = z + direction*self.epsilon + bias.view(-1,512,1,1)
+                    w_shift = z + direction*self.epsilon + bias.view(-1,512,1,1).cuda()
                     images_shifted = generator(w_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
@@ -210,13 +207,13 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'linear'  # ['linear','ortho']
+    algo = 'ortho'  # ['linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_'+algo) ## ortho/linear
-    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_linear/models/20000_model.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_ortho_10_22k'+algo) ## ortho/linear
+    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_ortho_resume/models/22000_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
@@ -229,7 +226,7 @@ if __name__ == '__main__':
     if algo == 'ortho':
         deformator = torch.load(deformator_path)['deformator']['ortho_mat']
         deformator = deformator.T
-        bias = torch.zeros((512))
+        bias = torch.zeros((1,512,1,1))
     elif algo == 'linear':
         deformator = torch.load(os.path.join(deformator_path))['deformator']['linear.weight'].T
         bias = torch.load(os.path.join(deformator_path))['deformator']['linear.bias'].T
