@@ -16,7 +16,7 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ld_ours_celebahq_ortho_exact'
+    experiment_name = 'ld_ours_celebahq_projection_exact'
     experiment_description = 'hyperparameter tuning of epsilon'
 else:
     experiment_name = input("Enter experiment name ")
@@ -55,9 +55,9 @@ opt.algo = CN()
 opt.algo.ours = CN()
 opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'latent_discovery'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
-opt.algo.ours.num_steps =80001
-opt.algo.ours.batch_size  = 8
-opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho',projection]
+opt.algo.ours.num_steps = 0001
+opt.algo.ours.batch_size = 8
+opt.algo.ours.deformator_type = 'projection'  # choices = ['linear','ortho',projection]
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512

@@ -34,6 +34,6 @@ def load_deformator(opt, G):
                                   out_dim=G.dim_z[0],
                                   type=opt.algo.ours.deformator_type,
                                   random_init=True).cuda()
-    deformator.log_mat_half.data = directions['linear.weight']
+    deformator.load_state_dict(directions)
     deformator.cuda()
     return deformator
