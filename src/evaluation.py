@@ -3,7 +3,7 @@ import numpy as np
 import random
 import torch
 import os
-from src.models.closedform.utils import load_generator
+from models.closedform.utils import load_generator
 from utils import NoiseDataset
 import json
 from collections import OrderedDict
@@ -34,17 +34,17 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = list(range(100))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = list(range(100))  # [4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald',
+        self.all_attr_list = ['pose', 'young', 'male', 'smiling', 'eyeglasses', 'Bald',
                               'Sideburns', 'Wearing_Lipstick', 'Pale_Skin',
                               'No_Beard', 'Wearing_Hat', 'Goatee',
-                              'Mustache', 'Double_Chin',  'Gray_Hair',
-                               'Wearing_Necktie',  'Blurry', 'Bangs']
+                              'Mustache', 'Double_Chin', 'Gray_Hair',
+                              'Wearing_Necktie', 'Blurry', 'Bangs']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -57,7 +57,8 @@ class Evaluator(object):
             predictor.cuda().eval()
             predictor_list.append(predictor)
         for classifier_name in attr_list[5:]:
-            predictor = attribute_utils.ClassifierWrapper(classifier_name, ckpt_path=self.nvidia_cls_path, device='cuda')
+            predictor = attribute_utils.ClassifierWrapper(classifier_name, ckpt_path=self.nvidia_cls_path,
+                                                          device='cuda')
             predictor.cuda().eval()
             predictor_list.append(predictor)
         return predictor_list
@@ -99,7 +100,7 @@ class Evaluator(object):
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
                             predictor(predict_images), dim=1)[:, 1])
-                if dir % 25 ==0:
+                if dir % 25 == 0:
                     torch.save(shifted_image_scores, os.path.join(self.result_path, 'shifted_scores_intermediate.pkl'))
                 perf_logger.stop_monitoring("Direction " + str(dir) + " completed")
 
@@ -120,17 +121,33 @@ class Evaluator(object):
         self.get_heat_map(rescoring_matrix, directions_idx, attribute_list, self.result_path)
         return rescoring_matrix, all_dir_attr_manipulation_acc
 
-    def get_partial_metrics(self, attributes, direction_idx, attr_vs_direction, rescoring_matrix,
-                            attr_manipulation_acc):
-        dir_attr_path = os.path.join(self.result_path, 'Direction_vs_Classifier_Metrics')
+    @staticmethod
+    def get_heat_map(matrix, dir, attribute_list, path, labels, classifier='full'):
+        sns.set(font_scale=1.8)
+        sns.set(font='Times New Roman')
+        fig, ax = plt.subplots(figsize=(5, 5))
+        # plt.rcParams['font.family'] = "Times New Roman"
+        hm = sns.heatmap(matrix, annot=True, fmt=".2f",cbar = False,  cmap='Blues')
+        ax.xaxis.tick_top()
+        plt.xticks(np.arange(len(attribute_list)) + 0.5, labels= labels)
+        plt.yticks(np.arange(len(dir)) + 0.5, labels= labels, rotation=0)
+        plt.tick_params(top=False)
+        plt.tight_layout()
+        plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.svg'), dpi=300)
+        plt.close('all')
+
+    @staticmethod
+    def get_partial_metrics(result_path, attributes, direction_idx, attr_list_dict, attr_vs_direction, rescoring_matrix,
+                            labels, attr_manipulation_acc):
+        dir_attr_path = os.path.join(result_path, 'Direction_vs_Classifier_Metrics')
         os.makedirs(dir_attr_path, exist_ok=True)
-        selected_attr = {cls_key: self.attr_list_dict[cls_key] for cls_key in attributes}
+        selected_attr = {cls_key: attr_list_dict[cls_key] for cls_key in attributes}
         attr_indices = list(selected_attr.values())
         temp_matrix = rescoring_matrix[direction_idx]
         partial_rescoring_matrix = temp_matrix[:, attr_indices]
-        self.get_heat_map(partial_rescoring_matrix, direction_idx, attributes, dir_attr_path, classifier='partial')
+        Evaluator.get_heat_map(partial_rescoring_matrix, direction_idx, attributes, dir_attr_path, labels, classifier='partial')
         for cls, dir in attr_vs_direction.items():
-            acc = attr_manipulation_acc[dir, selected_attr[cls]]
+            acc = attr_manipulation_acc[dir, attr_vs_direction[cls]]
             attr_vs_direction[cls] = eval(str(acc))
 
         with open(os.path.join(dir_attr_path, 'Attribute_manipulation_accuracies_partial.json'),
@@ -164,17 +181,6 @@ class Evaluator(object):
                       'w') as fp:
                 json.dump(classifier_direction_dict, fp)
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
-
-    def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        sns.set(font_scale=1.4)
-        fig, ax = plt.subplots(figsize=(35, 5))
-        hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
-        ax.xaxis.tick_top()
-        plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
-        plt.yticks(np.arange(len(dir)) + 0.5, labels=dir)
-        plt.tight_layout()
-        plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
-        plt.close('all')
 
 
     def evaluate_directions(self, deformator, resume=False, resume_dir=None):
@@ -233,14 +239,15 @@ if __name__ == '__main__':
     elif algo == 'linear':
         deformator = torch.load(os.path.join(deformator_path))['deformator']
         deformator = deformator.T
-    evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
+    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples,
+                          z_batch_size,
                           epsilon)
     # evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)
 
-    attributes = ['pose','male','young','smiling','eyeglasses']
+    attributes = ['pose', 'male', 'young', 'smiling', 'eyeglasses']
     rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
     attr_manipulation_acc = torch.load(os.path.join(result_path, 'attribute manipulation accuracy.pkl'))
-    direction_idx = [2,1,11,4,1]
+    direction_idx = [2, 1, 11, 4, 1]
     attr_vs_direction = OrderedDict(zip(attributes, direction_idx))
-    evaluator.get_partial_metrics(attributes, direction_idx, attr_vs_direction, rescoring_matrix,
-                        attr_manipulation_acc)
+    evaluator.get_partial_metrics(result_path, attributes, direction_idx, attr_vs_direction, rescoring_matrix,
+                                  attr_manipulation_acc)
