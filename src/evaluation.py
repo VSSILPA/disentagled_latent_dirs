@@ -4,6 +4,7 @@ import random
 import torch
 import os
 from src.models.closedform.utils import load_generator
+from src.models.latentdiscovery.latent_deformator import LatentDeformator
 from utils import NoiseDataset
 import json
 from collections import OrderedDict
@@ -27,6 +28,11 @@ def _set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
+
+def one_hot(dims, value, indx):
+    vec = torch.zeros(dims)
+    vec[indx] = value
+    return vec
 
 
 class Evaluator(object):
@@ -78,7 +84,7 @@ class Evaluator(object):
         torch.save(ref_image_scores, os.path.join(self.result_path, 'reference_attribute_scores.pkl'))
         return ref_image_scores
 
-    def get_evaluation_metric_values(self, generator, deformator, bias, attribute_list, reference_attr_scores, z_loader,
+    def get_evaluation_metric_values(self, generator, deformator, attribute_list, reference_attr_scores, z_loader,
                                      directions_idx, resume=False, direction_to_resume=None):
         predictor_list = self._get_predictor_list(attribute_list)
         if not resume:
@@ -90,6 +96,7 @@ class Evaluator(object):
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
+                    latent_shift = one_hot(generator.dim_shift, epsilon, dir).cuda()
                     direction =deformator[dir: dir + 1]
                     direction = direction.unsqueeze(2)
                     direction = direction.unsqueeze(3)
@@ -176,9 +183,7 @@ class Evaluator(object):
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
         plt.close('all')
 
-    def evaluate_directions(self, deformator, bias, resume=False, resume_dir=None):
-        G_weights = os.path.join(GEN_CHECKPOINT_DIR, 'pggan_celebahq1024' + '.pth')
-        generator = make_proggan(G_weights)
+    def evaluate_directions(self, generator, deformator, resume=False, resume_dir=None):
         if not resume:
             codes = torch.randn(self.num_samples, generator.dim_z[0],generator.dim_z[1],
                          generator.dim_z[2]).cuda()
@@ -191,7 +196,7 @@ class Evaluator(object):
         reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
         perf_logger.stop_monitoring("Reference attribute scores done")
         perf_logger.start_monitoring("Metrics done")
-        full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,bias,
+        full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
                                                                                               self.all_attr_list,
                                                                                               reference_attr_scores,
                                                                                               z_loader,
@@ -230,9 +235,22 @@ if __name__ == '__main__':
     elif algo == 'linear':
         deformator = torch.load(os.path.join(deformator_path))['deformator']['linear.weight'].T
         bias = torch.load(os.path.join(deformator_path))['deformator']['linear.bias'].T
-    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
+    elif algo == 'projection':
+        G_weights = os.path.join(GEN_CHECKPOINT_DIR, 'pggan_celebahq1024' + '.pth')
+        generator = make_proggan(G_weights)
+        directions = torch.load(os.path.join(deformator_path, 'deformator_0.pt'),
+                                map_location=torch.device('cpu'))
+        deformator = LatentDeformator(shift_dim=generator.dim_z,
+                                      input_dim=512,  # dimension of one-hot encoded vector
+                                      out_dim=generator.dim_z[0],
+                                      type='projection',
+                                      random_init=True).cuda()
+        deformator.load_state_dict(directions)
+        deformator.cuda()
+    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples,
+                          z_batch_size,
                           epsilon)
-    evaluator.evaluate_directions(deformator, bias, resume=resume, resume_dir=resume_direction)
+    evaluator.evaluate_directions(generator, deformator, resume=resume, resume_dir=resume_direction)
 
     # attributes = ['male', 'pose']
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))
