@@ -96,12 +96,8 @@ class Evaluator(object):
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
-                    latent_shift = one_hot(generator.dim_shift, epsilon, dir).cuda()
-                    direction =deformator[dir: dir + 1]
-                    direction = direction.unsqueeze(2)
-                    direction = direction.unsqueeze(3)
-                    w_shift = z + direction*self.epsilon + bias.view(-1,512,1,1).cuda()
-                    images_shifted = generator(w_shift)
+                    latent_shift = deformator(one_hot(self.num_directions, epsilon, dir).cuda())
+                    images_shifted = generator(z + latent_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
                     for predictor_idx, predictor in enumerate(predictor_list):
@@ -212,19 +208,19 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'ortho'  # ['linear','ortho']
+    algo = 'projection' # ['linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
-        root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
+        root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_ortho_10_22k'+algo) ## ortho/linear
-    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_ortho_resume/models/22000_model.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_20k_proj_'+algo) ## ortho/linear
+    deformator_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/models/projection/20000_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 512
-    z_batch_size = 8
+    z_batch_size = 2
     epsilon = 10
     resume = False
     resume_direction = None  ## If resume false, set None
@@ -238,10 +234,10 @@ if __name__ == '__main__':
     elif algo == 'projection':
         G_weights = os.path.join(GEN_CHECKPOINT_DIR, 'pggan_celebahq1024' + '.pth')
         generator = make_proggan(G_weights)
-        directions = torch.load(os.path.join(deformator_path, 'deformator_0.pt'),
-                                map_location=torch.device('cpu'))
+        directions = torch.load(os.path.join(deformator_path),
+                                map_location=torch.device('cpu'))['deformator']
         deformator = LatentDeformator(shift_dim=generator.dim_z,
-                                      input_dim=512,  # dimension of one-hot encoded vector
+                                      input_dim=200,  # dimension of one-hot encoded vector
                                       out_dim=generator.dim_z[0],
                                       type='projection',
                                       random_init=True).cuda()
