@@ -3,6 +3,8 @@ import numpy as np
 import random
 import torch
 import os
+from src.models.closedform.utils import load_generator
+from src.models.latentdiscovery.latent_deformator import LatentDeformator
 from utils import NoiseDataset
 import json
 from collections import OrderedDict
@@ -27,6 +29,11 @@ def _set_seed(seed):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
 
+def one_hot(dims, value, indx):
+    vec = torch.zeros(dims)
+    vec[indx] = value
+    return vec
+
 
 class Evaluator(object):
     def __init__(self, random_seed, result_path, simple_cls_path, nvidia_cls_path, num_samples, z_batch_size, epsilon):
@@ -35,16 +42,16 @@ class Evaluator(object):
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
         self.directions_idx = list(range(200))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.latent_dim = 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald',
-                              'Sideburns', 'Wearing_Lipstick', 'Pale_Skin',
-                              'No_Beard', 'Wearing_Hat', 'Goatee',
-                              'Mustache', 'Double_Chin',  'Gray_Hair',
-                               'Wearing_Necktie',  'Blurry', 'Bangs']
+        self.all_attr_list = ['pose', 'young','male', 'smiling']
+#['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald', 'Wearing_Lipstick',
+ #                             'No_Beard',  'Gray_Hair', 'Bangs']
+
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -80,7 +87,7 @@ class Evaluator(object):
         torch.save(ref_image_scores, os.path.join(self.result_path, 'reference_attribute_scores.pkl'))
         return ref_image_scores
 
-    def get_evaluation_metric_values(self, generator, deformator,bias, attribute_list, reference_attr_scores, z_loader,
+    def get_evaluation_metric_values(self, generator, deformator, attribute_list, reference_attr_scores, z_loader,
                                      directions_idx, resume=False, direction_to_resume=None):
         predictor_list = self._get_predictor_list(attribute_list)
         if not resume:
@@ -92,11 +99,8 @@ class Evaluator(object):
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
-                    direction =deformator[dir: dir + 1]
-                    direction = direction.unsqueeze(2)
-                    direction = direction.unsqueeze(3)
-                    w_shift = z + direction*self.epsilon + bias.view(1,512,1,1)
-                    images_shifted = generator(w_shift)
+                    latent_shift = deformator(one_hot(self.latent_dim, epsilon, dir).cuda())
+                    images_shifted = generator(z + latent_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
                     for predictor_idx, predictor in enumerate(predictor_list):
@@ -168,7 +172,8 @@ class Evaluator(object):
             print('Classifier analysis for ' + cls + ' at index ' + str(cls_index) + ' completed!!')
 
     def get_heat_map(self, matrix, dir, attribute_list, path, classifier='full'):
-        fig, ax = plt.subplots(figsize=(10, 10))
+        sns.set(font_scale=1.4)
+        fig, ax = plt.subplots(figsize=(35, 35))
         hm = sns.heatmap(matrix, annot=True, fmt=".2f", cmap='Blues')
         ax.xaxis.tick_top()
         plt.xticks(np.arange(len(attribute_list)) + 0.5, labels=attribute_list)
@@ -177,9 +182,7 @@ class Evaluator(object):
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
         plt.close('all')
 
-    def evaluate_directions(self, deformator, bias, resume=False, resume_dir=None):
-        G_weights = os.path.join(GEN_CHECKPOINT_DIR, 'pggan_celebahq1024' + '.pth')
-        generator = make_proggan(G_weights)
+    def evaluate_directions(self, generator, deformator, resume=False, resume_dir=None):
         if not resume:
             codes = torch.randn(self.num_samples, generator.dim_z[0],generator.dim_z[1],
                          generator.dim_z[2]).cuda()
@@ -192,7 +195,7 @@ class Evaluator(object):
         reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
         perf_logger.stop_monitoring("Reference attribute scores done")
         perf_logger.start_monitoring("Metrics done")
-        full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,bias,
+        full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
                                                                                               self.all_attr_list,
                                                                                               reference_attr_scores,
                                                                                               z_loader,
@@ -208,7 +211,7 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'linear'  # ['linear','ortho']
+    algo = 'projection' # ['linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
     else:
@@ -224,11 +227,31 @@ if __name__ == '__main__':
     epsilon = 10
     resume = False
     resume_direction = None  ## If resume false, set None
-    deformator = torch.load(os.path.join(deformator_path))['linear.weight'].T
-    bias = torch.load(os.path.join(deformator_path))['linear.bias'].T
-    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
+    G_weights = os.path.join(GEN_CHECKPOINT_DIR, 'pggan_celebahq1024' + '.pth')
+    generator = make_proggan(G_weights)
+    if algo == 'ortho':
+        directions = torch.load(deformator_path)['deformator']['log_mat_half']
+        deformator = LatentDeformator(shift_dim=generator.dim_z,
+                                      input_dim=512,  # dimension of one-hot encoded vector
+                                      out_dim=generator.dim_z[0],
+                                      type='ortho',
+                                      random_init=True).cuda()
+        deformator.log_mat_half.data = directions
+        deformator.cuda()
+    elif algo == 'projection':
+        directions = torch.load(os.path.join(deformator_path),
+                                map_location=torch.device('cpu'))['deformator']
+        deformator = LatentDeformator(shift_dim=generator.dim_z,
+                                      input_dim=200,  # dimension of one-hot encoded vector
+                                      out_dim=generator.dim_z[0],
+                                      type='projection',
+                                      random_init=True).cuda()
+        deformator.load_state_dict(directions)
+        deformator.cuda()
+    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples,
+                          z_batch_size,
                           epsilon)
-    evaluator.evaluate_directions(deformator, bias, resume=resume, resume_dir=resume_direction)
+    evaluator.evaluate_directions(generator, deformator, resume=resume, resume_dir=resume_direction)
 
     # attributes = ['male', 'pose']
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))

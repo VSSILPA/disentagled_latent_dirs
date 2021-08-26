@@ -40,7 +40,7 @@ class LatentDeformator(nn.Module):
 
             self.fc4 = nn.Linear(inner_dim, self.out_dim)
 
-        elif self.type in [DeformatorType.LINEAR, DeformatorType.PROJECTIVE]:
+        elif self.type == 'projection':
             self.linear = nn.Linear(self.input_dim, self.out_dim, bias=bias)
             self.linear.weight.data = torch.zeros_like(self.linear.weight.data)
 
@@ -76,7 +76,7 @@ class LatentDeformator(nn.Module):
             out = self.fc4(x) + input
         elif self.type == DeformatorType.LINEAR:
             out  = self.linear(input)
-        elif self.type == DeformatorType.PROJECTIVE:
+        elif self.type == 'projection':
             input_norm = torch.norm(input, dim=1, keepdim=True)
             out = self.linear(input)
             out = (input_norm / torch.norm(out, dim=1, keepdim=True)) * out
