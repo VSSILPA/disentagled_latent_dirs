@@ -56,7 +56,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
             rank_predictor_loss_list = []
             deformator_ranking_loss_list = []
 
-        if step % opt.algo.ours.saving_freq == 0 and step != 0:
+        if step % opt.algo.ours.saving_freq == 0:
             params = (deformator, deformator_opt, rank_predictor, rank_predictor_opt)
             perf_logger.start_monitoring("Saving Model")
             saver.save_model(params, step)
