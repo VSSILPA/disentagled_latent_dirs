@@ -59,8 +59,6 @@ class Trainer(object):
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        shift_epsilon = shift_epsilon.unsqueeze(2)
-        shift_epsilon = shift_epsilon.unsqueeze(3)
         if should_gen_classes:
             imgs = generator(z + shift_epsilon, classes)
         else:
@@ -82,7 +80,7 @@ class Trainer(object):
                                     self.opt.algo.ours.latent_dim).uniform_(-self.opt.algo.ours.shift_min,
                                                                                 self.opt.algo.ours.shift_min).cuda()
 
-        epsilon[:,200:] = 0
+        epsilon[:,self.opt.algo.ours.num_directions:] = 0
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
         ground_truths = (epsilon_1 < epsilon_2).type(torch.float32).cuda()[: , :self.opt.algo.ours.num_directions]
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)

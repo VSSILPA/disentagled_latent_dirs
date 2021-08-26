@@ -48,8 +48,10 @@ class Evaluator(object):
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald', 'Wearing_Lipstick',
-                              'No_Beard',  'Gray_Hair', 'Bangs']
+        self.all_attr_list = ['pose', 'young','male', 'smiling']
+#['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald', 'Wearing_Lipstick',
+ #                             'No_Beard',  'Gray_Hair', 'Bangs']
+
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -214,8 +216,8 @@ if __name__ == '__main__':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_20k_'+algo) ## ortho/linear
-    deformator_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/models/ortho_exact/16000_model.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_short_500'+algo) ## ortho/linear
+    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_ortho_final_save_every_500/models/500_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
