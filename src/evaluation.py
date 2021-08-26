@@ -41,7 +41,7 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = list(range(200))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = list(range(10,15))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.latent_dim = 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
@@ -211,13 +211,13 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'ortho' # ['linear','ortho']
+    algo = 'projection' # ['linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_short_500'+algo) ## ortho/linear
-    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_ortho_final_save_every_500/models/500_model.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_debug'+algo) ## ortho/linear
+    deformator_path = os.path.join(root_folder, 'results/ld_ours_celebahq_debug/models/0_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
         directions = torch.load(os.path.join(deformator_path),
                                 map_location=torch.device('cpu'))['deformator']
         deformator = LatentDeformator(shift_dim=generator.dim_z,
-                                      input_dim=200,  # dimension of one-hot encoded vector
+                                      input_dim=512,  # dimension of one-hot encoded vector
                                       out_dim=generator.dim_z[0],
                                       type='projection',
                                       random_init=True).cuda()
