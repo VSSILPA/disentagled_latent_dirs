@@ -41,15 +41,14 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = list(range(200))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = list(range(10,13))#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.latent_dim = 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses',  'Bald', 'Wearing_Lipstick',
-                              'No_Beard',  'Gray_Hair', 'Bangs']
+        self.all_attr_list = ['pose', 'young','male', 'smiling', 'eyeglasses']
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
 
@@ -97,7 +96,7 @@ class Evaluator(object):
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
-                    latent_shift = deformator(one_hot(self.latent_dim, epsilon, dir).cuda())
+                    latent_shift = deformator(one_hot(200, epsilon, dir).cuda())
                     images_shifted = generator(z + latent_shift)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
@@ -209,19 +208,19 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'ortho' # ['linear','ortho']
+    algo = 'projection' # ['linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     else:
         root_folder = '/home/ubuntu/src/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_20k_'+algo) ## ortho/linear
-    deformator_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/models/ortho_exact/16000_model.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/quantitative_analysis_6_6_4000_'+algo) ## ortho/linear
+    deformator_path = os.path.join(root_folder, 'results/celeba_hq/latent_discovery_ours/projection_6_6/4000_model.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 512
-    z_batch_size = 8
+    z_batch_size = 2
     epsilon = 10
     resume = False
     resume_direction = None  ## If resume false, set None
