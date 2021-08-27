@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'ld_ours_projection_rerun'
-    experiment_description = 'hyperparameter tuning of epsilon'
+    experiment_name = 'ld_ours_with_few_dirs'
+    experiment_description = 'selecting few dirs since smiling bias'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -60,7 +60,7 @@ opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'projection'  # choices = ['linear','ortho',projection]
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
-opt.algo.ours.num_directions = 200
+opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 500
 opt.algo.ours.logging_freq = 500
