@@ -8,9 +8,13 @@ GEN_CHECKPOINT_DIR = '../pretrained_models/generators/LatentDiscovery'
 DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/LatentDiscovery'
 
 
-def load_generator(opt):
-    model_name = opt.algo.ours.model_name
-    gan_type = opt.gan_type
+def load_generator(opt, model_name='', gan_type=''):
+    try:
+        model_name = opt.algo.ours.model_name
+        gan_type = opt.gan_type
+    except AttributeError:
+        model_name = model_name
+        gan_type = gan_type
     G_weights = os.path.join(GEN_CHECKPOINT_DIR, model_name + '.pkl')
     if gan_type == 'BigGAN':
         G = make_big_gan(G_weights, [239]).eval()  ##TODO 239 class
