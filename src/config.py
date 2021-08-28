@@ -16,8 +16,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'anime_dataset_closed_form+ours'
-    experiment_description = 'anime dataset'
+    experiment_name = 'lsun_cars_closed_form+ours'
+    experiment_description = 'lsun cars'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -53,7 +53,7 @@ opt.random_seed = 123
 # ---------------------------------------------------------------------------- #
 opt.algo = CN()
 opt.algo.ours = CN()
-opt.algo.ours.model_name = 'stylegan_animeface512'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
+opt.algo.ours.model_name = 'stylegan_car512'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps =40001
 opt.algo.ours.batch_size = 2
@@ -64,7 +64,7 @@ opt.algo.ours.num_directions = 512
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 500
-opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
+opt.algo.ours.shift_min = 3 ##TODO Hyperparameter tuning
 
 
 def get_config(inputs):
