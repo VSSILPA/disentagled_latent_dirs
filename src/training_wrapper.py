@@ -13,6 +13,7 @@ from model_loader import get_model
 from train import Trainer
 from saver import Saver
 from utils import *
+from face_identity_score import compute_face_identity_score
 
 
 def run_training_wrapper(configuration, opt, perf_logger):
@@ -40,6 +41,7 @@ def run_training_wrapper(configuration, opt, perf_logger):
     deformator.train()
     rank_predictor_loss_list = []
     deformator_ranking_loss_list = []
+    face_identity_score = compute_face_identity_score(generator, deformator,opt,[12,189,16,187])
 #    deformator, rank_predictor, deformator_opt, rank_predictor_opt = saver.load_model((deformator, deformator_opt, rank_predictor, rank_predictor_opt))
     for step in range(opt.algo.ours.num_steps):
         deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \

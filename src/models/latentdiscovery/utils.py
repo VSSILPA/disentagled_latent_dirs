@@ -32,9 +32,14 @@ def load_generator(opt, model_name='', gan_type=''):
 
 def load_deformator(opt, G):
     model_name = opt.algo.ours.model_name
-    # directions = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu'))
-    new_dirs = torch.load('../pretrained_models/deformators/LatentDiscovery/selected_dirs.pt')
-    deformator = CfOrtho(opt.algo.ours.num_directions, opt.algo.ours.latent_dim).cuda()
-    deformator.ortho_mat.data = new_dirs
+    directions = torch.load(os.path.join(DEFORMATOR_CHECKPOINT_DIR, model_name, 'deformator_0.pt'), map_location=torch.device('cpu'))
+    directions['linear.weight'] = directions['linear.weight'][:,:200]
+    deformator = LatentDeformator(shift_dim=G.dim_z,
+                                  input_dim=opt.algo.ours.num_directions,  # dimension of one-hot encoded vector
+                                  out_dim=G.dim_z[0],
+                                  type=opt.algo.ours.deformator_type,
+                                  random_init=True).cuda()
+#    deformator.log_mat_half.data = directions
+    deformator.load_state_dict(directions)
     deformator.cuda()
     return deformator
