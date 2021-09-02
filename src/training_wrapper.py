@@ -53,14 +53,14 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             loss, logit_loss, shift_loss = 0, 0, 0
             for k in range(resume_step+1, opt.algo.ld.num_steps):
                 start_time = time.time()
-                deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
-                    model_trainer.train_latent_discovery(
-                        generator, deformator, shift_predictor, deformator_opt,
-                        shift_predictor_opt)
-                loss = loss + losses[0]
-                logit_loss = logit_loss + losses[1]
-                shift_loss = shift_loss + losses[2]
-                if k % opt.algo.ld.logging_freq == 0 and k != 0:
+                # deformator, shift_predictor, deformator_opt, shift_predictor_opt, losses = \
+                #     model_trainer.train_latent_discovery(
+                #         generator, deformator, shift_predictor, deformator_opt,
+                #         shift_predictor_opt)
+                # loss = loss + losses[0]
+                # logit_loss = logit_loss + losses[1]
+                # shift_loss = shift_loss + losses[2]
+                if True:
                     metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     # accuracy = evaluator.evaluate_model(generator, deformator, shift_predictor, model_trainer)
                     total_loss, logit_loss, shift_loss = losses
@@ -112,29 +112,24 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             if configuration['resume_train']:
                 resume_step = 20000
                 deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
-            deformator.train()
+            deformator.eval()
             generator.eval()
             for k in range(resume_step,opt.algo.ours.num_steps):
-                deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
-                    model_trainer.train_ours(
-                        generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                if k % opt.algo.ours.saving_freq == 0 and k != 0:
-                    params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                    perf_logger.start_monitoring("Saving Model")
-                    saver.save_model(params, k, i , algo='ours')
-                    perf_logger.stop_monitoring("Saving Model")
+                # deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
+                #     model_trainer.train_ours(
+                #         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                # if k % opt.algo.ours.saving_freq == 0 and k != 0:
+                #     params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                #     perf_logger.start_monitoring("Saving Model")
+                #     saver.save_model(params, k, i , algo='ours')
+                #     perf_logger.stop_monitoring("Saving Model")
 
                 if k % opt.algo.ours.logging_freq == 0 and k!=0:
-                    metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+                    # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    deformator_layer = torch.nn.Linear(opt.algo.ours.num_directions,
-                                                       opt.algo.ours.latent_dim)
-                    if opt.algo.ours.deformator_type == 'ortho':
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.ortho_mat.data.cpu())
-                    else:
-                        deformator_layer.weight.data = torch.FloatTensor(deformator.weight.data.cpu())
-                    visualise_results.make_interpolation_chart(i, generator, deformator_layer, shift_r=10,
-                                                               shifts_count=5)
+                    for i in range(100):
+                        visualise_results.make_interpolation_chart(i, generator, deformator, shift_r=1,
+                                                                   shifts_count=10)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
         else:
             raise NotImplementedError

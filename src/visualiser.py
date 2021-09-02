@@ -57,13 +57,11 @@ class Visualiser(object):
     def interpolate(self, generator, z, shifts_r, shifts_count, dim, directions, with_central_border=False):
         shifted_images = []
         directions.cuda()
-        for shift in np.arange(-shifts_r, shifts_r, shifts_r / shifts_count): # TODO change traversal in z space to wspace
-            if directions is not None:
-                z_deformed = z.cuda() + directions(one_hot(directions.in_features, shift, dim).cuda())
-            else:
-                z_deformed = z.cuda() + one_hot(z.shape[1:], shift, dim).cuda()
-            w = generator.style(z_deformed)
-            shifted_image = generator([w], **generator_kwargs)[0]
+        z = z.cuda()
+        for shift in np.arange(-shifts_r, shifts_r, 2*shifts_r / shifts_count): # TODO change traversal in z space to wspace
+            w = generator.style(z)
+            shift_epsilon = directions(one_hot(10, shift, dim).cuda()).cuda()
+            shifted_image = generator([w+shift_epsilon], **generator_kwargs)[0]
             if shift == 0.0 and with_central_border:
                 shifted_image = add_border(shifted_image)
             shifted_images.append(shifted_image)
@@ -92,11 +90,14 @@ class Visualiser(object):
         elif self.opt.algorithm == 'ours':
             num_directions = self.opt.algo.ours.num_directions
 
-        for i in range(num_directions):
+        list_dirs = [1,2,3,4,5,7]
+
+        for i in list_dirs:
             imgs.append(self.interpolate(generator, z, shift_r, shifts_count, i, directions))
 
         batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, 64, 64)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
+        torch.save(batch_tensor,'../results/shapes_3d/closedform/result_images'+str(i)+'.pth')
 
         save_image(batch_tensor.view(-1, self.opt.num_channels, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
