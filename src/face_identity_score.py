@@ -30,8 +30,10 @@ def compute_face_identity_score(generator, deformator, opt, attribute_idx, epsil
         for sample_idx in range(num_samples):
             z = torch.randn(opt.algo.eval.batch_size, opt.algo.ours.latent_dim, generator.dim_z[1],
                             generator.dim_z[2]).cuda()
-            shift_epsilon = deformator(one_hot(200, epsilon, attribute).cuda())
+            shift_epsilon = deformator(one_hot(200, epsilon, attribute).cuda()).view(1,-1)
             source_image = generator(z)
+            shift_epsilon = shift_epsilon.unsqueeze(2)
+            shift_epsilon = shift_epsilon.unsqueeze(3)
             shifted_image = generator(z + shift_epsilon)
             source_image = postprocess(source_image)
             shifted_image = postprocess(shifted_image)
