@@ -66,6 +66,8 @@ opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 500
 opt.algo.ours.shift_min = 10 ##TODO Hyperparameter tuning
 
+opt.algo.eval = CN()
+opt.algo.eval.batch_size = 1
 
 def get_config(inputs):
     config = parser.parse_args(inputs)
