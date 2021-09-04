@@ -98,8 +98,9 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours':
             generator,deformator, deformator_opt, cr_discriminator, cr_optimizer = models
-            initialisation = model_trainer.train_closed_form(generator)
-            deformator.ortho_mat.data = initialisation.weight
+            # initialisation = model_trainer.train_closed_form(generator)
+            # #
+            # deformator.ortho_mat.data = initialisation.weight
             deformator.cuda()
             deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
 #            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
@@ -123,12 +124,13 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
                 #     perf_logger.start_monitoring("Saving Model")
                 #     saver.save_model(params, k, i , algo='ours')
                 #     perf_logger.stop_monitoring("Saving Model")
-
-                if k % opt.algo.ours.logging_freq == 0 and k!=0:
+                deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model(
+                    (deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
+                if True:
                     # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
                     perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    for i in range(100):
-                        visualise_results.make_interpolation_chart(i, generator, deformator, shift_r=1,
+                    for img_num in range(100):
+                        visualise_results.make_interpolation_chart(i, generator, deformator,img_num ,shift_r=3,
                                                                    shifts_count=10)
                     perf_logger.stop_monitoring("Latent Traversal Visualisations")
         else:

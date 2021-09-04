@@ -67,17 +67,17 @@ class Visualiser(object):
             shifted_images.append(shifted_image)
         return torch.stack(shifted_images)
 
-    def make_interpolation_chart(self, step, generator, directions, shift_r=10, shifts_count=5):
+    def make_interpolation_chart(self, step, generator, directions,img_num, shift_r=10, shifts_count=5):
 
         file_location = self.opt.result_dir + '/visualisations/latent_traversal/'
         if not os.path.exists(file_location):
             os.makedirs(file_location)
-        path = file_location + str(step) + '.png'
+        path = file_location + str(img_num) + '.png'
 
         directions.eval()
         generator.eval()
 
-        z = torch.randn(1, generator.style_dim)
+        z = torch.load('../results/shapes_3d/closedform/latent_traversal_params_eps3/z_'+str(img_num)+'.pth')
         imgs = []
         if self.opt.algorithm == 'LD':
             num_directions = self.opt.algo.ld.num_directions
@@ -97,7 +97,9 @@ class Visualiser(object):
 
         batch_tensor = torch.stack(imgs).view(-1, self.opt.num_channels, 64, 64)
         batch_tensor = torch.clamp(batch_tensor, -1, 1)
-        torch.save(batch_tensor,'../results/shapes_3d/closedform/result_images'+str(i)+'.pth')
+        torch.save(batch_tensor,'../results/shapes_3d/closedform_ours/latent_traversal_params_eps3/result_images'+str(img_num)+'.pth')
+        # torch.save(z,
+        #            '../results/shapes_3d/closedform_ours/latent_traversal_params/z_' + str(img_num) + '.pth')
 
         save_image(batch_tensor.view(-1, self.opt.num_channels, 64, 64), path, nrow=10, normalize=True, scale_each=True, pad_value=128,
                    padding=1)
