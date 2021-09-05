@@ -19,7 +19,7 @@ def postprocess(images, min_val=-1.0, max_val=1.0):
     return images
 
 
-def compute_face_identity_score(generator, deformator, opt, attribute_idx, epsilon=8, num_samples=100):
+def compute_face_identity_score(generator, deformator, opt, attribute_idx, epsilon=3, num_samples=1000):
     cosine_similarity_metric = []
     euclidean_distance_metric = []
     face_identity_scores = {}
@@ -36,8 +36,8 @@ def compute_face_identity_score(generator, deformator, opt, attribute_idx, epsil
             shifted_image = postprocess(shifted_image)
             # source_image = (source_image.squeeze(0).permute(1, 2, 0).detach().cpu().numpy() + 1)/2
             try:
-                source_image_encoding = face_recognition.face_encodings(source_image, model='small')[0]
-                shifted_image_encoding = face_recognition.face_encodings(shifted_image, model='small')[0]
+                source_image_encoding = face_recognition.face_encodings(source_image, model='large')[0]
+                shifted_image_encoding = face_recognition.face_encodings(shifted_image, model='large')[0]
             except IndexError:
                 count = count + 1
                 print("skipped")
@@ -62,5 +62,6 @@ def compute_face_identity_score(generator, deformator, opt, attribute_idx, epsil
         face_identity_scores[str(attribute)] = {'avg_distance': avg_distance,
                                                 'avg_cosine_similarity': avg_cosine_similarity,
                                                 'accuracy': float(correct / processed)}
+        print(face_identity_scores)
 
     return face_identity_scores

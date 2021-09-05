@@ -125,7 +125,7 @@ class Evaluator(object):
     def get_heat_map(matrix, dir, attribute_list, path, labels, classifier='full'):
         sns.set(font_scale=1.8)
         sns.set(font='Times New Roman')
-        fig, ax = plt.subplots(figsize=(5, 5))
+        fig, ax = plt.subplots(figsize=(3, 3))
         # plt.rcParams['font.family'] = "Times New Roman"
         hm = sns.heatmap(matrix, annot=True, fmt=".2f",cbar = False,  cmap='Blues')
         ax.xaxis.tick_top()
@@ -133,7 +133,7 @@ class Evaluator(object):
         plt.yticks(np.arange(len(dir)) + 0.5, labels= labels, rotation=0)
         plt.tick_params(top=False)
         plt.tight_layout()
-        plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.svg'), dpi=300)
+        plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.pdf'), dpi=300)
         plt.close('all')
 
     @staticmethod
