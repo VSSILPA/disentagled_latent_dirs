@@ -10,7 +10,7 @@ class Saver(object):
         self.experiment_name = self.config['experiment_name']
         self.model_name = self.config['file_name']
 
-    def save_model(self, params, step, algo='LD'):
+    def save_model(self, params, step,gen_num, algo='LD'):
         cwd = os.path.dirname(os.getcwd()) + f'/results/{self.experiment_name}'  # project root
         models_dir = cwd + '/models/'
 
@@ -28,7 +28,7 @@ class Saver(object):
                 'np_rng_state': np.random.get_state(),
                 'random_state': random.getstate()
 
-            }, os.path.join(models_dir, str(step) + '_model.pkl'))
+            }, os.path.join(models_dir, str(step) +str(gen_num)+ '_model.pkl'))
         else:
             raise NotImplementedError
 
