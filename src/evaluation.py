@@ -123,9 +123,11 @@ class Evaluator(object):
 
     @staticmethod
     def get_heat_map(matrix, dir, attribute_list, path, labels, classifier='full'):
+        plt.rcParams['pdf.fonttype'] = 42
+        plt.rcParams['ps.fonttype'] = 42
         sns.set(font_scale=1.8)
         sns.set(font='Times New Roman')
-        fig, ax = plt.subplots(figsize=(3, 3))
+        fig, ax = plt.subplots(figsize=(4, 3))
         # plt.rcParams['font.family'] = "Times New Roman"
         hm = sns.heatmap(matrix, annot=True, fmt=".2f",cbar = False,  cmap='Blues')
         ax.xaxis.tick_top()
