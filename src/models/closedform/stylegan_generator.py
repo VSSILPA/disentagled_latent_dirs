@@ -153,6 +153,19 @@ class StyleGANGenerator(nn.Module):
         for key, val in self.synthesis.pth_to_tf_var_mapping.items():
             self.pth_to_tf_var_mapping[f'synthesis.{key}'] = val
 
+    def sample_latent(self, n_samples=1, seed=None, truncation=None):
+        if seed is None:
+            seed = np.random.randint(np.iinfo(np.int32).max)  # use (reproducible) global rand state
+
+        rng = np.random.RandomState(seed)
+        noise = torch.from_numpy(
+            rng.standard_normal(512 * n_samples).reshape(n_samples, 512)).float().to(self.device)  # [N, 512]
+
+        if self.w_primary:
+            noise = model._modules['g_mapping'].forward(noise)
+
+        return noise
+
     def forward(self,
                 z,
                 label=None,

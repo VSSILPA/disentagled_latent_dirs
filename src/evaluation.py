@@ -63,7 +63,7 @@ class Evaluator(object):
         ref_image_scores = []
         with torch.no_grad():
             for batch_idx, z in enumerate(z_loader):
-                images = generator(z)
+                images = generator.synthesis(z)['image']
                 images = (images + 1) / 2
                 predict_images = F.avg_pool2d(images, 4, 4)
                 for predictor_idx, predictor in enumerate(predictor_list):
@@ -88,8 +88,8 @@ class Evaluator(object):
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
                 for batch_idx, z in enumerate(z_loader):
-                    w_shift = z + deformator[dir: dir + 1] * self.epsilon
-                    images_shifted = generator(w_shift)
+                    w_shift = z + deformator[dir: dir + 1] * self.epsilon ##TODO DEformator directions are in rows
+                    images_shifted = generator.synthesis(w_shift)['image']
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
                     for predictor_idx, predictor in enumerate(predictor_list):
@@ -171,10 +171,13 @@ class Evaluator(object):
         plt.close('all')
 
     def evaluate_directions(self, deformator, resume=False, resume_dir=None):
-        generator = load_generator(None, model_name='pggan_celebahq1024')
+        generator = load_generator(None, model_name='stylegan_celebahq1024')
         if not resume:
             codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
-            codes = generator.layer0.pixel_norm(codes)
+            codes = generator.mapping(codes)['w']
+            codes = generator.truncation(codes,
+                                     trunc_psi=0.7,
+                                     trunc_layers=8)
             codes = codes.detach()
             z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
             torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
@@ -201,18 +204,18 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'closedform'  # ['closedform','linear','ortho']
+    algo = 'ganspace'  # ['closedform','linear','ortho']
     if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
         root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis_epsilon_2_2000')
-    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ClosedForm/pggan_celebahq1024/pggan_celebahq1024.pkl')
+    result_path = os.path.join(root_folder, 'results/celeba_hq/ganspace')
+    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ganspace/stylegan_celebahq1024/stylegan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 2000
-    z_batch_size = 2
-    epsilon = 2
+    z_batch_size = 2 ##TODO
+    epsilon = 2 ##TODO
     resume = False
     resume_direction = None  ## If resume false, set None
     if algo == 'closedform':
@@ -224,6 +227,9 @@ if __name__ == '__main__':
     elif algo == 'linear':
         deformator = torch.load(os.path.join(deformator_path))['deformator']
         deformator = deformator.T
+    elif algo == 'ganspace': ##TODO
+        deformator = torch.load(deformator_path, map_location='cpu')
+        deformator = torch.FloatTensor(deformator).cuda()
     evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
                           epsilon)
     evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)

@@ -24,4 +24,9 @@ MODEL_ZOO = {
         resolution=512,
         url='https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EWDWflY6lBpGgX0CGQpd2Z4B5wTEVamTOA9JRYne7zdCvA?e=tOzgYA&download=1',
     ),
+    'stylegan_celebahq1024': dict(
+            gan_type='stylegan',
+            resolution=1024,
+            url='https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EcCdXHddE7FOvyfmqeOyc9ABqVuWh8PQYFnV6JM1CXvFig?e=1nUYZ5&download=1',
+    ),
 }

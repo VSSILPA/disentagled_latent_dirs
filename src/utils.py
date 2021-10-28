@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from natsort import natsorted
 import numpy as np
 from PIL import Image
+from types import SimpleNamespace
 
 
 def one_hot(dims, value, indx):
@@ -118,3 +119,39 @@ class NewDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+def get_instrumented_model(model, layers, device, **kwargs):
+    model.eval()
+
+    inst = kwargs.get('inst', None)
+    if inst:
+        inst.close()
+
+    if not isinstance(layers, list):
+        layers = [layers]
+
+    # Verify given layer names
+    module_names = [name for (name, _) in model.named_modules()]
+    # for layer_name in layers:
+    #     if not layer_name in module_names:
+    #         print(f"Layer '{layer_name}' not found in model!")
+    #         print("Available layers:", '\n'.join(module_names))
+    #         raise RuntimeError(f"Unknown layer '{layer_name}''")
+
+    # Reset StyleGANs to z mode for shape annotation
+    if hasattr(model, 'use_z'):
+        model.use_z()
+
+    from netdissect.modelconfig import create_instrumented_model
+    inst = create_instrumented_model(SimpleNamespace(
+        model=model,
+        layers=layers,
+        cuda=device.type == 'cuda',
+        gen=True,
+        latent_shape=model.get_latent_shape()
+    ))
+
+    if kwargs.get('use_w', False):
+        model.use_w()
+
+    return inst

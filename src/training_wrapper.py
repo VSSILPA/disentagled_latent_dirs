@@ -33,8 +33,9 @@ def run_training_wrapper(configuration, opt, perf_logger):
     perf_logger.stop_monitoring("Fetching data, models and class instantiations")
 
     generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt = models
-    generator.generator.eval()
+    generator.eval()
     deformator.train()
     for step in range(opt.algo.ours.num_steps):
         directions = model_trainer.train_ganspace(generator)
+        torch.save(directions, opt.result_dir + '/models/ganspace_deformator.pt')
 

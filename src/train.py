@@ -23,11 +23,11 @@ class Trainer(object):
         os.environ['PYTHONHASHSEED'] = str(seed)
 
     def train_ganspace(self, generator):
-        z = torch.randn(10, generator.generator.gen.style_dim).cuda()
-        feats = generator.generator.gen.style(z)
+        z = torch.randn(self.opt.algo.gs.num_samples, generator.w_space_dim).cuda()
+        feats = generator.mapping(z)['w']
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.ours.num_directions]
-        deformator_layer = torch.nn.Linear(self.opt.algo.cf.num_directions, V.shape[1])
+        deformator_layer = torch.nn.Linear(self.opt.algo.ours.num_directions, V.shape[1])
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator
 
