@@ -34,13 +34,14 @@ def get_model(opt):
     elif opt.algo.ours.initialisation == 'ganspace':
         inst = get_instrumented_model('StyleGAN', 'celebahq', 'g_mapping', device, use_w=True, inst=None)
         generator = inst.model
-        #1_000_000,
-        pc_config = Config(components=128, n=1_000, use_w=True,
+
+        pc_config = Config(components=128, n=1_000_000, use_w=True,
                            layer='g_mapping', model=opt.gan_type, output_class='celebahq')
         dump_name = get_or_compute(pc_config, inst)
         with np.load(dump_name) as data:
             lat_comp = data['lat_comp']
             lat_mean = data['lat_mean']
+        print(dump_name)
         deformator = load_gs_deformator(opt)
         d_ours_pose, d_ours_smile, d_ours_gender, d_ours_glasses = lat_comp[7], lat_comp[14], lat_comp[1], lat_comp[5]
 
