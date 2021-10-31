@@ -37,12 +37,13 @@ class Evaluator(object):
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
         self.directions_idx = [7, 14, 1, 5]  ##TODOD change from 0 to 512
+        self.epsilons = [5,5,5,5]
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose','smiling', 'male', 'eyeglasses', ]
+        self.all_attr_list = ['pose','smiling', 'male', 'eyeglasses' ]
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
         _set_seed(self.random_seed)
@@ -66,10 +67,10 @@ class Evaluator(object):
         ref_image_scores = []
         with torch.no_grad():
             for batch_idx, z in enumerate(z_loader):
-                images = generator.sample_np(z)
-                images = torch.FloatTensor(images).permute(0, 3, 2, 1)
+                images = generator.sample_np(z).detach()
+#                images = torch.FloatTensor(images).permute(0, 3, 2, 1)
                 images = (images + 1) / 2
-                predict_images = F.avg_pool2d(images, 4, 4)
+                predict_images = F.avg_pool2d(images, 4, 4).to(device)
                 for predictor_idx, predictor in enumerate(predictor_list):
                     ref_image_scores.append(torch.softmax(
                         predictor(predict_images), dim=1)[:, 1])
@@ -94,14 +95,14 @@ class Evaluator(object):
                 delta = deformator[dir].numpy()
                 d_per_layer = torch.FloatTensor([self.normalize(delta)] * generator.get_max_latents())
                 dir_layer = attr_layers[dir_index]
+                eps = self.epsilons[dir_index]
                 for batch_idx, z in enumerate(z_loader):
                     w = [z] * generator.get_max_latents()
                     for l in range(dir_layer[0], dir_layer[1]):
-                        w[l] = w[l] + epsilon * d_per_layer[l]
-                    images_shifted = generator.sample_np(w)
-                    images_shifted = torch.FloatTensor(images_shifted).permute(0, 3, 2, 1)
+                        w[l] = w[l] + eps * (d_per_layer[l]).to(device)
+                    images_shifted = generator.sample_np(w).detach()
                     images_shifted = (images_shifted + 1) / 2
-                    predict_images = F.avg_pool2d(images_shifted, 4, 4)
+                    predict_images = F.avg_pool2d(images_shifted, 4, 4).to(device)
                     for predictor_idx, predictor in enumerate(predictor_list):
                         shifted_image_scores.append(torch.softmax(
                             predictor(predict_images), dim=1)[:, 1])
@@ -214,17 +215,17 @@ if __name__ == '__main__':
     algo = 'ganspace'  # ['closedform','linear','ortho']
     # if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
     #     root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
-    root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/ganspace')
+    root_folder = '/home/ubuntu/src/disentagled_latent_dirs/'
+    result_path = os.path.join(root_folder, 'results/celeba_hq/ganspace_working_eps5')
     deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/Ganspace/stylegan_celebahq1024/stylegan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
 
-    num_samples = 100
-    z_batch_size = 2 ##TODO
-    epsilon = 2 ##TODO
+    num_samples = 500
+    z_batch_size = 4 ##TODO
+    epsilon = 3 ##TODO
     attr_layers = [(0,7), (3, 4), (2, 6), (0, 2)]
     resume = False
     resume_direction = None  ## If resume false, set None
