@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from logger import PerfomanceLogger
 import seaborn as sns
+from ganspace.notebooks.notebook_init import *
 
 from models.attribute_predictors import attribute_predictor, attribute_utils
 
@@ -30,31 +31,33 @@ def _set_seed(seed):
 
 class Evaluator(object):
     def __init__(self, random_seed, result_path, simple_cls_path, nvidia_cls_path, num_samples, z_batch_size, epsilon):
-        _set_seed(random_seed)
+        self.random_seed = random_seed
         self.result_path = result_path
+        self.normalize = lambda t: t / np.sqrt(np.sum(t.reshape(-1) ** 2))
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = [2, 1, 11, 1, 4]#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = [7, 14, 1, 5]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose', 'male', 'young', 'eyeglasses', 'smiling']
+        self.all_attr_list = ['pose','smiling', 'male', 'eyeglasses', ]
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
+        _set_seed(self.random_seed)
 
     def _get_predictor_list(self, attr_list):
         predictor_list = []
         for each in attr_list[:5]:
             predictor = attribute_predictor.get_classifier(
                 os.path.join(self.simple_cls_path, "classifiers", each, "weight.pkl"),
-                'cuda')
-            predictor.cuda().eval()
+                device)
+            predictor.to(device).eval()
             predictor_list.append(predictor)
         for classifier_name in attr_list[5:]:
-            predictor = attribute_utils.ClassifierWrapper(classifier_name, ckpt_path=self.nvidia_cls_path, device='cuda')
-            predictor.cuda().eval()
+            predictor = attribute_utils.ClassifierWrapper(classifier_name, ckpt_path=self.nvidia_cls_path, device=device)
+            predictor.to(device).eval()
             predictor_list.append(predictor)
         return predictor_list
 
@@ -63,7 +66,8 @@ class Evaluator(object):
         ref_image_scores = []
         with torch.no_grad():
             for batch_idx, z in enumerate(z_loader):
-                images = generator.synthesis(z)['image']
+                images = generator.sample_np(z)
+                images = torch.FloatTensor(images).permute(0, 3, 2, 1)
                 images = (images + 1) / 2
                 predict_images = F.avg_pool2d(images, 4, 4)
                 for predictor_idx, predictor in enumerate(predictor_list):
@@ -77,7 +81,7 @@ class Evaluator(object):
         return ref_image_scores
 
     def get_evaluation_metric_values(self, generator, deformator, attribute_list, reference_attr_scores, z_loader,
-                                     directions_idx, resume=False, direction_to_resume=None):
+                                     directions_idx, attr_layers, resume=False, direction_to_resume=None):
         predictor_list = self._get_predictor_list(attribute_list)
         if not resume:
             shifted_image_scores = []
@@ -87,9 +91,15 @@ class Evaluator(object):
         with torch.no_grad():
             for dir_index, dir in enumerate(directions_idx):
                 perf_logger.start_monitoring("Direction " + str(dir) + " completed")
+                delta = deformator[dir].numpy()
+                d_per_layer = torch.FloatTensor([self.normalize(delta)] * generator.get_max_latents())
+                dir_layer = attr_layers[dir_index]
                 for batch_idx, z in enumerate(z_loader):
-                    w_shift = z + deformator[dir: dir + 1] * self.epsilon ##TODO DEformator directions are in rows
-                    images_shifted = generator.synthesis(w_shift)['image']
+                    w = [z] * generator.get_max_latents()
+                    for l in range(dir_layer[0], dir_layer[1]):
+                        w[l] = w[l] + epsilon * d_per_layer[l]
+                    images_shifted = generator.sample_np(w)
+                    images_shifted = torch.FloatTensor(images_shifted).permute(0, 3, 2, 1)
                     images_shifted = (images_shifted + 1) / 2
                     predict_images = F.avg_pool2d(images_shifted, 4, 4)
                     for predictor_idx, predictor in enumerate(predictor_list):
@@ -170,16 +180,12 @@ class Evaluator(object):
         plt.savefig(os.path.join(path, classifier + '_Rescoring_Analysis' + '.jpeg'), dpi=300)
         plt.close('all')
 
-    def evaluate_directions(self, deformator, resume=False, resume_dir=None):
-        generator = load_generator(None, model_name='stylegan_celebahq1024')
+    def evaluate_directions(self, deformator, layers, resume=False, resume_dir=None):
+        inst = get_instrumented_model('StyleGAN', 'celebahq', 'g_mapping', device, use_w=True, inst=None)
+        generator = inst.model
         if not resume:
-            codes = torch.randn(self.num_samples, generator.z_space_dim).cuda()
-            codes = generator.mapping(codes)['w']
-            codes = generator.truncation(codes,
-                                     trunc_psi=0.7,
-                                     trunc_layers=8)
-            codes = codes.detach()
-            z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=generator.z_space_dim)
+            codes = generator.sample_latent(self.num_samples, seed=self.random_seed).to(device).detach()
+            z = NoiseDataset(latent_codes=codes, num_samples=self.num_samples, z_dim=codes.shape[1])
             torch.save(z, os.path.join(self.result_path, 'z_analysis.pkl'))
         else:
             z = torch.load(os.path.join(self.result_path, 'z_analysis.pkl'))
@@ -193,6 +199,7 @@ class Evaluator(object):
                                                                                               reference_attr_scores,
                                                                                               z_loader,
                                                                                               self.directions_idx,
+                                                                                              layers,
                                                                                               resume=resume,
                                                                                               direction_to_resume=resume_dir)
         perf_logger.stop_monitoring("Metrics done")
@@ -205,22 +212,25 @@ class Evaluator(object):
 if __name__ == '__main__':
     random_seed = 1234
     algo = 'ganspace'  # ['closedform','linear','ortho']
-    if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
-        root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
+    # if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
+    #     root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
+    root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
     result_path = os.path.join(root_folder, 'results/celeba_hq/ganspace')
-    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ganspace/stylegan_celebahq1024/stylegan_celebahq1024.pkl')
+    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/Ganspace/stylegan_celebahq1024/stylegan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
-    num_samples = 2000
+
+    num_samples = 100
     z_batch_size = 2 ##TODO
     epsilon = 2 ##TODO
+    attr_layers = [(0,7), (3, 4), (2, 6), (0, 2)]
     resume = False
     resume_direction = None  ## If resume false, set None
     if algo == 'closedform':
         _, deformator, _ = torch.load(deformator_path, map_location='cpu')
-        deformator = torch.FloatTensor(deformator).cuda()
+        deformator = torch.FloatTensor(deformator).to(device)
     elif algo == 'ortho':
         deformator = torch.load(deformator_path)['deformator']['ortho_mat']
         deformator = deformator.T
@@ -229,10 +239,9 @@ if __name__ == '__main__':
         deformator = deformator.T
     elif algo == 'ganspace': ##TODO
         deformator = torch.load(deformator_path, map_location='cpu')
-        deformator = torch.FloatTensor(deformator).cuda()
     evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
                           epsilon)
-    evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)
+    evaluator.evaluate_directions(deformator, attr_layers, resume=resume, resume_dir=resume_direction)
 
     # attributes = evaluator.all_attr_list
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))

@@ -35,9 +35,14 @@ def get_model(opt):
         inst = get_instrumented_model('StyleGAN', 'celebahq', 'g_mapping', device, use_w=True, inst=None)
         generator = inst.model
 
-        pc_config = Config(components=128, n=1_000_000, use_w=True,
-                           layer='g_mapping', model=opt.gan_type, output_class='celebahq')
-        dump_name = get_or_compute(pc_config, inst)
+#        pc_config = Config(components=128, n=1_000_000, use_w=True,
+#                           layer='g_mapping', model=opt.gan_type, output_class='celebahq')
+#        dump_name = get_or_compute(pc_config, inst)
+        # #1_000_000,
+        # pc_config = Config(components=128, n=1_000, use_w=True,
+        #                    layer='g_mapping', model=opt.gan_type, output_class='celebahq')
+        # dump_name = get_or_compute(pc_config, inst)
+        dump_name = '/home/ubuntu/src/disentagled_latent_dirs/src/ganspace/cache/components/stylegan-celebahq_g_mapping_ipca_c128_n1000000_w.npz'
         with np.load(dump_name) as data:
             lat_comp = data['lat_comp']
             lat_mean = data['lat_mean']

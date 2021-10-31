@@ -11,7 +11,7 @@ def get_resnet():
 
 def get_classifier(pretrain_path, device):
     classifier = ClassifyModel().to(device)
-    classifier.load_state_dict(torch.load(pretrain_path))
+    classifier.load_state_dict(torch.load(pretrain_path, map_location='cpu'))
     return classifier
 
 
