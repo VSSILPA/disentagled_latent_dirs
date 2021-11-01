@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from logger import PerfomanceLogger
 import seaborn as sns
 from ganspace.notebooks.notebook_init import *
+import torchvision
 
 from models.attribute_predictors import attribute_predictor, attribute_utils
 
@@ -36,13 +37,13 @@ class Evaluator(object):
         self.normalize = lambda t: t / np.sqrt(np.sum(t.reshape(-1) ** 2))
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = [7, 14, 1, 5]  ##TODOD change from 0 to 512
+        self.directions_idx = [ 7,14, 1, 5]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
         self.z_batch_size = z_batch_size
         self.num_batches = int(self.num_samples / self.z_batch_size)
-        self.all_attr_list = ['pose','smiling', 'male', 'eyeglasses', ]
+        self.all_attr_list = ['pose', 'smiling', 'male', 'eyeglasses', ]
         attr_index = list(range(len(self.all_attr_list)))
         self.attr_list_dict = OrderedDict(zip(self.all_attr_list, attr_index))
         _set_seed(self.random_seed)
@@ -56,7 +57,8 @@ class Evaluator(object):
             predictor.to(device).eval()
             predictor_list.append(predictor)
         for classifier_name in attr_list[5:]:
-            predictor = attribute_utils.ClassifierWrapper(classifier_name, ckpt_path=self.nvidia_cls_path, device=device)
+            predictor = attribute_utils.ClassifierWrapper(classifier_name, ckpt_path=self.nvidia_cls_path,
+                                                          device=device)
             predictor.to(device).eval()
             predictor_list.append(predictor)
         return predictor_list
@@ -67,7 +69,7 @@ class Evaluator(object):
         with torch.no_grad():
             for batch_idx, z in enumerate(z_loader):
                 images = generator.sample_np(z)
-                images = torch.FloatTensor(images).permute(0, 3, 2, 1)
+                images = torch.FloatTensor(images)
                 images = (images + 1) / 2
                 predict_images = F.avg_pool2d(images, 4, 4)
                 for predictor_idx, predictor in enumerate(predictor_list):
@@ -79,6 +81,29 @@ class Evaluator(object):
         ref_image_scores = ref_image_scores.unsqueeze(0).repeat(len(self.directions_idx), 1, 1)
         torch.save(ref_image_scores, os.path.join(self.result_path, 'reference_attribute_scores.pkl'))
         return ref_image_scores
+
+    def plot_latent_traversals(self, generator, deformator, z_loader):
+        latent_traversals = []
+        with torch.no_grad():
+            for dir_index, dir in enumerate(self.directions_idx):
+                delta = deformator[dir].numpy()
+                d_per_layer = torch.FloatTensor([self.normalize(delta)] * generator.get_max_latents())
+                dir_layer = attr_layers[dir_index]
+                img = 0
+                for batch_idx, z in enumerate(z_loader):
+                    for epsilon in range(-2, 2, 1):
+                        w = [z] * generator.get_max_latents()
+                        for l in range(dir_layer[0], dir_layer[1]):
+                            w[l] = w[l] + epsilon * d_per_layer[l]
+                        images_shifted = generator.sample_np(w)
+                        latent_traversals.append(images_shifted)
+                    images = torch.stack(latent_traversals).squeeze(1)
+                    grid = torchvision.utils.make_grid(images.clamp(min=-1, max=1), nrow=7, scale_each=True,
+                                                       normalize=True)
+                    plt.imsave('test' + str(img) + '.png', grid.permute(1, 2, 0).cpu().numpy())
+                    img = img+1
+                    latent_traversals = []
+
 
     def get_evaluation_metric_values(self, generator, deformator, attribute_list, reference_attr_scores, z_loader,
                                      directions_idx, attr_layers, resume=False, direction_to_resume=None):
@@ -194,14 +219,15 @@ class Evaluator(object):
         reference_attr_scores = self.get_reference_attribute_scores(generator, z_loader, self.all_attr_list)
         perf_logger.stop_monitoring("Reference attribute scores done")
         perf_logger.start_monitoring("Metrics done")
-        full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
-                                                                                              self.all_attr_list,
-                                                                                              reference_attr_scores,
-                                                                                              z_loader,
-                                                                                              self.directions_idx,
-                                                                                              layers,
-                                                                                              resume=resume,
-                                                                                              direction_to_resume=resume_dir)
+        self.plot_latent_traversals(generator, deformator, z_loader)
+        # full_rescoring_matrix, full_attr_manipulation_acc = self.get_evaluation_metric_values(generator, deformator,
+        #                                                                                       self.all_attr_list,
+        #                                                                                       reference_attr_scores,
+        #                                                                                       z_loader,
+        #                                                                                       self.directions_idx,
+        #                                                                                       layers,
+        #                                                                                       resume=resume,
+        #                                                                                       direction_to_resume=resume_dir)
         perf_logger.stop_monitoring("Metrics done")
         classifiers_to_analyse = self.all_attr_list
         top_k = 5
@@ -216,16 +242,16 @@ if __name__ == '__main__':
     #     root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
     root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
     result_path = os.path.join(root_folder, 'results/celeba_hq/ganspace')
-    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/Ganspace/stylegan_celebahq1024/stylegan_celebahq1024.pkl')
+    deformator_path = os.path.join(root_folder,
+                                   'pretrained_models/deformators/Ganspace/stylegan_celebahq1024/stylegan_celebahq1024.pkl')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
-
-    num_samples = 100
-    z_batch_size = 2 ##TODO
-    epsilon = 2 ##TODO
-    attr_layers = [(0,7), (3, 4), (2, 6), (0, 2)]
+    num_samples = 10
+    z_batch_size = 1  ##TODO
+    epsilon = 10  ##TODO
+    attr_layers = [(0, 18), (0, 18), (0, 18)]
     resume = False
     resume_direction = None  ## If resume false, set None
     if algo == 'closedform':
@@ -237,11 +263,16 @@ if __name__ == '__main__':
     elif algo == 'linear':
         deformator = torch.load(os.path.join(deformator_path))['deformator']
         deformator = deformator.T
-    elif algo == 'ganspace': ##TODO
+    elif algo == 'ganspace':  ##TODO
         deformator = torch.load(deformator_path, map_location='cpu')
-    evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
+    deformator[14] = 7* deformator[14]
+    deformator[1] = -3.2*deformator[1]
+    deformator[5] = -10*deformator[5]
+    evaluator = Evaluator(random_seed, result_path, simple_classifier_path, nvidia_classifier_path, num_samples,
+                          z_batch_size,
                           epsilon)
     evaluator.evaluate_directions(deformator, attr_layers, resume=resume, resume_dir=resume_direction)
+
 
     # attributes = evaluator.all_attr_list
     # rescoring_matrix = torch.load(os.path.join(result_path, 'rescoring matrix.pkl'))

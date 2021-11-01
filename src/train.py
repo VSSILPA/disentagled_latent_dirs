@@ -23,7 +23,7 @@ class Trainer(object):
         os.environ['PYTHONHASHSEED'] = str(seed)
 
     def train_ganspace(self, generator):
-        z = torch.randn(self.opt.algo.gs.num_samples, generator.w_space_dim).cuda()
+        z = torch.randn(self.opt.algo.gs.num_samples, self.opt.algo.ours.latent_dim)
         feats = generator.mapping(z)['w']
         V = torch.svd(feats - feats.mean(0)).V.detach().cpu().numpy()
         deformator = V[:, :self.opt.algo.ours.num_directions]
@@ -31,24 +31,19 @@ class Trainer(object):
         deformator_layer.weight.data = torch.FloatTensor(deformator)
         return deformator
 
-    def train_ours(self, generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt, should_gen_classes):
+    def train_ours(self, generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt):
         generator.zero_grad()
         deformator.zero_grad()
         rank_predictor_opt.zero_grad()
         rank_predictor.train()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim).cuda()
+        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim)
         z = torch.cat((z_, z_), dim=0)
-
-        if should_gen_classes:
-            classes = generator.mixed_classes(z.shape[0])
 
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        if should_gen_classes:
-            imgs = generator(z + shift_epsilon, classes)
-        else:
-            imgs = generator(z + shift_epsilon)
+
+        imgs = generator(z + shift_epsilon)
         logits = rank_predictor(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -66,10 +61,8 @@ class Trainer(object):
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
-        if should_gen_classes:
-            imgs = generator(z + shift_epsilon, classes)
-        else:
-            imgs = generator(z + shift_epsilon)
+
+        imgs = generator(z + shift_epsilon)
         logits = rank_predictor(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -85,9 +78,12 @@ class Trainer(object):
     def make_shifts_rank(self):
         epsilon = torch.FloatTensor(int(self.opt.algo.ours.batch_size),
                                     self.opt.algo.ours.num_directions).uniform_(-self.opt.algo.ours.shift_min,
-                                                                                self.opt.algo.ours.shift_min).cuda()
+                                                                                self.opt.algo.ours.shift_min)
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
-        ground_truths = (epsilon_1 < epsilon_2).type(torch.float32).cuda()
+        ground_truths = (epsilon_1 < epsilon_2).type(torch.float32)
+        epsilon_1[:, self.config.opt.algo.ours.num_out_units :] = 0
+        epsilon_2[:, :] = 0
+        ground_truths = ground_truths[:,:4]
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths

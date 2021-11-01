@@ -35,7 +35,24 @@ def run_training_wrapper(configuration, opt, perf_logger):
     generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt = models
     generator.eval()
     deformator.train()
+    rank_predictor_loss_list = []
+    deformator_ranking_loss_list = []
     for step in range(opt.algo.ours.num_steps):
-        directions = model_trainer.train_ganspace(generator)
-        torch.save(directions, opt.result_dir + '/models/ganspace_deformator.pt')
+        deformator, deformator_opt, rank_predictor, rank_predictor_opt, rank_predictor_loss, deformator_ranking_loss = \
+            model_trainer.train_ours(generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt)
+        rank_predictor_loss_list.append(rank_predictor_loss)
+        deformator_ranking_loss_list.append(deformator_ranking_loss)
 
+        if step % opt.algo.ours.logging_freq == 0:
+            rank_predictor_loss_avg = sum(rank_predictor_loss_list) / len(rank_predictor_loss_list)
+            deformator_ranking_loss_avg = sum(deformator_ranking_loss_list) / len(deformator_ranking_loss_list)
+            logging.info("step : %d / %d Rank predictor loss : %.4f Deformator_ranking loss  %.4f " % (
+                step, opt.algo.ours.num_steps, rank_predictor_loss_avg, deformator_ranking_loss_avg))
+            rank_predictor_loss_list = []
+            deformator_ranking_loss_list = []
+
+        if step % opt.algo.ours.saving_freq == 0 and step != 0:
+            params = (deformator, deformator_opt, rank_predictor, rank_predictor_opt)
+            perf_logger.start_monitoring("Saving Model")
+            saver.save_model(params, step)
+            perf_logger.stop_monitoring("Saving Model")

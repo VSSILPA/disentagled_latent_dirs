@@ -34,8 +34,7 @@ def get_model(opt):
     elif opt.algo.ours.initialisation == 'ganspace':
         inst = get_instrumented_model('StyleGAN', 'celebahq', 'g_mapping', device, use_w=True, inst=None)
         generator = inst.model
-        # #1_000_000,
-        # pc_config = Config(components=128, n=1_000, use_w=True,
+        # pc_config = Config(components=128, n=1_000_000, use_w=True,
         #                    layer='g_mapping', model=opt.gan_type, output_class='celebahq')
         # dump_name = get_or_compute(pc_config, inst)
         dump_name = '/home/silpa/PycharmProjects/disentagled_latent_dirs/src/ganspace/cache/components/stylegan-celebahq_g_mapping_ipca_c128_n1000000_w.npz'
@@ -43,10 +42,15 @@ def get_model(opt):
             lat_comp = data['lat_comp']
             lat_mean = data['lat_mean']
         deformator = load_gs_deformator(opt)
+        deformator.to(device)
         d_ours_pose, d_ours_smile, d_ours_gender, d_ours_glasses = lat_comp[7], lat_comp[14], lat_comp[1], lat_comp[5]
+        deformator.ortho_mat.data[:, 0] = torch.FloatTensor(d_ours_pose)
+        deformator.ortho_mat.data[:, 1] = torch.FloatTensor(d_ours_smile)
+        deformator.ortho_mat.data[:, 2] = torch.FloatTensor(d_ours_gender)
+        deformator.ortho_mat.data[:, 3] = torch.FloatTensor(d_ours_glasses)
 
     deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-    rank_predictor = ResNetRankPredictor(num_dirs=opt.algo.ours.num_directions).cuda()
+    rank_predictor = ResNetRankPredictor(num_dirs=opt.algo.ours.num_out_units).to(device)
     rank_predictor_opt = torch.optim.Adam(rank_predictor.parameters(), lr=opt.algo.ours.rank_predictor_lr)
 
     return generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt

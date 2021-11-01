@@ -55,12 +55,13 @@ opt.algo = CN()
 opt.algo.ours = CN()
 opt.algo.ours.model_name = 'stylegan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
 opt.algo.ours.initialisation = 'ganspace'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
-opt.algo.ours.num_steps = 1
+opt.algo.ours.num_steps = 20000
 opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
 opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.rank_predictor_lr = 0.0001
 opt.algo.ours.num_directions = 512
+opt.algo.ours.num_out_units = 4
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.saving_freq = 2000
 opt.algo.ours.logging_freq = 500

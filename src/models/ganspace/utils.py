@@ -7,5 +7,4 @@ def load_gs_deformator(opt):
         deformator = CfLinear(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
     elif deformator_type == 'ortho':
         deformator = CfOrtho(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
-    deformator.cuda()
     return deformator

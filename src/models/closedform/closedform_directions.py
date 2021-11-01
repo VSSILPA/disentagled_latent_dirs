@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+from ganspace.notebooks.notebook_init import *
 
 class CfLinear(nn.Module):
     def __init__(self, input_dim=None, out_dim=None):
@@ -22,9 +22,8 @@ class CfOrtho(nn.Module):
 
         self.input_dim = input_dim
         self.out_dim = out_dim
-        init = 0.001 * torch.randn((self.out_dim, self.input_dim), device="cuda") + torch.eye(self.out_dim,
-                                                                                              self.input_dim,
-                                                                                              device="cuda")
+        init = 0.001 * torch.randn((self.out_dim, self.input_dim)).to(device) + torch.eye(self.out_dim,
+                                                                                              self.input_dim).to(device)
         q, r = torch.qr(init)
         unflip = torch.diag(r).sign().add(0.5).sign()
         q *= unflip[..., None, :]
