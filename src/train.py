@@ -10,6 +10,7 @@ class Trainer(object):
         super(Trainer, self).__init__()
         self.config = config
         self.opt = opt
+        self.normalize = lambda t: t / np.sqrt(np.sum(t.reshape(-1) ** 2))
         self.ranking_loss = nn.BCEWithLogitsLoss()
 
     @staticmethod
@@ -37,13 +38,18 @@ class Trainer(object):
         rank_predictor_opt.zero_grad()
         rank_predictor.train()
 
-        z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), self.opt.algo.ours.latent_dim)
-        z = torch.cat((z_, z_), dim=0)
+        deformator.ortho_mat.data = deformator.ortho_mat / torch.norm(deformator.ortho_mat, dim=0, p=2)
+        w_ = generator.sample_latent(int(self.opt.algo.ours.batch_size / 2))
+        w = torch.cat((w_, w_), dim=0)
 
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
 
-        imgs = generator(z + shift_epsilon)
+        w = w.unsqueeze(1).repeat(1, 18, 1)
+        shift_epsilon = shift_epsilon.unsqueeze(1).repeat(1, 18, 1)
+        w[:, :4, :] = w[:, :4, :] + shift_epsilon[:, :4, :]
+
+        imgs = generator.sample_np(w)
         logits = rank_predictor(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -82,8 +88,8 @@ class Trainer(object):
 
         epsilon_1, epsilon_2 = torch.split(epsilon, int(self.opt.algo.ours.batch_size / 2))
         ground_truths = (epsilon_1 < epsilon_2).type(torch.float32)
-        epsilon_1[:, self.config.opt.algo.ours.num_out_units :] = 0
-        epsilon_2[:, :] = 0
-        ground_truths = ground_truths[:,:4]
+        epsilon_1[:, self.opt.algo.ours.num_out_units :] = 0
+        epsilon_2[:, self.opt.algo.ours.num_out_units : ] = 0
+        ground_truths = ground_truths[:, :4]
         epsilon = torch.cat((epsilon_1, epsilon_2), dim=0)
         return epsilon, ground_truths
