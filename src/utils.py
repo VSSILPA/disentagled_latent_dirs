@@ -4,7 +4,7 @@ import fnmatch
 import shutil
 from typing import List, Tuple
 from torch.utils.data import Dataset
-from natsort import natsorted
+# from natsort import natsorted
 import numpy as np
 from PIL import Image
 

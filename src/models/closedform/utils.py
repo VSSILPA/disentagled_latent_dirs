@@ -9,6 +9,7 @@ from models.closedform.stylegan2_generator import StyleGAN2Generator
 
 GEN_CHECKPOINT_DIR = '../pretrained_models/generators/ClosedForm'
 DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/ClosedForm'
+INTERFACEGAN_DEFORMATOR_CHECKPOINT_DIR = '../pretrained_models/deformators/interfacegan'
 
 
 def build_generator(gan_type, resolution, **kwargs):
@@ -72,7 +73,7 @@ def load_generator(opt, model_name=''):
         generator.load_state_dict(checkpoint['generator_smooth'])
     else:
         generator.load_state_dict(checkpoint['generator'])
-    generator = generator.cuda()
+    generator = generator.cuda() 
     generator.eval()
     print(f'Finish loading checkpoint.')
     return generator
@@ -91,3 +92,29 @@ def load_deformator(opt):
         deformator.ortho_mat.data = torch.FloatTensor(directions_T)
     deformator.cuda()
     return deformator
+
+
+def load_interfacegan_deformator(opt):
+    model_name = opt.algo.ours.model_name
+    deformator_type = opt.algo.ours.deformator_type
+    directions = torch.load(os.path.join(INTERFACEGAN_DEFORMATOR_CHECKPOINT_DIR, 'directions.pt'),map_location=opt.device)
+    directions_T = directions.T  ## Sefa returns eigenvectors as rows, so transpose required
+    if deformator_type == 'linear':
+        deformator = CfLinear(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
+        deformator.linear.weight.data = torch.FloatTensor(directions_T)
+    elif deformator_type == 'ortho':
+        deformator = CfOrtho(opt.algo.ours.latent_dim, opt.algo.ours.num_directions)
+        deformator.ortho_mat.data = torch.FloatTensor(directions_T)
+    deformator.to(opt.device)
+    return deformator
+
+# import torch
+# import numpy as np
+# age_boundary = np.load('pretrained_models/interfacegan_boundaries/pggan_celebahq_age_boundary.npy')
+# smile_boundary = np.load('pretrained_models/interfacegan_boundaries/pggan_celebahq_smile_boundary.npy')
+# gender_boundary = np.load('pretrained_models/interfacegan_boundaries/pggan_celebahq_gender_boundary.npy')
+# pose_boundary = np.load('pretrained_models/interfacegan_boundaries/pggan_celebahq_pose_boundary.npy')
+# eyeglasses_boundary = np.load('pretrained_models/interfacegan_boundaries/pggan_celebahq_eyeglasses_boundary.npy')
+# deformator_interface_gan = torch.FloatTensor([pose_boundary,smile_boundary,age_boundary,gender_boundary,eyeglasses_boundary])
+# deformator_interface_gan = deformator_interface_gan.squeeze(1)
+# torch.save(deformator_interface_gan,'src/pretrained_models/interfacegan/directions.pt')

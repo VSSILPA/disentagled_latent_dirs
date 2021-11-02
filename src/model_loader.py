@@ -14,6 +14,7 @@ from models.closedform.utils import load_generator as load_cf_generator
 from models.closedform.utils import load_deformator as load_cf_deformator
 from models.latentdiscovery.utils import load_generator as load_ld_generator
 from models.latentdiscovery.utils import load_deformator as load_ld_deformator
+from models.closedform.utils import load_interfacegan_deformator
 
 
 def get_model(opt):
@@ -25,8 +26,12 @@ def get_model(opt):
         generator = load_ld_generator(opt)
         deformator = load_ld_deformator(opt)
 
+    elif opt.algo.ours.initialisation == 'interfacegan':
+        generator = load_cf_generator(opt)
+        deformator = load_interfacegan_deformator(opt) ##TODO first eigenvectos normalisation check
+
     deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-    rank_predictor = ResNetRankPredictor(num_dirs=opt.algo.ours.num_directions).cuda()
+    rank_predictor = ResNetRankPredictor(num_dirs=opt.algo.ours.num_directions).to(opt.device)
     rank_predictor_opt = torch.optim.Adam(rank_predictor.parameters(), lr=opt.algo.ours.rank_predictor_lr)
 
     return generator, deformator, deformator_opt, rank_predictor, rank_predictor_opt

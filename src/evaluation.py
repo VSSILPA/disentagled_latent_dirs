@@ -34,7 +34,7 @@ class Evaluator(object):
         self.result_path = result_path
         self.simple_cls_path = simple_cls_path
         self.nvidia_cls_path = nvidia_cls_path
-        self.directions_idx = [2,1,10,4,1]#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
+        self.directions_idx = [0, 1, 2, 3, 4]#[4, 16, 23, 24, 8, 11]  ##TODOD change from 0 to 512
         self.num_directions = len(self.directions_idx)
         self.num_samples = num_samples
         self.epsilon = epsilon
@@ -201,29 +201,30 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     random_seed = 1234
-    algo = 'closedform'  # ['closedform','linear','ortho']
-    if torch.cuda.get_device_properties(0).name == 'GeForce GTX 1050 Ti':
-        root_folder = '/home/adarsh/PycharmProjects/disentagled_latent_dirs'
-    result_path = os.path.join(root_folder, 'results/celeba_hq/closed_form/quantitative_analysis_epsilon_2')
-    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/ClosedForm/pggan_celebahq1024/pggan_celebahq1024.pkl')
+    device = 'cuda'
+    algo = 'interfacegan'  # ['closedform','linear','ortho']
+    root_folder = '/home/silpa/PycharmProjects/disentagled_latent_dirs'
+    result_path = os.path.join(root_folder, 'results/celeba_hq/interfacegan/quantitative_analysis_epsilon_2')
+    deformator_path = os.path.join(root_folder, 'pretrained_models/deformators/interfacegan/directions.pt')
     simple_classifier_path = os.path.join(root_folder, 'pretrained_models')
     nvidia_classifier_path = os.path.join(root_folder, 'pretrained_models/classifiers/nvidia_classifiers')
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 512
     z_batch_size = 2
-    epsilon = 2
+    epsilon = 3
     resume = False
     resume_direction = None  ## If resume false, set None
-    if algo == 'closedform':
-        _, deformator, _ = torch.load(deformator_path, map_location='cpu')
-        deformator = torch.FloatTensor(deformator).cuda()
+    if algo == 'interfacegan':
+        deformator = torch.load(deformator_path, map_location='cpu')
+        deformator = torch.FloatTensor(deformator.T).to((device))
     elif algo == 'ortho':
         deformator = torch.load(deformator_path)['deformator']['ortho_mat']
         deformator = deformator.T
     elif algo == 'linear':
         deformator = torch.load(os.path.join(deformator_path))['deformator']
         deformator = deformator.T
+
     evaluator = Evaluator(random_seed, result_path,simple_classifier_path, nvidia_classifier_path, num_samples, z_batch_size,
                           epsilon)
     evaluator.evaluate_directions(deformator, resume=resume, resume_dir=resume_direction)

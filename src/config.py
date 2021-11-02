@@ -10,6 +10,7 @@
 
 import argparse
 import os
+import torch
 import sys
 from yacs.config import CfgNode as CN
 from contextlib import redirect_stdout
@@ -45,6 +46,7 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'pggan'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN2','SNGAN' ,'StyleGAN']
+opt.device = 'cuda'
 # choices=['AnimeFaceS', 'ImageNet',CelebAHQ' ,'LSUN-cars', 'LSUN-cats' , 'LSUN-landscapes']
 opt.random_seed = 123
 
@@ -54,7 +56,7 @@ opt.random_seed = 123
 opt.algo = CN()
 opt.algo.ours = CN()
 opt.algo.ours.model_name = 'pggan_celebahq1024'  # choices = ['pggan_celebahq1024',stylegan_animeface512,stylegan_car512,stylegan_cat256]
-opt.algo.ours.initialisation = 'closed_form'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
+opt.algo.ours.initialisation = 'interfacegan'  # choices = ['closed_form', 'latent_discovery', 'gan_space]
 opt.algo.ours.num_steps =40001
 opt.algo.ours.batch_size = 8
 opt.algo.ours.deformator_type = 'ortho'  # choices = ['linear','ortho']
