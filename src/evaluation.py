@@ -211,7 +211,7 @@ if __name__ == '__main__':
     os.makedirs(result_path, exist_ok=True)
 
     num_samples = 512
-    z_batch_size = 2
+    z_batch_size = 8
     epsilon = 3
     resume = False
     resume_direction = None  ## If resume false, set None
