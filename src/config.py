@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'shapes3d with eval on rank predictor with zero grad and eval'
-    experiment_description = 'Running for random seed-2 mpi3d'
+    experiment_name = 'shapes3d random init generator 0'
+    experiment_description = 'hwo random iniit result is for generator 0'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -90,7 +90,7 @@ opt.algo.ld.saving_freq = 1000
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
 opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 6001
+opt.algo.ours.num_steps = 18001
 opt.algo.ours.batch_size = 32
 opt.algo.ours.deformator_type = 'ortho'
 opt.algo.ours.deformator_randint = True
@@ -98,8 +98,8 @@ opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 6000
-opt.algo.ours.saving_freq = 6000
+opt.algo.ours.logging_freq = 3000
+opt.algo.ours.saving_freq = 3000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #
