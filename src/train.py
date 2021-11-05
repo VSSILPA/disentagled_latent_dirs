@@ -30,6 +30,7 @@ class Trainer(object):
         deformator.zero_grad()
         cr_optimizer.zero_grad()
         cr_discriminator.train()
+        deformator.eval()
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.style_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
@@ -37,9 +38,9 @@ class Trainer(object):
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
 
-        w = generator.style(z)
+        w = generator.style(z+shift_epsilon)
 
-        imgs, _ = generator([w + shift_epsilon], **generator_kwargs)
+        imgs, _ = generator([w], **generator_kwargs)
         logits = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -50,16 +51,18 @@ class Trainer(object):
         
         generator.zero_grad()
         deformator.zero_grad()
+        cr_discriminator.zero_grad()
         cr_discriminator.eval()
+        deformator.train()
 
         z_ = torch.randn(int(self.opt.algo.ours.batch_size / 2), generator.style_dim).cuda()
         z = torch.cat((z_, z_), dim=0)
         epsilon, ground_truths = self.make_shifts_rank()
         shift_epsilon = deformator(epsilon)
 
-        w = generator.style(z)
+        w = generator.style(z+shift_epsilon)
 
-        imgs, _ = generator([w + shift_epsilon], **generator_kwargs)
+        imgs, _ = generator([w], **generator_kwargs)
         logits = cr_discriminator(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))

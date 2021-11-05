@@ -17,8 +17,8 @@ from contextlib import redirect_stdout
 
 test_mode = True
 if test_mode:
-    experiment_name = 'shapes3d random init generator 0'
-    experiment_description = 'hwo random iniit result is for generator 0'
+    experiment_name = 'z_space_corrected_3_generators'
+    experiment_description = 'trying to identify which is better z or w'
 else:
     experiment_name = input("Enter experiment name ")
     experiment_description = 'first run of shapes 3d for latent discovert with ortho'
@@ -43,14 +43,13 @@ parser.add_argument('--experiment_description', type=str, default=experiment_des
 # Options for General settings
 # ---------------------------------------------------------------------------- #
 parser.add_argument('--evaluation', type=bool, default=False, help='whether to run in evaluation mode or not')
-parser.add_argument('--file_name', type=str, default='40005_model.pkl', help='name of the model to be loaded')
+parser.add_argument('--file_name', type=str, default='test' , help='name of the model to be loaded')
 parser.add_argument('--resume_train', type=bool, default=False, help='name of the model to be loaded')
 opt = CN()
 opt.gan_type = 'StyleGAN2'  # choices=['BigGAN', 'ProgGAN', 'StyleGAN', 'StyleGAN2','SNGAN']
 opt.algorithm = 'ours'  # choices=['LD', 'CF', 'linear_combo', 'GS', 'ours']
 opt.dataset = 'shapes3d'  # choices=['dsprites', 'mpi3d', 'cars3d','shapes3d','anime_face','mnist','CelebA]
-#opt.pretrained_gen_root = 'models/pretrained/generators/new_generators/new_generators/'
-opt.pretrained_gen_root = 'models/pretrained/new_generators/'
+opt.pretrained_gen_root = '/home/ubuntu/src/disentagled_latent_dirs/new_generators/'
 opt.num_channels = 3 if opt.dataset != 'dsprites' else 1
 opt.device = 'cuda:'
 opt.device_id = '0'
@@ -89,8 +88,8 @@ opt.algo.ld.saving_freq = 1000
 # Options for Ours
 # ---------------------------------------------------------------------------- #
 opt.algo.ours = CN()
-opt.algo.ours.initialisation = 'cf'
-opt.algo.ours.num_steps = 18001
+opt.algo.ours.initialisation = None
+opt.algo.ours.num_steps = 48001
 opt.algo.ours.batch_size = 32
 opt.algo.ours.deformator_type = 'ortho'
 opt.algo.ours.deformator_randint = True
@@ -98,8 +97,8 @@ opt.algo.ours.deformator_lr = 0.0001
 opt.algo.ours.num_directions = 10
 opt.algo.ours.latent_dim = 512
 opt.algo.ours.shift_predictor_size = None
-opt.algo.ours.logging_freq = 3000
-opt.algo.ours.saving_freq = 3000
+opt.algo.ours.logging_freq = 6000
+opt.algo.ours.saving_freq = 6000
 opt.algo.ours.shift_predictor_lr = 0.0001
 
 # ---------------------------------------------------------------------------- #

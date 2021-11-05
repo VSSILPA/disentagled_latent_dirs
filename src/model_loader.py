@@ -41,7 +41,7 @@ def get_model(opt):
             small=True,
             channel_multiplier=config_gan["channel_multiplier"],
         )
-        G.load_state_dict(torch.load('/home/ubuntu/src/disentagled_latent_dirs/new_generators/3dshapes/7.pt'))
+        G.load_state_dict(torch.load(opt.pretrained_gen_path))
         G.eval().to(device)
         for p in G.parameters():
             p.requires_grad_(False)

@@ -64,7 +64,7 @@ class LatentDataset(Dataset):
             x = torch.clamp(x, -1, 1)
             x = (((x.detach().cpu().numpy() + 1) / 2) * 255).astype(np.uint8)
             images.append(x)
-            labels.append(w.detach().cpu().numpy())
+            labels.append(z.detach().cpu().numpy())
 
         self.images = np.concatenate(images, 0)
         logging.info('max value in image :' + str(self.images.max()))
