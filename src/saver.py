@@ -47,7 +47,7 @@ class Saver(object):
 
     def load_model(self, params, algo='LD'):
         models_dir = os.path.dirname(os.getcwd()) + f'/pretrained_models/' + self.config['file_name']  # project root
-        checkpoint = torch.load('/home/adarsh/PycharmProjects/disentagled_latent_dirs/results/shapes_3d/closedform_ours/seed_2/60007_model.pkl')
+        checkpoint = torch.load('/home/ubuntu/src/disentagled_latent_dirs/results/shapes3d random init generator 0/models/150000_model.pkl')
         if algo == 'LD':
             deformator, shift_predictor, deformator_opt, shift_predictor_opt = params
             deformator.load_state_dict(checkpoint['deformator'])

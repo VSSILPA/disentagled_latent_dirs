@@ -30,7 +30,7 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             filtered_dirs.append((x, y))
     files = [(f[0], os.path.join(opt.result_dir, "src", f[1])) for f in filtered_dirs]
     copy_files_and_create_dirs(files)
-    for i in range(7,8):
+    for i in range(0,opt.num_generator_seeds):
         logging.info("Running for generator model : " + str(i))
         resume_step = 0
         opt.pretrained_gen_path = opt.pretrained_gen_root + opt.dataset + '/' + str(i) + '.pt'
@@ -98,41 +98,30 @@ def run_training_wrapper(configuration, opt, data, perf_logger):
             metrics = evaluator.compute_metrics(generator, directions, data, epoch=0)
         elif opt.algorithm == 'ours':
             generator,deformator, deformator_opt, cr_discriminator, cr_optimizer = models
-            # initialisation = model_trainer.train_closed_form(generator)
-            # #
-            # deformator.ortho_mat.data = initialisation.weight
             deformator.cuda()
-            deformator_opt = torch.optim.Adam(deformator.parameters(), lr=opt.algo.ours.deformator_lr)
-#            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-#            logging.info("---------------------Closed form initialisation results------------------------")
-#            logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
-#            logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
-#            logging.info("MIG : " + str(metrics['mig']))
-#            logging.info("DCI Metric : " + str(metrics['dci']))
+            metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
+            logging.info("---------------------Random initialisation results wspace------------------------")
+            logging.info("BetaVAE Metric : " + str(metrics['beta_vae']['eval_accuracy']))
+            logging.info("Factor Metric : " + str(metrics['factor_vae']['eval_accuracy']))
+            logging.info("MIG : " + str(metrics['mig']))
+            logging.info("DCI Metric : " + str(metrics['dci']))
             resume_step = 0
             if configuration['resume_train']:
-                resume_step = 20000
+                print('**************resuming*********************8')
+                resume_step = 15001
                 deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model((deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
-            deformator.eval()
+#                metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
             generator.eval()
             for k in range(resume_step,opt.algo.ours.num_steps):
-                # deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
-                #     model_trainer.train_ours(
-                #         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                # if k % opt.algo.ours.saving_freq == 0 and k != 0:
-                #     params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
-                #     perf_logger.start_monitoring("Saving Model")
-                #     saver.save_model(params, k, i , algo='ours')
-                #     perf_logger.stop_monitoring("Saving Model")
-                deformator, deformator_opt, cr_discriminator, cr_optimizer = saver.load_model(
-                    (deformator, deformator_opt, cr_discriminator, cr_optimizer), algo='ours')
-                if True:
-                    # metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
-                    perf_logger.start_monitoring("Latent Traversal Visualisations")
-                    for img_num in range(100):
-                        visualise_results.make_interpolation_chart(i, generator, deformator,img_num ,shift_r=3,
-                                                                   shifts_count=10)
-                    perf_logger.stop_monitoring("Latent Traversal Visualisations")
+                deformator, deformator_opt, cr_discriminator, cr_optimizer, losses = \
+                     model_trainer.train_ours(
+                         generator, deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                if k % opt.algo.ours.saving_freq == 0 and k != 0:
+                    params = (deformator, deformator_opt, cr_discriminator, cr_optimizer)
+                    perf_logger.start_monitoring("Saving Model")
+                    saver.save_model(params, k, i , algo='ours')
+                    perf_logger.stop_monitoring("Saving Model")
+                    metrics = evaluator.compute_metrics(generator, deformator, data, epoch=0)
         else:
             raise NotImplementedError
         metrics_seed['betavae_metric'].append(metrics['beta_vae']['eval_accuracy'])
