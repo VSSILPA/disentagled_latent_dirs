@@ -39,7 +39,7 @@ class Trainer(object):
 
         w = generator.style(z)
 
-        imgs, _ = generator([w + shift_epsilon], **generator_kwargs)
+        imgs, _ = generator([w+shift_epsilon], **generator_kwargs)
         logits = cr_discriminator(imgs.detach())
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
@@ -59,7 +59,7 @@ class Trainer(object):
 
         w = generator.style(z)
 
-        imgs, _ = generator([w + shift_epsilon], **generator_kwargs)
+        imgs, _ = generator([w+shift_epsilon], **generator_kwargs)
         logits = cr_discriminator(imgs)
 
         epsilon1, epsilon2 = torch.split(logits, int(self.opt.algo.ours.batch_size / 2))
