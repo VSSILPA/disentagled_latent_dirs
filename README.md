@@ -1,4 +1,4 @@
-# disentagled_latent_dirs
+# Self-supervised Enhancement of Latent Discovery in GANs
 Imporved disentagled directions learning
 
 Change indexing from memory  map to full data in MPI3D, Shapes3D
