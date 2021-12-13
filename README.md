@@ -11,8 +11,7 @@ Self-supervised Enhancement of Latent Discovery in GANs. \
 - Python 3
 - NVIDIA GPU + CUDA CuDNN
 
-<img src='dal_block_diagram.png' width=800>
-
+## Abstract
 Several methods for discovering interpretable directions in the latent space of pretrained GANs have been proposed. Latent semantics discovered by unsupervised methods are relatively less disentangled than supervised methods since they do not
 use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),which is trained using self-supervision. SRE enhances the disentanglement in directions obtained by existing unsupervised disentanglement techniques. These directions are updated to preserve the ordering of variation within each direction in latent space.
 
