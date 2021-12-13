@@ -13,7 +13,7 @@ Self-supervised Enhancement of Latent Discovery in GANs. \
 
 ## Abstract
 Several methods for discovering interpretable directions in the latent space of pretrained GANs have been proposed. Latent semantics discovered by unsupervised methods are relatively less disentangled than supervised methods since they do not
-use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),which is trained using self-supervision. SRE enhances the disentanglement in directions obtained by existing unsupervised disentanglement techniques. These directions are updated to preserve the ordering of variation within each direction in latent space.
+use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),which is trained using self-supervision. SRE enhances the disentanglement in directions obtained by existing unsupervised disentanglement techniques. These directions are updated to preserve the ordering of variation within each direction in latent space.We also show that the learned SRE can be used to perform Attribute-based image retrieval task without further training.
 
 
 <a name="setup"/>
@@ -33,6 +33,6 @@ use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),
 ## Disovered directions
 <img src='result.png' width=800>
 
-## Application
+## Application - Attribute based Image Retrieval
 <img src='application.png' width=800>
 
