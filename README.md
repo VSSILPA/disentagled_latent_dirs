@@ -1,21 +1,42 @@
 # Self-supervised Enhancement of Latent Discovery in GANs
-Imporved disentagled directions learning
+[Paper](link)
 
-Change indexing from memory  map to full data in MPI3D, Shapes3D
+Self-supervised Enhancement of Latent Discovery in GANs. \
+[Silpa V S](silpavs.43@gmail.com)*,[Adarsh K](kadarsh22@gmail.com)*, [S Sumitra](https://www.iist.ac.in/mathematics/sumitra)
+* indicates equal contribution.
+*AAAI 2022*
 
-Normalisation of dtatasets : [0,1]
-Change to [-1,1] if required
+## Prerequisites
+- Ubuntu
+- Python 3
+- NVIDIA GPU + CUDA CuDNN
+
+<img src='dal_block_diagram.png' width=800>
+
+Several methods for discovering interpretable directions in the latent space of pretrained GANs have been proposed. Latent semantics discovered by unsupervised methods are relatively less disentangled than supervised methods since they do not
+use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),which is trained using self-supervision. SRE enhances the disentanglement in directions obtained by existing unsupervised disentanglement techniques. These directions are updated to preserve the ordering of variation within each direction in latent space.
 
 
-Cars3D dataset can't be normalised for the whole data due to memory erroR.
-Change the train function by loading data and normalize it using an IF CONDITION.
+<a name="setup"/>
+<a name="application"/>
 
-config.py
-Options for style gan generator , discriminator used for stylegan architecture and not style gan2
+## Setup
 
-shapes3d,mpi3d --- self.images is in range [0,255]
-while cars3d,ddsprites in range[0,1]
+- Clone this repo:
+```bash
+git clone https://github.com/kadarsh22/disentanglement_based_active_learning.git
+cd disentanglement_based_active_learning
+```
 
-average expected loss for encoder training is in range of .35,0.5 if the loss is around 0.9 it might due to usage of 
-images from a different generator mod
+- Install dependencies:
+	- Install dependcies to a new virtual environment.
+	```bash
+	pip install -r requirements.txt
+	```
+ 
+## Disovered directions
+<img src='discovered_directions.png' width=800>
+
+## Application
+<img src='image_retrival.png' width=800>
 
