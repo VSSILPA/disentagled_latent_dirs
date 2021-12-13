@@ -31,8 +31,8 @@ use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),
 	```
  
 ## Disovered directions
-<img src='result.pdf' width=800>
+<img src='result.png' width=800>
 
 ## Application
-<img src='application.pdf' width=800>
+<img src='application.png' width=800>
 
