@@ -2,8 +2,8 @@
 [Paper](link)
 
 Self-supervised Enhancement of Latent Discovery in GANs. \
-[Silpa V S](silpavs.43@gmail.com)*,[Adarsh K](kadarsh22@gmail.com)*, [S Sumitra](https://www.iist.ac.in/mathematics/sumitra)
-* indicates equal contribution.
+[Silpa V S*](silpavs.43@gmail.com), [Adarsh K*](kadarsh22@gmail.com), [S Sumitra](https://www.iist.ac.in/mathematics/sumitra)
+* *indicates equal contribution.
 *AAAI 2022*
 
 ## Prerequisites
@@ -21,11 +21,10 @@ use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),
 
 ## Setup
 
-- Clone this repo:
-
+- Clone this repo
 
 - Install dependencies:
-	- Install dependcies to a new virtual environment.
+	- Install dependencies to a new virtual environment.
 	```bash
 	pip install -r requirements.txt
 	```
