@@ -22,10 +22,7 @@ use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),
 ## Setup
 
 - Clone this repo:
-```bash
-git clone https://github.com/kadarsh22/disentanglement_based_active_learning.git
-cd disentanglement_based_active_learning
-```
+
 
 - Install dependencies:
 	- Install dependcies to a new virtual environment.
@@ -34,8 +31,8 @@ cd disentanglement_based_active_learning
 	```
  
 ## Disovered directions
-<img src='discovered_directions.png' width=800>
+<img src='result.pdf' width=800>
 
 ## Application
-<img src='image_retrival.png' width=800>
+<img src='application.pdf' width=800>
 
