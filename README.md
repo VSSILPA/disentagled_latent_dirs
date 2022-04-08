@@ -29,7 +29,7 @@ use pre-trained attribute classifiers. We propose Scale Ranking Estimator (SRE),
 	pip install -r requirements.txt
 	```
  
-## Disovered directions
+## Discovered directions
 <img src='result.png' width=800>
 
 ## Application - Attribute based Image Retrieval
